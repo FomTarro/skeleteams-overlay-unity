@@ -1,0 +1,84 @@
+.unity-text-element {
+    margin: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    -unity-font: url("project://database/Assets/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&guid=d8a76c8697d04a541be94c5927440329&type=3#NotInter-Regular");
+}
+
+.unity-label {
+}
+
+.panel {
+    flex-grow: 1;
+    background-color: rgb(45, 45, 45);
+    -unity-background-scale-mode: scale-to-fit;
+    width: 100%;
+    height: 100%;
+    align-self: center;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+}
+
+.col {
+    align-items: center;
+    align-self: center;
+    flex-grow: 1;
+    justify-content: flex-start;
+}
+
+.row {
+}
+
+.border-box {
+    border-left-color: rgb(254, 179, 208);
+    border-right-color: rgb(254, 179, 208);
+    border-top-color: rgb(254, 179, 208);
+    border-bottom-color: rgb(254, 179, 208);
+    border-top-width: 5px;
+    border-right-width: 5px;
+    border-bottom-width: 5px;
+    border-left-width: 5px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.teams-logo {
+    width: 48px;
+    height: 48px;
+}
+
+.top-pad {
+    padding-top: 13%;
+}
+
+.side-pad {
+    padding-right: 20%;
+    padding-left: 20%;
+}
+
+.title {
+    -unity-font: url("project://database/Assets/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&guid=d8a76c8697d04a541be94c5927440329&type=3#NotInter-Regular");
+    font-size: 32px;
+    -unity-font-style: bold;
+    padding-top: 14px;
+    -unity-text-align: upper-center;
+}
+
+.subtitle {
+    -unity-font-style: bold;
+    font-size: 16px;
+    padding-top: 14px;
+}
+
+.connect-row-item {
+    margin-right: 10px;
+    margin-left: 10px;
+}

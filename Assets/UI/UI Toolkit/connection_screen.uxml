@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/connection_uss.uss?fileID=7433441132597879392&amp;guid=d36dec58408a2d0489c1d2a00cc3975d&amp;type=3#connection_uss" />
+    <ui:VisualElement style="flex-grow: 1; background-image: url(&quot;project://database/Assets/Screenshot_2025-12-06_16-37-07.png?fileID=2800000&amp;guid=6ae2e1cd2a1e37e4b80484ae1120649f&amp;type=3#Screenshot_2025-12-06_16-37-07&quot;); position: absolute; width: 100%; height: 100%; background-color: rgb(0, 0, 0); -unity-background-scale-mode: scale-and-crop; display: flex; -unity-background-image-tint-color: rgba(255, 255, 255, 0.38);" />
+    <ui:VisualElement name="container" class="panel col top-pad" style="background-color: rgba(45, 45, 45, 0);">
+        <ui:VisualElement name="teams-logo" class="teams-logo" style="background-image: url(&quot;project://database/Assets/gingham_32.png?fileID=2800000&amp;guid=e6c40edd3ab5d9e429824736dbee53b3&amp;type=3#gingham_32&quot;);" />
+        <ui:Label tabindex="-1" text="【Grim Fandango】Let&apos;s Visit the Land of the Dead!" parse-escape-sequences="true" display-tooltip-when-elided="true" name="stream-title" class="title" />
+        <ui:Label tabindex="-1" text="Saturday, December 6th - 10:20 PM GMT-5&#10;" parse-escape-sequences="true" display-tooltip-when-elided="true" name="stream-subtitle" class="subtitle" />
+        <ui:VisualElement name="main-row" class="row side-pad" style="flex-grow: 1; flex-direction: row;">
+            <ui:VisualElement class="border-box connect-row-item" style="flex-grow: 1;" />
+            <ui:VisualElement class="border-box connect-row-item" style="flex-grow: 1;" />
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-grow: 1;" />
+        <ui:VisualElement name="Logo" class="spout" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Spout.renderTexture?fileID=8400000&amp;guid=b2f4cd9322ca5d540a61cacccdac0a81&amp;type=2#Spout&quot;); -unity-background-scale-mode: scale-to-fit; flex-shrink: 0;" />
+    </ui:VisualElement>
+</ui:UXML>
