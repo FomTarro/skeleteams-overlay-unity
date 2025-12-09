@@ -107,7 +107,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1385487756028504889, guid: a1a6001fac3641d47ac2aa722c652f5a, type: 3}
       propertyPath: m_Name
-      value: Text (TMP) (1)
+      value: Icon Glyph
       objectReference: {fileID: 0}
     - target: {fileID: 4431924856167194988, guid: a1a6001fac3641d47ac2aa722c652f5a, type: 3}
       propertyPath: m_Pivot.x
@@ -191,11 +191,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5758734379192791160, guid: a1a6001fac3641d47ac2aa722c652f5a, type: 3}
       propertyPath: m_fontSize
-      value: 23.3
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 5758734379192791160, guid: a1a6001fac3641d47ac2aa722c652f5a, type: 3}
       propertyPath: m_enableAutoSizing
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5758734379192791160, guid: a1a6001fac3641d47ac2aa722c652f5a, type: 3}
+      propertyPath: m_HorizontalAlignment
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
