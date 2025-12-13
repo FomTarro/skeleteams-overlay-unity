@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 2074380151308047686}
   - component: {fileID: 4338876573876478209}
   - component: {fileID: 4566067971446595688}
-  - component: {fileID: -7041104281263949320}
   m_Layer: 5
   m_Name: Spout Texture
   m_TagString: Untagged
@@ -61,7 +60,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: bc6f1b25556b7cc4c92ecce646130928, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -69,7 +68,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 8400000, guid: b2f4cd9322ca5d540a61cacccdac0a81, type: 2}
+  m_Texture: {fileID: 0}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -149,16 +148,3 @@ MonoBehaviour:
   _targetRenderer: {fileID: 4338876573876478209}
   _targetMaterialProperty: 
   _resources: {fileID: 11400000, guid: f449ebbe2051c2e4d993eaa773a410de, type: 2}
---- !u!114 &-7041104281263949320
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2307286214131890906}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c733f1cb91394543ade8ce4f184f21a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _runtimeTexture: {fileID: 0}
