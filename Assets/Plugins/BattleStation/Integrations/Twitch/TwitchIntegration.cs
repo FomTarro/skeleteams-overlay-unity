@@ -1,6 +1,8 @@
 using System;
+using Skeletom.BattleStation.Integrations.Twitch;
 using Skeletom.Essentials.IO;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class TwitchIntegration : Integration<TwitchIntegration, TwitchIntegration.IntegrationData>
 {
@@ -37,6 +39,42 @@ public class TwitchIntegration : Integration<TwitchIntegration, TwitchIntegratio
         USER_TOKEN = token;
         SaveDataManager.Instance.WriteSaveData(this);
     }
+
+    [Serializable]
+    public class TwitchChatMessageEvent : UnityEvent<ChatMessageEventSubEvent> { }
+    public TwitchChatMessageEvent onTwitchChatMessage = new TwitchChatMessageEvent();
+
+    private void Update()
+    {
+        
+    }
+
+    private void ProcessMessage(string msg)
+    {
+        try
+        {
+            EventSubSocketMessage<EventSubEventPayload<string>> message = JsonUtility.FromJson<EventSubSocketMessage<EventSubEventPayload<string>>>(msg);
+            if ("session_welcome".Equals(message.metadata.message_type))
+            {
+                EventSubSocketMessage<EventSubWelcomePayload> session = JsonUtility.FromJson<EventSubSocketMessage<EventSubWelcomePayload>>(msg);
+                string sessionId = session.payload.session.id;
+                // TODO: kick off all HTTP subscriptions
+            }
+            else if ("notification".Equals(message.metadata.message_type))
+            {
+                if ("channel.follow".Equals(message.payload.subscription.type))
+                {
+                    EventSubSocketMessage<EventSubEventPayload<ChatMessageEventSubEvent>> obj = JsonUtility.FromJson<EventSubSocketMessage<EventSubEventPayload<ChatMessageEventSubEvent>>>(msg);
+                    onTwitchChatMessage.Invoke(obj.payload.@event);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
 
     public override void FromSaveData(IntegrationData data)
     {

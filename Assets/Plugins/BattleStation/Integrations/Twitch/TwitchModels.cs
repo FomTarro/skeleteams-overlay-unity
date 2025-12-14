@@ -2,6 +2,34 @@ using System;
 
 namespace Skeletom.BattleStation.Integrations.Twitch
 {
+
+    #region HTTP
+
+    [Serializable]
+    public class EventSubSubscriptionRequest<T>
+    {
+        public string type;
+        public string version;
+        public T condition;
+        public EventSubSubscriptionTransport transport;
+    }
+
+    [Serializable]
+    public class EventSubSubscriptionTransport {
+        public string method = "websocket";
+        public string session_id;
+    }
+
+    [Serializable]
+    public class EventSubSubscriptionResponse
+    {
+        // TODO
+    }
+
+    #endregion
+
+    #region WebSocket
+
     [Serializable]
     public class EventSubSocketMessage<T>
     {
@@ -17,6 +45,27 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string message_timestamp;
     }
 
+    [Serializable]
+    public class EventSubWelcomePayload
+    {
+        public EventSubSession session;
+    }
+
+    [Serializable]
+    public class EventSubSession {
+        public string id;
+        public string status;
+        public string connected_at;
+        public int keepalive_timeout_seconds;
+        public string reconnect_url;
+    }
+
+    [Serializable]
+    public class EventSubEventPayload<T>
+    {
+        public EventSubSubscriptionInfo subscription;
+        public T @event;
+    }
 
     [Serializable]
     public class EventSubSubscriptionInfo
@@ -24,13 +73,6 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string id;
         public string status;
         public string type;
-    }
-
-    [Serializable]
-    public class EventSubEvent<T>
-    {
-        public EventSubSubscriptionInfo subscription;
-        public T @event;
     }
 
     [Serializable]
@@ -71,4 +113,5 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public ChatMessage message;
         public string color;
     }
+    #endregion
 }

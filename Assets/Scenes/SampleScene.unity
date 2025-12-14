@@ -1650,6 +1650,54 @@ PrefabInstance:
       addedObject: {fileID: 2060653982}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 732e9dbd0c011bd478c85a38c1ce59ae, type: 3}
+--- !u!1 &687667456
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 687667458}
+  - component: {fileID: 687667457}
+  m_Layer: 0
+  m_Name: Twitch Integration
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &687667457
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687667456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79eacb2aa58a89d44aab09e275722d9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _initializationOrder: 0
+  onTwitchChatMessage:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!4 &687667458
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687667456}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &699140955
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4134,3 +4182,4 @@ SceneRoots:
   - {fileID: 1149463498}
   - {fileID: 404186381}
   - {fileID: 538101002}
+  - {fileID: 687667458}
