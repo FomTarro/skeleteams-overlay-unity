@@ -36,8 +36,8 @@ namespace Skeletom.Essentials.Utils {
         public static IEnumerator PostRequest(string url, string body, Action<HttpError> onError, Action<string> onSuccess, string bearer) {
             UnityWebRequest webRequest = new UnityWebRequest(url, "POST");
             byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(body);
-            webRequest.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);
-            webRequest.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+            webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            webRequest.downloadHandler = new DownloadHandlerBuffer();
             webRequest.SetRequestHeader("Content-Type", "application/json");
             if (bearer != null) {
                 webRequest.SetRequestHeader("Authorization", string.Format("Bearer {0}", bearer));

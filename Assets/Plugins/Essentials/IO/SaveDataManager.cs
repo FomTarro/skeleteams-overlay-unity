@@ -33,27 +33,25 @@ namespace Skeletom.Essentials.IO
 		/// <typeparam name="T">The type of save data.</typeparam>
 		public void WriteSaveData<T>(ISaveable<T> source) where T : BaseSaveData
 		{
+			try
 			{
-				try
+				string folder = string.Empty;
+				bool directoryExists = CreateFolder(source.FileFolder, out folder);
+				if (directoryExists)
 				{
-					string folder = string.Empty;
-					bool directoryExists = CreateFolder(source.FileFolder, out folder);
-					if (directoryExists)
-					{
-						T content = source.ToSaveData();
-						content.version = Application.version;
-						File.WriteAllText(Path.Combine(folder, source.FileName), source.TransformBeforeWrite(content));
-						Debug.Log(string.Format("Writing file: {0}", source.FileName));
-					}
-					else
-					{
-						throw new DirectoryNotFoundException("Could not write data to path: " + source.FileFolder);
-					}
+					T content = source.ToSaveData();
+					content.version = Application.version;
+					File.WriteAllText(Path.Combine(folder, source.FileName), source.TransformBeforeWrite(content));
+					Debug.Log(string.Format("Writing file: {0}", source.FileName));
 				}
-				catch (Exception e)
+				else
 				{
-					Debug.LogError(e);
+					throw new DirectoryNotFoundException("Could not write data to path: " + source.FileFolder);
 				}
+			}
+			catch (Exception e)
+			{
+				Debug.LogError(e);
 			}
 		}
 
