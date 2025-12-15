@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Skeletom.Essentials.Utils {
@@ -11,17 +13,13 @@ namespace Skeletom.Essentials.Utils {
         /// Makes a GET request to the given URL, executing the corresponding callback on completion.
         /// </summary>
         /// <param name="url">The URL to call.</param>
+        /// <param name="headers">Optional request headers.</param>
         /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <param name="onSuccess">The callback executed on a successful request.</param>
-        /// <param name="bearer">Optional bearer token for authentication.</param>
         /// <returns></returns>
-        public static IEnumerator GetRequest(string url, Action<HttpError> onError, Action<string> onSuccess, string bearer) {
+        public static IEnumerator GetRequest(string url, HttpHeaders headers, Action<string> onSuccess, Action<HttpError> onError) {
             UnityWebRequest webRequest = UnityWebRequest.Get(url);
-            webRequest.SetRequestHeader("Content-Type", "application/json");
-            if (bearer != null) {
-                webRequest.SetRequestHeader("Authorization", string.Format("Bearer {0}", bearer));
-            }
-            yield return MakeWebRequest(webRequest, onError, onSuccess);
+            yield return MakeWebRequest(webRequest, headers, onSuccess, onError);
         }
 
         /// <summary>
@@ -29,29 +27,34 @@ namespace Skeletom.Essentials.Utils {
         /// </summary>
         /// <param name="url">The URL to call.</param>
         /// <param name="body">The body of the POST.</param>
+        /// <param name="headers">Optional request headers.</param>
         /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <param name="onSuccess">The callback executed on a successful request.</param>
-        /// <param name="bearer">Optional bearer token for authentication.</param>
         /// <returns></returns>
-        public static IEnumerator PostRequest(string url, string body, Action<HttpError> onError, Action<string> onSuccess, string bearer) {
+        public static IEnumerator PostRequest(string url, string body, HttpHeaders headers, Action<string> onSuccess, Action<HttpError> onError) {
             UnityWebRequest webRequest = new UnityWebRequest(url, "POST");
             byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(body);
             webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
             webRequest.downloadHandler = new DownloadHandlerBuffer();
-            webRequest.SetRequestHeader("Content-Type", "application/json");
-            if (bearer != null) {
-                webRequest.SetRequestHeader("Authorization", string.Format("Bearer {0}", bearer));
-            }
-            yield return MakeWebRequest(webRequest, onError, onSuccess);
+            yield return MakeWebRequest(webRequest, headers, onSuccess, onError);
         }
 
-        private static IEnumerator MakeWebRequest(UnityWebRequest req, Action<HttpError> onError, Action<string> onSuccess){
+        private static IEnumerator MakeWebRequest(UnityWebRequest req, HttpHeaders headers, Action<string> onSuccess, Action<HttpError> onError){
             using (req) {
+                req.timeout = 30;
+                req.SetRequestHeader("Content-Type", headers.contentType ?? "application/json");
+                if (headers.authorization != null) {
+                    req.SetRequestHeader("Authorization", string.Format("Bearer {0}", headers.authorization));
+                }
+                foreach (string key in headers.customHeaders.Keys)
+                {
+                    req.SetRequestHeader(key, headers.customHeaders[key]);
+                }
                 // Request and wait for the desired page.
                 yield return req.SendWebRequest();
                 if (req.result != UnityWebRequest.Result.Success) {
-                    string errorMessage = string.Format("Error making GET request to URL: {0} : {1}", req.url, req.error);
-                    HttpError error = new HttpError(req.responseCode, req.error);
+                    string errorMessage = string.Format("Error making request to URL: {0} : {1}", req.url, req.error);
+                    HttpError error = new HttpError(req.responseCode, errorMessage);
                     onError.Invoke(error);
                 }
                 else {
@@ -95,16 +98,27 @@ namespace Skeletom.Essentials.Utils {
             return port;
         }
 
-        public class HttpError {
+        public class HttpHeaders
+        {
+            public string authorization;
+            public string contentType;
+            public Dictionary<string, string> customHeaders = new Dictionary<string, string>();
+        }
+
+
+        public class HttpError
+        {
             public long statusCode;
             public string message;
 
-            public HttpError(long statusCode, string message) {
+            public HttpError(long statusCode, string message)
+            {
                 this.statusCode = statusCode;
                 this.message = message;
             }
 
-            public override string ToString(){
+            public override string ToString()
+            {
                 return this.statusCode + ": " + this.message;
             }
         }
