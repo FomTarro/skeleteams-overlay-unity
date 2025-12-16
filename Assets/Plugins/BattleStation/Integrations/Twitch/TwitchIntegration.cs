@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Skeletom.Essentials.IO;
+using Skeletom.Essentials.Utils;
 using UnityEngine;
 using UnityEngine.Events;
-using Skeletom.Essentials.Utils;
 
 namespace Skeletom.BattleStation.Integrations.Twitch
 {
@@ -11,7 +11,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
     {
         private const string CLIENT_ID = "x2rikvl9behn8k54flc95ulhbq265m";
         private const string USER_TOKEN_ENDPOINT = "https://id.twitch.tv/oauth2/authorize";
-        private const string USER_TOKEN_REDIRECT = "https://twitchapps.com/tokengen/";
+        private const string USER_TOKEN_REDIRECT = "http://localhost:61616/twitch/oauth2";
         private string USER_TOKEN = "NO_TOKEN_SET";
         private string BROADCASTER_ID = "NO_ID_SET";
 
@@ -61,7 +61,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 HttpUtils.GetRequest(USERS_ENDPOINT, headers,
                     (str) =>
                     {
-                        
+
                     },
                     (err) =>
                     {

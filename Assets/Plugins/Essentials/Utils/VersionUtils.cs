@@ -42,11 +42,7 @@ namespace Skeletom.Essentials.Utils
         public static IEnumerator FetchAndCheckVersion(string url, Action<VersionInfo> onRemoteNewer, Action<VersionInfo> onRemoteOlder, Action<HttpUtils.HttpError> onError, string bearer)
         {
             return HttpUtils.GetRequest(url,
-            (error) =>
-            {
-                Debug.LogError(error);
-                onError.Invoke(error);
-            },
+            new HttpUtils.HttpHeaders(),
             (success) =>
             {
                 try
@@ -67,7 +63,11 @@ namespace Skeletom.Essentials.Utils
                     onError.Invoke(error);
                 }
             },
-            bearer);
+            (error) =>
+            {
+                Debug.LogError(error);
+                onError.Invoke(error);
+            });
         }
 
         [Serializable]
