@@ -1,14 +1,27 @@
 using System.Collections;
 using System.Collections.Generic;
+using Klak.Spout;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TextureReceiver : MonoBehaviour
 {
     [SerializeField]
-    private string _targetName;
-    public string TargetName
+    private RawImage _target;
+
+    private SpoutReceiver _receiver;
+
+    private void OnEnable()
     {
-        get { return _targetName; }
+        _receiver = GetComponent<SpoutReceiver>();
     }
 
+    private void Update()
+    {
+        if (_target != null && _receiver != null)
+        {
+            _target.texture = _receiver.receivedTexture;
+        }
+    }
+    
 }
