@@ -4,8 +4,7 @@ using UnityEngine;
 
 public interface IServer {
 
-    void SetPort(int port);
-    int Port { get; }
+    int Port { get; set; }
 
     List<string> Paths { get; }
 

@@ -1,47 +1,46 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Events;
 
-public class UnityEventEndpoint : BaseUnityEndpoint
+namespace Skeletom.BattleStation.Server
 {
-
-	[System.Serializable]
-	public class WebServerPostEvent : UnityEvent<string> { }
-	[SerializeField]
-	public WebServerPostEvent callback;
-
-	public override IResponseArgs ProcessRequest(IRequestArgs request)
+	public class UnityEventEndpoint : BaseUnityEndpoint
 	{
-		string body = request.Body;
-		Debug.Log(body);
-		try
+		[Serializable]
+		public class WebServerPostEvent : UnityEvent<string> { }
+		public WebServerPostEvent OnPost;
+
+		public override IResponseArgs ProcessRequest(IRequestArgs request)
 		{
-			callback.Invoke(body);
-			return new UnityEventResponse(200, JsonUtility.ToJson(new ResponseMessage()));
+			string body = request.Body;
+			try
+			{
+				OnPost.Invoke(body);
+				return new UnityEventResponse(200, JsonUtility.ToJson(new ResponseMessage()));
+			}
+			catch (Exception e)
+			{
+				return new UnityEventResponse(500, e.Message);
+			}
 		}
-		catch (System.Exception e)
+
+		[Serializable]
+		public class ResponseMessage
 		{
-			return new UnityEventResponse(500, e.Message);
+			public string message = "OK!";
 		}
-	}
 
-	[System.Serializable]
-	public class ResponseMessage
-	{
-		public string message = "OK!";
-	}
-
-	[System.Serializable]
-	public class UnityEventResponse : IResponseArgs
-	{
-		public string Body { get; private set; }
-
-		public int Status { get; private set; }
-
-
-		public UnityEventResponse(int status, string body)
+		[Serializable]
+		public class UnityEventResponse : IResponseArgs
 		{
-			Status = status;
-			Body = body;
+			public string Body { get; private set; }
+			public int Status { get; private set; }
+
+			public UnityEventResponse(int status, string body)
+			{
+				Status = status;
+				Body = body;
+			}
 		}
 	}
 }

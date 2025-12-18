@@ -2,26 +2,29 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TextAssetEndpoint : BaseUnityEndpoint
+namespace Skeletom.BattleStation.Server
 {
-    [SerializeField]
-    private TextAsset _textAsset;
-    public override IResponseArgs ProcessRequest(IRequestArgs request)
+    public class TextAssetEndpoint : BaseUnityEndpoint
     {
-        return new TextAssetResponse(200, _textAsset);
-    }
-
-    [System.Serializable]
-    public class TextAssetResponse : IResponseArgs
-    {
-        public string Body { get; private set; }
-
-        public int Status { get; private set; }
-
-        public TextAssetResponse(int status, TextAsset body)
+        [SerializeField]
+        private TextAsset _textAsset;
+        public override IResponseArgs ProcessRequest(IRequestArgs request)
         {
-            Status = status;
-            Body = body.text;
+            return new TextAssetResponse(200, _textAsset);
+        }
+
+        [System.Serializable]
+        public class TextAssetResponse : IResponseArgs
+        {
+            public string Body { get; private set; }
+
+            public int Status { get; private set; }
+
+            public TextAssetResponse(int status, TextAsset body)
+            {
+                Status = status;
+                Body = body.text;
+            }
         }
     }
 }

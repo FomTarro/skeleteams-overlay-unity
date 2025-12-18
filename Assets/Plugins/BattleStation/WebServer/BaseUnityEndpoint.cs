@@ -1,10 +1,14 @@
 ﻿using UnityEngine;
 
-public abstract class BaseUnityEndpoint : MonoBehaviour, IEndpoint {
-    
-	[SerializeField]
-	protected string _path;
-	public string Path => this._path;
+namespace Skeletom.BattleStation.Server
+{
+	public abstract class BaseUnityEndpoint : MonoBehaviour, IEndpoint
+	{
 
-	public abstract IResponseArgs ProcessRequest(IRequestArgs request);
+		[SerializeField]
+		protected string _path;
+		public string Path => this._path;
+
+		public abstract IResponseArgs ProcessRequest(IRequestArgs request);
+	}
 }

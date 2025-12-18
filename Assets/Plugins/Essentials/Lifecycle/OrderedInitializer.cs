@@ -24,7 +24,7 @@ namespace Skeletom.Essentials.Lifecycle
         private static bool LOADING_STARTED = false;
         private static bool LOADING_FINISHED = false;
 
-        protected bool _initialized = false;
+        private bool _initialized = false;
         public bool IsInitialized { get { return _initialized; } }
 
         private void Awake()

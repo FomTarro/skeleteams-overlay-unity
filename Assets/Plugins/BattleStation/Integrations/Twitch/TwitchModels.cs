@@ -1,9 +1,32 @@
 using System;
+using System.Collections.Generic;
 
 namespace Skeletom.BattleStation.Integrations.Twitch
 {
 
     #region HTTP
+
+    [Serializable]
+    public class DataResponse<T>
+    {
+        public List<T> data;
+    }
+
+    [Serializable]
+    public class UserData
+    {
+        public string id;
+        public string login;
+        public string display_name;
+        public string type;
+        public string broadcaster_type;
+        public string description;
+        public string profile_image_url;
+        public string offline_image_url;
+        public int view_count;
+        public string email;
+        public string created_at;
+    }
 
     [Serializable]
     public class EventSubSubscriptionRequest<T>

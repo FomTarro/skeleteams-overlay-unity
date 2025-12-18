@@ -9,6 +9,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 {
     public class TwitchIntegration : Integration<TwitchIntegration, TwitchIntegration.IntegrationData>
     {
+        public override string FileName => "twitch.json";
+
         private const string CLIENT_ID = "x2rikvl9behn8k54flc95ulhbq265m";
         private const string USER_TOKEN_ENDPOINT = "https://id.twitch.tv/oauth2/authorize";
         private const string USER_TOKEN_REDIRECT = "http://localhost:61616/twitch/oauth2";
@@ -16,17 +18,40 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private string BROADCASTER_ID = "NO_ID_SET";
 
         private const string USERS_ENDPOINT = "https://api.twitch.tv/helix/users";
+        private const string VALIDATE_ENDPOINT = "https://id.twitch.tv/oauth2/validate";
 
         private static readonly string[] USER_TOKEN_SCOPES = {
-        "chat:read",
-        "channel:read:redemptions",
-        "channel:read:subscriptions",
-        "moderator:read:followers",
-    };
+            "chat:read",
+            "channel:read:redemptions",
+            "channel:read:subscriptions",
+            "moderator:read:followers",
+        };
 
         public override void Initialize()
         {
             RequestToken();
+        }
+
+        public override void GetToken(Action<string> onSuccess, Action onError)
+        {
+            if (USER_TOKEN == null || USER_TOKEN.Equals("NO_TOKEN_SET"))
+            {
+                // request a new token... but how do we wait for that whole long response?
+            }
+            else
+            {
+                ValidateToken(USER_TOKEN, (isValid) =>
+                {
+                    if (isValid)
+                    {
+                        onSuccess(USER_TOKEN);
+                    }
+                    else
+                    {
+                        // request a new one
+                    }
+                });
+            }
         }
 
         public void RequestToken()
@@ -47,7 +72,35 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             SaveDataManager.Instance.WriteSaveData(this);
         }
 
-        public void GetUserInfo(Action onSuccess, Action<HttpUtils.HttpError> onError)
+        private void ValidateToken(string token, Action<bool> onValidation)
+        {
+            HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
+            {
+                authorization = token
+            };
+            StartCoroutine(
+                HttpUtils.GetRequest(VALIDATE_ENDPOINT, headers,
+                    (str) =>
+                    {
+                        onValidation(true);
+                    },
+                    (err) =>
+                    {
+                        onValidation(false);
+                    }
+                )
+            );
+        }
+
+        public void GetUserInfoFromToken(Action<UserData> onSuccess, Action<HttpUtils.HttpError> onError)
+        {
+            GetUserInfo(new List<string>(), (list) =>
+            {
+                onSuccess(list[0]);
+            }, onError);
+        }
+
+        public void GetUserInfo(List<string> users, Action<List<UserData>> onSuccess, Action<HttpUtils.HttpError> onError)
         {
             HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
             {
@@ -61,11 +114,11 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 HttpUtils.GetRequest(USERS_ENDPOINT, headers,
                     (str) =>
                     {
-
+                        onSuccess(JsonUtility.FromJson<DataResponse<UserData>>(str).data);
                     },
                     (err) =>
                     {
-
+                        onError(err);
                     }
                 )
             );
