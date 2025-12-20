@@ -22,38 +22,45 @@ namespace Skeletom.BattleStation.Server
             }
         }
 
-        private IEndpoint[] _endpoints = new IEndpoint[0];
-        public List<string> Paths => GetPaths();
-
-        private List<string> GetPaths()
-        {
-            List<string> paths = new List<string>();
-            foreach (IEndpoint endpoint in this._endpoints)
-            {
-                paths.Add(endpoint.Path);
-            }
-            return paths;
-        }
+        private Dictionary<string, IEndpoint> _endpoints = new Dictionary<string, IEndpoint>();
+        public List<string> Paths { get { return new List<string>(_endpoints.Keys); } }
 
         private HttpListener HTTP_LISTENER;
         private readonly LinkedList<HttpListenerContext> WAITING_CONTEXTS = new LinkedList<HttpListenerContext>();
         private Thread LISTENER_THREAD;
         private bool CLOSE_THREAD_AND_CONTEXTS = false;
 
-        public void Start()
+        private void OnEnable()
         {
             StartServer();
+        }
+
+        private void OnDisable()
+        {
+            StopServer();
+        }
+
+        public void RegisterEndpoint(IEndpoint endpoint)
+        {
+            _endpoints[endpoint.Path.ToLower()] = endpoint;
+        }
+
+        public void UnregisterEndpoint(IEndpoint endpoint)
+        {
+            if (_endpoints.ContainsKey(endpoint.Path.ToLower()))
+            {
+                _endpoints.Remove(endpoint.Path.ToLower());
+            }
         }
 
         public void StartServer()
         {
             StopServer();
             Debug.Log(string.Format("HTTP Server starting on port: {0}...", this._port));
-            this._endpoints = GetComponents<IEndpoint>();
             CLOSE_THREAD_AND_CONTEXTS = false;
             LISTENER_THREAD = new Thread(ListenThread);
             LISTENER_THREAD.Start();
-            Debug.Log(string.Format("HTTP Server started on port: {0}!", this._port));
+            Debug.Log(string.Format("HTTP Server started on port: {0}", this._port));
         }
 
         public void StopServer()
@@ -68,7 +75,7 @@ namespace Skeletom.BattleStation.Server
             }
         }
 
-        void OnApplicationQuit()
+        private void OnApplicationQuit()
         {
             StopServer();
         }
@@ -122,34 +129,31 @@ namespace Skeletom.BattleStation.Server
 
                 if (nextContext != null)
                 {
-                    bool match = false;
-                    foreach (IEndpoint endpoint in this._endpoints)
+                    string localPath = nextContext.Request.Url.LocalPath.ToLower();
+                    if (_endpoints.ContainsKey(localPath))
                     {
-                        if (nextContext.Request.Url.LocalPath.ToLower().Equals(endpoint.Path.ToLower()))
+                        IEndpoint endpoint = _endpoints[localPath];
+                        var queryParams = System.Web.HttpUtility.ParseQueryString(nextContext.Request.Url.Query);
+                        QueryParameter[] parameters = new QueryParameter[queryParams.Count];
+                        for (int i = 0; i < queryParams.Count; i++)
                         {
-                            var queryParams = System.Web.HttpUtility.ParseQueryString(nextContext.Request.Url.Query);
-                            QueryParameter[] parameters = new QueryParameter[queryParams.Count];
-                            for (int i = 0; i < queryParams.Count; i++)
-                            {
-                                string key = queryParams.AllKeys[i];
-                                parameters[i] = new QueryParameter(key, queryParams[key]);
-                            }
-                            match = true;
-                            string body = "";
-                            using (StreamReader reader = new StreamReader(nextContext.Request.InputStream, nextContext.Request.ContentEncoding))
-                            {
-                                body = reader.ReadToEnd();
-                            }
-                            HttpRequestArgs args = new HttpRequestArgs(endpoint, parameters, body, nextContext.Request.UserHostName);
-                            IResponseArgs response = endpoint.ProcessRequest(args);
-                            nextContext.Response.StatusCode = response.Status;
-                            // TODO: Content Type on Response
-                            byte[] bytes = nextContext.Request.ContentEncoding.GetBytes(response.Body);
-                            nextContext.Response.OutputStream.Write(bytes, 0, bytes.Length);
-                            nextContext.Response.Close();
+                            string key = queryParams.AllKeys[i];
+                            parameters[i] = new QueryParameter(key, queryParams[key]);
                         }
+                        string body = "";
+                        using (StreamReader reader = new StreamReader(nextContext.Request.InputStream, nextContext.Request.ContentEncoding))
+                        {
+                            body = reader.ReadToEnd();
+                        }
+                        EndpointRequest args = new EndpointRequest(endpoint, parameters, body, nextContext.Request.UserHostName);
+                        EndpointResponse response = endpoint.ProcessRequest(args);
+                        nextContext.Response.StatusCode = response.status;
+                        // TODO: Content Type on Response
+                        byte[] bytes = nextContext.Request.ContentEncoding.GetBytes(response.body);
+                        nextContext.Response.OutputStream.Write(bytes, 0, bytes.Length);
+                        nextContext.Response.Close();
                     }
-                    if (!match)
+                    else
                     {
                         nextContext.Response.StatusCode = 404;
                         nextContext.Response.Close();
@@ -164,33 +168,6 @@ namespace Skeletom.BattleStation.Server
                     nextContext.Response.StatusCode = 500;
                     nextContext.Response.Close();
                 }
-            }
-        }
-
-        private class QueryParameter : IQueryParameter
-        {
-            public string Key { get; private set; }
-            public string Value { get; private set; }
-            public QueryParameter(string key, string value)
-            {
-                Key = key;
-                Value = value;
-            }
-        }
-
-        private class HttpRequestArgs : IRequestArgs
-        {
-            public IEndpoint Endpoint { get; private set; }
-            public IQueryParameter[] QueryParameters { get; private set; }
-            public string Body { get; private set; }
-            public string ClientID { get; private set; }
-
-            public HttpRequestArgs(IEndpoint endpoint, IQueryParameter[] queryParameters, string body, string id)
-            {
-                Endpoint = endpoint;
-                QueryParameters = queryParameters;
-                Body = body;
-                ClientID = id;
             }
         }
     }

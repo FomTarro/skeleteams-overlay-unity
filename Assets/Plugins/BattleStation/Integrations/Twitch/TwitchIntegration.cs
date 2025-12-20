@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.IO;
 using Skeletom.Essentials.Utils;
 using UnityEngine;
@@ -27,31 +29,30 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             "moderator:read:followers",
         };
 
-        public override void Initialize()
+        [SerializeField]
+        private WebServer _webServer;
+        [SerializeField]
+        private TextAsset _tokenRedirectPage;
+
+        private class TokenData : BaseSaveData
         {
-            RequestToken();
+            public string token;
         }
 
-        public override void GetToken(Action<string> onSuccess, Action onError)
+        public override void Initialize()
         {
-            if (USER_TOKEN == null || USER_TOKEN.Equals("NO_TOKEN_SET"))
+            // Set up token ingest endpoints 
+            _webServer.RegisterEndpoint(new Endpoint("/twitch/oauth2", (req) =>
             {
-                // request a new token... but how do we wait for that whole long response?
-            }
-            else
+                return new EndpointResponse(200, _tokenRedirectPage.text);
+            }));
+            _webServer.RegisterEndpoint(new Endpoint("/twitch/token", (req) =>
             {
-                ValidateToken(USER_TOKEN, (isValid) =>
-                {
-                    if (isValid)
-                    {
-                        onSuccess(USER_TOKEN);
-                    }
-                    else
-                    {
-                        // request a new one
-                    }
-                });
-            }
+                TokenData data = JsonUtility.FromJson<TokenData>(req.body);
+                SetToken(data.token);
+                return new EndpointResponse(200, "OK");
+            }));
+            FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
         }
 
         public void RequestToken()
@@ -69,7 +70,28 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public void SetToken(string token)
         {
             USER_TOKEN = token;
+            // TODO: figure out way to ignore write if the caller is a read function
             SaveDataManager.Instance.WriteSaveData(this);
+            GetSelfUserInfo((user) =>
+            {
+                BROADCASTER_ID = user.id;
+                // TODO: this probably sets off all the registration and subscription events, lol
+                Debug.Log(user.display_name);
+                GetUserInfo(new List<string> { "skeletom_ch", "henemimi" }, (users) =>
+                {
+                    foreach (UserData user in users)
+                    {
+                        Debug.Log(user.created_at);
+                    }
+                },
+                (err) =>
+                {
+                    Debug.LogError(err);
+                });
+            }, (err) =>
+            {
+                Debug.LogError(err);
+            });
         }
 
         private void ValidateToken(string token, Action<bool> onValidation)
@@ -91,15 +113,6 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 )
             );
         }
-
-        public void GetUserInfoFromToken(Action<UserData> onSuccess, Action<HttpUtils.HttpError> onError)
-        {
-            GetUserInfo(new List<string>(), (list) =>
-            {
-                onSuccess(list[0]);
-            }, onError);
-        }
-
         public void GetUserInfo(List<string> users, Action<List<UserData>> onSuccess, Action<HttpUtils.HttpError> onError)
         {
             HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
@@ -111,7 +124,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 }
             };
             StartCoroutine(
-                HttpUtils.GetRequest(USERS_ENDPOINT, headers,
+                HttpUtils.GetRequest(USERS_ENDPOINT + "?" + string.Join('&', users.Select(user => "login=" + user)), headers,
                     (str) =>
                     {
                         onSuccess(JsonUtility.FromJson<DataResponse<UserData>>(str).data);
@@ -123,6 +136,15 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 )
             );
         }
+
+        public void GetSelfUserInfo(Action<UserData> onSuccess, Action<HttpUtils.HttpError> onError)
+        {
+            GetUserInfo(new List<string>(), (list) =>
+            {
+                onSuccess(list[0]);
+            }, onError);
+        }
+
 
         [Serializable]
         public class TwitchChatMessageEvent : UnityEvent<ChatMessageEventSubEvent> { }
@@ -162,7 +184,14 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         public override void FromSaveData(IntegrationData data)
         {
-            USER_TOKEN = data.token;
+            SetToken(data.token);
+            ValidateToken(USER_TOKEN, (isValid) =>
+            {
+                if (!isValid)
+                {
+                    RequestToken();
+                }
+            });
         }
 
         public override IntegrationData ToSaveData()

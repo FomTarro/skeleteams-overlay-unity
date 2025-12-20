@@ -1,13 +1,17 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
+namespace Skeletom.BattleStation.Server
+{
+    public interface IServer
+    {
+        int Port { get; set; }
 
-public interface IServer {
+        List<string> Paths { get; }
 
-    int Port { get; set; }
+        void StartServer();
+        void StopServer();
 
-    List<string> Paths { get; }
+        void RegisterEndpoint(IEndpoint endpoint);
+        void UnregisterEndpoint(IEndpoint endpoint);
 
-    void StartServer();
-    void StopServer();
+    }
 }

@@ -8,8 +8,6 @@ public abstract class Integration<T, K> : Singleton<T>, ISaveable<K> where T : I
 
     public abstract string FileName { get; }
 
-    public abstract void GetToken(Action<string> onSuccess, Action onError);
-
     public abstract void FromSaveData(K data);
 
     public abstract K ToSaveData();

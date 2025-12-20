@@ -1601,6 +1601,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _initializationOrder: 0
+  _webServer: {fileID: 835040116}
+  _tokenRedirectPage: {fileID: 4900000, guid: 8c572cfe1f55d8b4f80f1c64e50ae70e, type: 3}
   onTwitchChatMessage:
     m_PersistentCalls:
       m_Calls: []
@@ -1752,8 +1754,6 @@ GameObject:
   m_Component:
   - component: {fileID: 835040117}
   - component: {fileID: 835040116}
-  - component: {fileID: 835040118}
-  - component: {fileID: 835040119}
   m_Layer: 0
   m_Name: Web Server
   m_TagString: Untagged
@@ -1789,36 +1789,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &835040118
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 835040114}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62137e9ee3c2ba646aec1e33138e29c7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _path: /twitch/oauth2
-  _textAsset: {fileID: 4900000, guid: 8c572cfe1f55d8b4f80f1c64e50ae70e, type: 3}
---- !u!114 &835040119
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 835040114}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 57346071adc934948a34c4c9f55697fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _path: /twitch/token
-  OnPost:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1001 &869809240
 PrefabInstance:
   m_ObjectHideFlags: 0
