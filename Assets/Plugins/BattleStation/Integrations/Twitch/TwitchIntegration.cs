@@ -20,6 +20,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private string BROADCASTER_ID = "NO_ID_SET";
 
         private const string USERS_ENDPOINT = "https://api.twitch.tv/helix/users";
+        private const string EVENTSUB_SUBSCRIPTION_ENDPOINT = "https://api.twitch.tv/helix/eventsub/subscriptions";
         private const string VALIDATE_ENDPOINT = "https://id.twitch.tv/oauth2/validate";
 
         private static readonly string[] USER_TOKEN_SCOPES = {
@@ -76,18 +77,17 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             {
                 BROADCASTER_ID = user.id;
                 // TODO: this probably sets off all the registration and subscription events, lol
-                Debug.Log(user.display_name);
-                GetUserInfo(new List<string> { "skeletom_ch", "henemimi" }, (users) =>
-                {
-                    foreach (UserData user in users)
-                    {
-                        Debug.Log(user.created_at);
-                    }
-                },
-                (err) =>
-                {
-                    Debug.LogError(err);
-                });
+                // GetUserInfo(new List<string> { "skeletom_ch", "henemimi" }, (users) =>
+                // {
+                //     foreach (UserData user in users)
+                //     {
+                //         Debug.Log(user.created_at);
+                //     }
+                // },
+                // (err) =>
+                // {
+                //     Debug.LogError(err);
+                // });
             }, (err) =>
             {
                 Debug.LogError(err);
@@ -147,7 +147,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
 
         [Serializable]
-        public class TwitchChatMessageEvent : UnityEvent<ChatMessageEventSubEvent> { }
+        public class TwitchChatMessageEvent : UnityEvent<EventSub.EventSubChatMessageEvent> { }
         public TwitchChatMessageEvent onTwitchChatMessage = new TwitchChatMessageEvent();
 
         private void Update()
@@ -159,18 +159,47 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         {
             try
             {
-                EventSubSocketMessage<EventSubEventPayload<string>> message = JsonUtility.FromJson<EventSubSocketMessage<EventSubEventPayload<string>>>(msg);
+                EventSub.EventSubSocketMessage<EventSub.EventSubEventPayload<string>> message = JsonUtility.FromJson<EventSub.EventSubSocketMessage<EventSub.EventSubEventPayload<string>>>(msg);
                 if ("session_welcome".Equals(message.metadata.message_type))
                 {
-                    EventSubSocketMessage<EventSubWelcomePayload> session = JsonUtility.FromJson<EventSubSocketMessage<EventSubWelcomePayload>>(msg);
+                    EventSub.EventSubSocketMessage<EventSub.EventSubWelcomePayload> session = JsonUtility.FromJson<EventSub.EventSubSocketMessage<EventSub.EventSubWelcomePayload>>(msg);
                     string sessionId = session.payload.session.id;
                     // TODO: kick off all HTTP subscriptions
+                    HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
+                    {
+                        authorization = USER_TOKEN,
+                        customHeaders = new Dictionary<string, string>()
+                        {
+                            {"Client-ID", BROADCASTER_ID}
+                        }
+                    };
+                    StartCoroutine(HttpUtils.PostRequest(
+                        EVENTSUB_SUBSCRIPTION_ENDPOINT,
+                        JsonUtility.ToJson(new EventSub.EventSubChatMessageSubscriptionRequest(sessionId)
+                        {
+                            condition = {
+                                broadcaster_user_id=BROADCASTER_ID,
+                                user_id=BROADCASTER_ID
+                            }
+                        }),
+                        headers,
+                        (success) =>
+                        {
+
+                        },
+                        (err) =>
+                        {
+
+                        })
+                    );
+
                 }
                 else if ("notification".Equals(message.metadata.message_type))
                 {
                     if ("channel.follow".Equals(message.payload.subscription.type))
                     {
-                        EventSubSocketMessage<EventSubEventPayload<ChatMessageEventSubEvent>> obj = JsonUtility.FromJson<EventSubSocketMessage<EventSubEventPayload<ChatMessageEventSubEvent>>>(msg);
+                        EventSub.EventSubSocketMessage<EventSub.EventSubEventPayload<EventSub.EventSubChatMessageEvent>> obj =
+                        JsonUtility.FromJson<EventSub.EventSubSocketMessage<EventSub.EventSubEventPayload<EventSub.EventSubChatMessageEvent>>>(msg);
                         onTwitchChatMessage.Invoke(obj.payload.@event);
                     }
                 }
