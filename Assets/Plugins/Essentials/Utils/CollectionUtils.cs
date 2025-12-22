@@ -72,5 +72,28 @@ namespace Skeletom.Essentials.Utils
             }
             return _enumCache[typeof(T)] as T[];
         }
+
+        public static bool CheckEqualElements<T>(T[] a, T[] b)
+        {
+            if (a.Length != b.Length)
+            {
+                return false;
+            }
+            T[] aClone = new T[a.Length];
+            Array.Copy(a, aClone, a.Length);
+            Array.Sort(aClone);
+            T[] bClone = new T[b.Length];
+            Array.Copy(b, bClone, b.Length);
+            Array.Sort(bClone);
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (!aClone[i].Equals(bClone[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }

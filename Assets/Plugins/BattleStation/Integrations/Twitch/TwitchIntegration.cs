@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.IO;
 using Skeletom.Essentials.Utils;
@@ -25,15 +26,20 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private static readonly string[] USER_TOKEN_SCOPES = {
             "chat:read",
+            "user:read:chat",
             "channel:read:redemptions",
             "channel:read:subscriptions",
             "moderator:read:followers",
         };
 
+        [Header("Networking")]
         [SerializeField]
         private WebServer _webServer;
         [SerializeField]
         private TextAsset _tokenRedirectPage;
+        private WebSocket _socket = new WebSocket();
+
+        private Dictionary<string, Action<string>> _subscriptions = new Dictionary<string, Action<string>>();
 
         private class TokenData : BaseSaveData
         {
@@ -62,7 +68,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             + "?client_id=" + CLIENT_ID
             + "&redirect_uri=" + USER_TOKEN_REDIRECT
             + "&response_type=token"
-            + "&state=" + new Guid().ToString()
+            + "&state=" + "http://localhost:" + _webServer.Port + "/twitch/token"
             + "&scope=" + string.Join(" ", USER_TOKEN_SCOPES);
 
             Application.OpenURL(userToken);
@@ -77,17 +83,20 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             {
                 BROADCASTER_ID = user.id;
                 // TODO: this probably sets off all the registration and subscription events, lol
-                // GetUserInfo(new List<string> { "skeletom_ch", "henemimi" }, (users) =>
-                // {
-                //     foreach (UserData user in users)
-                //     {
-                //         Debug.Log(user.created_at);
-                //     }
-                // },
-                // (err) =>
-                // {
-                //     Debug.LogError(err);
-                // });
+                _socket.Start("wss://eventsub.wss.twitch.tv/ws",
+                () =>
+                {
+                    Debug.Log("Twitch EventSub Socket connected!");
+                },
+                () =>
+                {
+                    Debug.Log("Twitch EventSub Socket disconnected.");
+                },
+                (err) =>
+                {
+                    Debug.LogError($"Twitch EventSub Socket error: {err}");
+                }
+            );
             }, (err) =>
             {
                 Debug.LogError(err);
@@ -104,7 +113,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 HttpUtils.GetRequest(VALIDATE_ENDPOINT, headers,
                     (str) =>
                     {
-                        onValidation(true);
+                        TokenValidationResponse response = JsonUtility.FromJson<TokenValidationResponse>(str);
+                        bool scopesEqual = CollectionUtils.CheckEqualElements(USER_TOKEN_SCOPES, response.scopes);
+                        onValidation(scopesEqual);
                     },
                     (err) =>
                     {
@@ -120,7 +131,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 authorization = USER_TOKEN,
                 customHeaders = new Dictionary<string, string>()
                 {
-                    {"Client-ID", CLIENT_ID}
+                    {"Client-Id", CLIENT_ID}
                 }
             };
             StartCoroutine(
@@ -147,60 +158,59 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
 
         [Serializable]
-        public class TwitchChatMessageEvent : UnityEvent<EventSub.EventSubChatMessageEvent> { }
+        public class TwitchChatMessageEvent : UnityEvent<EventSub.ChatMessageEvent> { }
         public TwitchChatMessageEvent onTwitchChatMessage = new TwitchChatMessageEvent();
 
         private void Update()
         {
-
+            _socket.Tick(Time.deltaTime);
+            string data = null;
+            do
+            {
+                if (this._socket != null)
+                {
+                    data = this._socket.GetNextResponse();
+                    if (data != null)
+                    {
+                        ProcessMessage(data);
+                    }
+                }
+            } while (data != null);
         }
 
         private void ProcessMessage(string msg)
         {
             try
             {
-                EventSub.EventSubSocketMessage<EventSub.EventSubEventPayload<string>> message = JsonUtility.FromJson<EventSub.EventSubSocketMessage<EventSub.EventSubEventPayload<string>>>(msg);
+                EventSub.EventMessage<EventSub.EventPayload<string>> message = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<string>>>(msg);
                 if ("session_welcome".Equals(message.metadata.message_type))
                 {
-                    EventSub.EventSubSocketMessage<EventSub.EventSubWelcomePayload> session = JsonUtility.FromJson<EventSub.EventSubSocketMessage<EventSub.EventSubWelcomePayload>>(msg);
+                    EventSub.EventMessage<EventSub.WelcomePayload> session = JsonUtility.FromJson<EventSub.EventMessage<EventSub.WelcomePayload>>(msg);
                     string sessionId = session.payload.session.id;
+                    _subscriptions.Clear();
                     // TODO: kick off all HTTP subscriptions
-                    HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
-                    {
-                        authorization = USER_TOKEN,
-                        customHeaders = new Dictionary<string, string>()
+                    SubscribeToEvent<EventSub.ChatMessageEvent>(
+                        new EventSub.ChatMessageSubscriptionRequest(sessionId)
                         {
-                            {"Client-ID", BROADCASTER_ID}
-                        }
-                    };
-                    StartCoroutine(HttpUtils.PostRequest(
-                        EVENTSUB_SUBSCRIPTION_ENDPOINT,
-                        JsonUtility.ToJson(new EventSub.EventSubChatMessageSubscriptionRequest(sessionId)
-                        {
-                            condition = {
-                                broadcaster_user_id=BROADCASTER_ID,
-                                user_id=BROADCASTER_ID
+                            condition = new EventSub.ChatMessageEventCondition()
+                            {
+                                broadcaster_user_id = BROADCASTER_ID,
+                                user_id = BROADCASTER_ID
                             }
-                        }),
-                        headers,
-                        (success) =>
-                        {
-
                         },
-                        (err) =>
+                        (message) =>
                         {
-
-                        })
+                            onTwitchChatMessage.Invoke(message);
+                        }
                     );
 
                 }
                 else if ("notification".Equals(message.metadata.message_type))
                 {
-                    if ("channel.follow".Equals(message.payload.subscription.type))
+                    Debug.Log(msg);
+                    if (_subscriptions.ContainsKey(message.payload.subscription.id))
                     {
-                        EventSub.EventSubSocketMessage<EventSub.EventSubEventPayload<EventSub.EventSubChatMessageEvent>> obj =
-                        JsonUtility.FromJson<EventSub.EventSubSocketMessage<EventSub.EventSubEventPayload<EventSub.EventSubChatMessageEvent>>>(msg);
-                        onTwitchChatMessage.Invoke(obj.payload.@event);
+                        _subscriptions[message.payload.subscription.id](msg);
                     }
                 }
             }
@@ -210,15 +220,52 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }
         }
 
+        private void SubscribeToEvent<K>(EventSub.IEventSubscriptionRequest payload, Action<K> onEvent) where K : EventSub.IEventSubEvent
+        {
+            HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
+            {
+                authorization = USER_TOKEN,
+                customHeaders = new Dictionary<string, string>()
+                {
+                    {"Client-Id", CLIENT_ID}
+                }
+            };
+            string eventType = payload.GetSubscriptionType();
+            StartCoroutine(
+                HttpUtils.PostRequest(
+                    EVENTSUB_SUBSCRIPTION_ENDPOINT,
+                    JsonUtility.ToJson(payload),
+                    headers,
+                    (success) =>
+                    {
+                        EventSub.SubscriptionResponse response = JsonUtility.FromJson<EventSub.SubscriptionResponse>(success);
+                        EventSub.SubscriptionData data = response.data[0];
+                        _subscriptions[data.id] = (msg) =>
+                        {
+                            EventSub.EventMessage<EventSub.EventPayload<K>> obj = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<K>>>(msg);
+                            onEvent(obj.payload.@event);
+                        };
+                        Debug.Log($"Subscribed to {eventType} - ${data.id}");
+                    },
+                    (err) =>
+                    {
+                        Debug.LogError($"Error subscribing to {eventType}: {err}");
+                    }
+                )
+            );
+        }
 
         public override void FromSaveData(IntegrationData data)
         {
-            SetToken(data.token);
-            ValidateToken(USER_TOKEN, (isValid) =>
+            ValidateToken(data.token, (isValid) =>
             {
                 if (!isValid)
                 {
                     RequestToken();
+                }
+                else
+                {
+                    SetToken(data.token);
                 }
             });
         }
