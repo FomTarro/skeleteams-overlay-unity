@@ -22,6 +22,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private const string USERS_ENDPOINT = "https://api.twitch.tv/helix/users";
         private const string EVENTSUB_SUBSCRIPTION_ENDPOINT = "https://api.twitch.tv/helix/eventsub/subscriptions";
+        private const string EMOTES_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes/set";
         private const string VALIDATE_ENDPOINT = "https://id.twitch.tv/oauth2/validate";
 
         private static readonly string[] USER_TOKEN_SCOPES = {
@@ -31,6 +32,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             "channel:read:subscriptions",
             "moderator:read:followers",
         };
+
+        [SerializeField]
+        private List<Texture2D> _emoteCache = new List<Texture2D>();
 
         [Header("Networking")]
         [SerializeField]
@@ -156,6 +160,46 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }, onError);
         }
 
+        public void GetGlobalEmotes(string setId, Action<List<Texture2D>> onSuccess, Action<HttpUtils.HttpError> onError)
+        {
+            HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
+            {
+                authorization = USER_TOKEN,
+                customHeaders = new Dictionary<string, string>()
+                {
+                    {"Client-Id", CLIENT_ID}
+                }
+            };
+            StartCoroutine(
+                HttpUtils.GetRequest(EMOTES_ENDPOINT + $"?emote_set_id={setId}", headers,
+                    (str) =>
+                    {
+                        EmoteDataResponse response = JsonUtility.FromJson<EmoteDataResponse>(str);
+                        foreach (EmoteData data in response.data) {
+                            string url = response.template
+                            .Replace("{{id}}", data.id)
+                            .Replace("{{format}}", "static")
+                            .Replace("{{theme_mode}}", "light")
+                            .Replace("{{scale}}", data.scale[^1]);
+                            StartCoroutine(HttpUtils.GetTextureRequest(url, headers,
+                                (tex) =>
+                                {
+                                    tex.name = data.name;
+                                    _emoteCache.Add(tex);
+                                },
+                                onError)
+                            );
+                        }
+                        onSuccess(null);
+                    },
+                    (err) =>
+                    {
+                        onError(err);
+                    }
+                )
+            );
+        }
+
 
         [Serializable]
         public class TwitchChatMessageEvent : UnityEvent<EventSub.ChatMessageEvent> { }
@@ -201,6 +245,18 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         (message) =>
                         {
                             onTwitchChatMessage.Invoke(message);
+                            ISet<string> uniqueSetIds = new HashSet<string>();
+                            foreach (EventSub.ChatMessageFragment fragment in message.message.fragments)
+                            {
+                                if (fragment.emote != null)
+                                {
+                                    uniqueSetIds.Add(fragment.emote.emote_set_id);
+                                }
+                            }
+                            foreach (string setId in uniqueSetIds)
+                            {
+                                GetGlobalEmotes(setId, (tex) => { }, (err) => { Debug.LogError(err); });
+                            }
                         }
                     );
 
@@ -220,13 +276,12 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }
         }
 
-        private void SubscribeToEvent<K>(EventSub.IEventSubscriptionRequest payload, Action<K> onEvent) where K : EventSub.IEventSubEvent
+        private void SubscribeToEvent<T>(EventSub.IEventSubscriptionRequest payload, Action<T> onEvent) where T : EventSub.IEventSubEvent
         {
             HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
             {
                 authorization = USER_TOKEN,
-                customHeaders = new Dictionary<string, string>()
-                {
+                customHeaders = {
                     {"Client-Id", CLIENT_ID}
                 }
             };
@@ -242,10 +297,10 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         EventSub.SubscriptionData data = response.data[0];
                         _subscriptions[data.id] = (msg) =>
                         {
-                            EventSub.EventMessage<EventSub.EventPayload<K>> obj = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<K>>>(msg);
+                            EventSub.EventMessage<EventSub.EventPayload<T>> obj = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<T>>>(msg);
                             onEvent(obj.payload.@event);
                         };
-                        Debug.Log($"Subscribed to {eventType} - ${data.id}");
+                        Debug.Log($"Subscribed to {eventType} - {data.id}");
                     },
                     (err) =>
                     {

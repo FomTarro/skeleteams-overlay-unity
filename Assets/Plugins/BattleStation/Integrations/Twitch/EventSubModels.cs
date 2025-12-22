@@ -162,8 +162,17 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
         public string type;
         public string text;
         public string cheermote;
-        public string emote;
+        public ChatMessageFragmentEmote emote;
         public string mention;
+    }
+
+    [Serializable]
+    public class ChatMessageFragmentEmote
+    {
+        public string emote_set_id;
+        public string[] format = new string[0];
+        public string id;
+        public string owner_id;
     }
 
     [Serializable]

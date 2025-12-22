@@ -5,8 +5,10 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 {
     #region Generic API Response
 
+    public interface IDataResponse { }
+
     [Serializable]
-    public class DataResponse<T>
+    public class DataResponse<T> : IDataResponse
     {
         public List<T> data;
     }
@@ -43,6 +45,35 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public int view_count;
         public string email;
         public string created_at;
+    }
+
+    #endregion
+
+    #region Emotes API 
+
+    [Serializable]
+    public class EmoteDataResponse : DataResponse<EmoteData>
+    {
+        public string template;
+    }
+
+    [Serializable]
+    public class EmoteData
+    {
+        public string id;
+        public string name;
+        public EmoteImages images;
+        public string[] format = new string[0];
+        public string[] scale = new string[0];
+        public string[] theme_mode = new string[0];
+    }
+
+    [Serializable]
+    public class EmoteImages
+    {
+        public string url_1x;
+        public string url_2x;
+        public string url_4x;
     }
 
     #endregion
