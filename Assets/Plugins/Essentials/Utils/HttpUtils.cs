@@ -22,12 +22,30 @@ namespace Skeletom.Essentials.Utils
         public static IEnumerator GetRequest(string url, HttpHeaders headers, Action<string> onSuccess, Action<HttpError> onError)
         {
             UnityWebRequest webRequest = UnityWebRequest.Get(url);
-            yield return MakeWebRequest(webRequest, headers, (req) => {
+            yield return MakeWebRequest(webRequest, headers, (req) =>
+            {
                 onSuccess(req.downloadHandler.text);
             }, onError);
         }
 
-                /// <summary>
+        /// <summary>
+        /// Makes a GET request to the given URL, executing the corresponding callback on completion.
+        /// </summary>
+        /// <param name="url">The URL to call.</param>
+        /// <param name="headers">Optional request headers.</param>
+        /// <param name="onError">The callback executed on an unsuccessful request.</param>
+        /// <param name="onSuccess">The callback executed on a successful request.</param>
+        /// <returns></returns>
+        public static IEnumerator GetBytesRequest(string url, HttpHeaders headers, Action<byte[]> onSuccess, Action<HttpError> onError)
+        {
+            UnityWebRequest webRequest = UnityWebRequest.Get(url);
+            yield return MakeWebRequest(webRequest, headers, (req) =>
+            {
+                onSuccess(req.downloadHandler.data);
+            }, onError);
+        }
+
+        /// <summary>
         /// Makes a GET request to the given URL, executing the corresponding callback on completion.
         /// </summary>
         /// <param name="url">The URL to call.</param>
@@ -38,7 +56,8 @@ namespace Skeletom.Essentials.Utils
         public static IEnumerator GetTextureRequest(string url, HttpHeaders headers, Action<Texture2D> onSuccess, Action<HttpError> onError)
         {
             UnityWebRequest webRequest = UnityWebRequestTexture.GetTexture(url);
-            yield return MakeWebRequest(webRequest, headers, (req) => {
+            yield return MakeWebRequest(webRequest, headers, (req) =>
+            {
                 onSuccess(DownloadHandlerTexture.GetContent(req));
             }, onError);
         }
@@ -58,7 +77,8 @@ namespace Skeletom.Essentials.Utils
             byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(body);
             webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
             webRequest.downloadHandler = new DownloadHandlerBuffer();
-            yield return MakeWebRequest(webRequest, headers, (req) => {
+            yield return MakeWebRequest(webRequest, headers, (req) =>
+            {
                 onSuccess(req.downloadHandler.text);
             }, onError);
         }

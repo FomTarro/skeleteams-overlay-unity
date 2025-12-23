@@ -33,8 +33,20 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             "moderator:read:followers",
         };
 
+        [Serializable]
+        public struct EmoteFrames
+        {
+            public string name;
+            public List<GifToTextureDecoder.Frame> frames;
+            public EmoteFrames(string name, List<GifToTextureDecoder.Frame> frames)
+            {
+                this.name = name;
+                this.frames = frames;
+            }
+        }
+
         [SerializeField]
-        private List<Texture2D> _emoteCache = new List<Texture2D>();
+        private List<EmoteFrames> _emoteCache = new List<EmoteFrames>();
 
         [Header("Networking")]
         [SerializeField]
@@ -160,7 +172,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }, onError);
         }
 
-        public void GetGlobalEmotes(string setId, Action<List<Texture2D>> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetEmotesBySetId(string setId, Action<List<Texture2D>> onSuccess, Action<HttpUtils.HttpError> onError)
         {
             HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
             {
@@ -175,27 +187,42 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     (str) =>
                     {
                         EmoteDataResponse response = JsonUtility.FromJson<EmoteDataResponse>(str);
-                        foreach (EmoteData data in response.data) {
+                        foreach (EmoteData data in response.data)
+                        {
+                            string format = data.format[^1];
                             string url = response.template
                             .Replace("{{id}}", data.id)
-                            .Replace("{{format}}", "static")
+                            .Replace("{{format}}", format)
                             .Replace("{{theme_mode}}", "light")
                             .Replace("{{scale}}", data.scale[^1]);
-                            StartCoroutine(HttpUtils.GetTextureRequest(url, headers,
-                                (tex) =>
-                                {
-                                    tex.name = data.name;
-                                    _emoteCache.Add(tex);
-                                },
-                                onError)
+                            StartCoroutine(
+                                HttpUtils.GetBytesRequest(url, headers,
+                                    (bytes) =>
+                                    {
+                                        if ("animated".Equals(format))
+                                        {
+                                            var frames = GifToTextureDecoder.Decode(bytes);
+                                            _emoteCache.Add(new EmoteFrames(data.name, frames));
+                                        }
+                                        else
+                                        {
+                                            var tex = new Texture2D(2, 2);
+                                            if (tex.LoadImage(bytes))
+                                            {
+                                                _emoteCache.Add(new EmoteFrames(data.name, new List<GifToTextureDecoder.Frame>()
+                                                {
+                                                    new GifToTextureDecoder.Frame(tex, -1)
+                                                }));
+                                            }
+                                        }
+                                    },
+                                    onError
+                                )
                             );
                         }
                         onSuccess(null);
                     },
-                    (err) =>
-                    {
-                        onError(err);
-                    }
+                    onError
                 )
             );
         }
@@ -255,7 +282,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                             }
                             foreach (string setId in uniqueSetIds)
                             {
-                                GetGlobalEmotes(setId, (tex) => { }, (err) => { Debug.LogError(err); });
+                                GetEmotesBySetId(setId, (tex) => { }, (err) => { Debug.LogError(err); });
                             }
                         }
                     );
