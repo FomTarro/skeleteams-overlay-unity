@@ -11,6 +11,10 @@ namespace Skeletom.Essentials.Utils
 
     public static class HttpUtils
     {
+
+        // TODO: keep a dictionary of requests that map to their callbacks, such that two identical requests do not race, 
+        // and instead the second awaits the first and shares the results. 
+
         /// <summary>
         /// Makes a GET request to the given URL, executing the corresponding callback on completion.
         /// </summary>
@@ -91,7 +95,7 @@ namespace Skeletom.Essentials.Utils
                 req.SetRequestHeader("Content-Type", headers.contentType ?? "application/json");
                 if (headers.authorization != null)
                 {
-                    req.SetRequestHeader("Authorization", string.Format("Bearer {0}", headers.authorization));
+                    req.SetRequestHeader("Authorization", $"Bearer {headers.authorization}");
                 }
                 foreach (string key in headers.customHeaders.Keys)
                 {
@@ -101,13 +105,12 @@ namespace Skeletom.Essentials.Utils
                 yield return req.SendWebRequest();
                 if (req.result != UnityWebRequest.Result.Success)
                 {
-                    string errorMessage = string.Format("Error making request to URL: {0} : {1}", req.url, req.error);
+                    string errorMessage = string.Format($"Error making request to URL: {req.url} : {req.error}");
                     HttpError error = new HttpError(req.responseCode, errorMessage);
                     onError.Invoke(error);
                 }
                 else
                 {
-                    // Debug.Log("Received: " + webRequest.downloadHandler.text);
                     try
                     {
                         onSuccess.Invoke(req);
@@ -175,20 +178,6 @@ namespace Skeletom.Essentials.Utils
             public override string ToString()
             {
                 return this.statusCode + ": " + this.message;
-            }
-        }
-
-        public class ConnectionStatus
-        {
-            public string message;
-            public Status status;
-
-            public enum Status
-            {
-                CONNECTING = 0,
-                CONNECTED = 1,
-                ERROR = 2,
-                DISCONNECTED = 3,
             }
         }
     }

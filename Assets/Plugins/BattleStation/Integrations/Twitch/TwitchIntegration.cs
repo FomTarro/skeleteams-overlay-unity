@@ -111,7 +111,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     }
                 );
                 GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
-                GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
+                // GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
             }, (err) =>
             {
                 Debug.LogError(err);
@@ -174,16 +174,57 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         public void GetChannelEmotes(string broadcasterId, Action<List<ChatImage>> onSuccess, Action<HttpUtils.HttpError> onError)
         {
-            Debug.Log($"Fetching channel emotes for Broadcaster ID: ${broadcasterId}");
+            Debug.Log($"Fetching channel emotes for Broadcaster ID: {broadcasterId}");
             string url = $"{EMOTES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
             GetGenericEmotes(url, onSuccess, onError);
         }
 
         public void GetSetEmotes(string setId, Action<List<ChatImage>> onSuccess, Action<HttpUtils.HttpError> onError)
         {
-            Debug.Log($"Fetching set emotes for set ID: ${setId}");
+            Debug.Log($"Fetching set emotes for set ID: {setId}");
             string url = $"{EMOTES_ENDPOINT}?emote_set_id={setId}";
             GetGenericEmotes(url, onSuccess, onError);
+        }
+
+        public void GetIndividualEmote(EmoteData data, Action<ChatImage> onSuccess, Action<HttpUtils.HttpError> onError)
+        {
+            string format = data.format[^1];
+            string scale = data.scale[^1];
+            string url = EMOTES_INDIVIDUAL_ENDPOINT
+            .Replace("{{id}}", data.id)
+            .Replace("{{format}}", format)
+            .Replace("{{theme_mode}}", "light")
+            .Replace("{{scale}}", scale);
+            StartCoroutine(
+                HttpUtils.GetBytesRequest(url, GetHeaders(),
+                    (bytes) =>
+                    {
+                        if ("animated".Equals(format))
+                        {
+                            var frames = GifToTextureDecoder.Decode(bytes).Select(
+                                frame => new ChatImage.Frame(frame.texture, frame.delay)
+                            );
+                            // TODO: dispose of existing textures if they exist
+                            _imageCache[data.name] = new ChatImage(data.name, frames);
+                            onSuccess(_imageCache[data.name]);
+                        }
+                        else
+                        {
+                            var tex = new Texture2D(2, 2);
+                            if (tex.LoadImage(bytes))
+                            {
+                                _imageCache[data.name] = new ChatImage(data.name, tex);
+                                onSuccess(_imageCache[data.name]);
+                            }
+                            else
+                            {
+                                onError(new HttpUtils.HttpError(500, $"Unable to convert emote to Texture2D for {data.name}"));
+                            }
+                        }
+                    },
+                    onError
+                )
+            );
         }
 
         private void GetGenericEmotes(string url, Action<List<ChatImage>> onSuccess, Action<HttpUtils.HttpError> onError)
@@ -208,51 +249,23 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                             }
                             if (pending <= 0)
                             {
-                                Debug.Log($"All {emotes.Count} emotes resolved!");
+                                Debug.Log($"{emotes.Count} total emotes resolved!");
                                 onSuccess(emotes);
                             }
                         }
                         EMOTES_INDIVIDUAL_ENDPOINT = response.template;
                         foreach (EmoteData data in response.data)
                         {
-                            string format = data.format[^1];
-                            string scale = data.scale[^1];
-                            string url = EMOTES_INDIVIDUAL_ENDPOINT
-                            .Replace("{{id}}", data.id)
-                            .Replace("{{format}}", format)
-                            .Replace("{{theme_mode}}", "light")
-                            .Replace("{{scale}}", scale);
-                            StartCoroutine(
-                                HttpUtils.GetBytesRequest(url, GetHeaders(),
-                                    (bytes) =>
-                                    {
-                                        if ("animated".Equals(format))
-                                        {
-                                            var frames = GifToTextureDecoder.Decode(bytes).Select(
-                                                frame => new ChatImage.Frame(frame.texture, frame.delay)
-                                            );
-                                            // TODO: dispose of existing textures if they exist
-                                            _imageCache[data.name] = new ChatImage(data.name, frames);
-                                            emotes.Add(_imageCache[data.name]);
-                                        }
-                                        else
-                                        {
-                                            var tex = new Texture2D(2, 2);
-                                            if (tex.LoadImage(bytes))
-                                            {
-                                                _imageCache[data.name] = new ChatImage(data.name, tex);
-                                                emotes.Add(_imageCache[data.name]);
-                                            }
-                                        }
-                                        onDependencyResolved(data, true);
-                                    },
-                                    (err) =>
-                                    {
-                                        Debug.LogError(err);
-                                        onDependencyResolved(data, false);
-                                    }
-                                )
-                            );
+                            GetIndividualEmote(data, (img) =>
+                            {
+                                emotes.Add(img);
+                                onDependencyResolved(data, true);
+                            },
+                            (err) =>
+                            {
+                                Debug.LogError(err);
+                                onDependencyResolved(data, false);
+                            });
                         }
                     },
                     onError
@@ -299,7 +312,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         },
                         (message) =>
                         {
-                            PrepareMessage(message, onChatMessage.Invoke);           
+                            PrepareChat(message, onChatMessage.Invoke);           
                             // foreach (string setId in uniqueSetIds)
                             // {
                             //     GetEmotesBySetId(setId, (tex) => { }, (err) => { Debug.LogError(err); });
@@ -323,7 +336,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }
         }
 
-        private void PrepareMessage(EventSub.ChatMessageEvent chatEvent, Action<ChatMessage> onMessageReady)
+        private void PrepareChat(EventSub.ChatMessageEvent chatEvent, Action<ChatMessage> onMessageReady)
         {
             // create a callback for all HTTP dependencies
             foreach (EventSub.ChatMessageFragment fragment in chatEvent.message.fragments)
@@ -362,7 +375,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     },
                     (err) =>
                     {
-                        Debug.LogError($"Error subscribing to {eventType}: {err}");
+                        Debug.LogError($"Error subscribing to {eventType} - {err}");
                     }
                 )
             );
