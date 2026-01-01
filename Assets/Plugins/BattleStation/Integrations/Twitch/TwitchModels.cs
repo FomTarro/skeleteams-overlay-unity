@@ -66,6 +66,19 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string[] format = new string[0];
         public string[] scale = new string[0];
         public string[] theme_mode = new string[0];
+
+        public EmoteData()
+        {
+
+        }
+
+        public EmoteData(string emoteName, EventSub.ChatMessageFragmentEmote fragment)
+        {
+            name = emoteName;
+            id = fragment.id;
+            format = fragment.format;
+            scale = new string[] { "1.0" };
+        }
     }
 
     [Serializable]

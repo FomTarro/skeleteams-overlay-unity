@@ -15,6 +15,19 @@ namespace Skeletom.Essentials.Utils
         // TODO: keep a dictionary of requests that map to their callbacks, such that two identical requests do not race, 
         // and instead the second awaits the first and shares the results. 
 
+        private struct CallbackPair
+        {
+            public Action<UnityWebRequest> onSuccess;
+            public Action<HttpError> onError;
+            public CallbackPair(Action<UnityWebRequest> onSuccess, Action<HttpError> onError)
+            {
+                this.onSuccess = onSuccess;
+                this.onError = onError;
+            }
+        }
+
+        private static Dictionary<string, Queue<CallbackPair>> CONTEXTS = new Dictionary<string, Queue<CallbackPair>>();
+
         /// <summary>
         /// Makes a GET request to the given URL, executing the corresponding callback on completion.
         /// </summary>
@@ -89,37 +102,64 @@ namespace Skeletom.Essentials.Utils
 
         private static IEnumerator MakeWebRequest(UnityWebRequest req, HttpHeaders headers, Action<UnityWebRequest> onSuccess, Action<HttpError> onError)
         {
-            using (req)
+            // Context system allows for intelligent pooling of 
+            string contextKey = $"{req.method}-${headers}-${req.url}";
+            if (CONTEXTS.ContainsKey(contextKey))
             {
-                req.timeout = 30;
-                req.SetRequestHeader("Content-Type", headers.contentType ?? "application/json");
-                if (headers.authorization != null)
+                CONTEXTS[contextKey].Enqueue(new CallbackPair(onSuccess, onError));
+                Debug.Log($"Pending {req.method} Request to: {req.url}, adding response handler to queue...");
+            }
+            else
+            {
+                CONTEXTS[contextKey] = new Queue<CallbackPair>();
+                CONTEXTS[contextKey].Enqueue(new CallbackPair(onSuccess, onError));
+                Debug.Log($"Making {req.method} Request to: {req.url}");
+                using (req)
                 {
-                    req.SetRequestHeader("Authorization", $"Bearer {headers.authorization}");
-                }
-                foreach (string key in headers.customHeaders.Keys)
-                {
-                    req.SetRequestHeader(key, headers.customHeaders[key]);
-                }
-                // Request and wait for the desired page.
-                yield return req.SendWebRequest();
-                if (req.result != UnityWebRequest.Result.Success)
-                {
-                    string errorMessage = string.Format($"Error making request to URL: {req.url} : {req.error}");
-                    HttpError error = new HttpError(req.responseCode, errorMessage);
-                    onError.Invoke(error);
-                }
-                else
-                {
-                    try
+                    req.timeout = 30;
+                    req.SetRequestHeader("Content-Type", headers.contentType);
+                    if (headers.authorization != null)
                     {
-                        onSuccess.Invoke(req);
+                        req.SetRequestHeader("Authorization", $"Bearer {headers.authorization}");
                     }
-                    catch (Exception e)
+                    foreach (string key in headers.customHeaders.Keys)
                     {
-                        HttpError error = new HttpError(500, e.ToString());
-                        onError.Invoke(error);
+                        req.SetRequestHeader(key, headers.customHeaders[key]);
                     }
+                    // Request and wait for the desired page.
+                    yield return req.SendWebRequest();
+                    do
+                    {
+                        if (CONTEXTS[contextKey].TryDequeue(out CallbackPair pair))
+                        {
+                            try
+                            {
+                                if (req.result != UnityWebRequest.Result.Success)
+                                {
+                                    string errorMessage = string.Format($"Error making request to URL: {req.url} : {req.error}");
+                                    HttpError error = new HttpError(req.responseCode, errorMessage);
+                                    pair.onError.Invoke(error);
+                                }
+                                else
+                                {
+                                    try
+                                    {
+                                        pair.onSuccess.Invoke(req);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        HttpError error = new HttpError(500, e.ToString());
+                                        pair.onError.Invoke(error);
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogError(e);
+                            }
+                        }
+                    } while (CONTEXTS[contextKey].Count > 0);
+                    CONTEXTS.Remove(contextKey);
                 }
             }
         }
@@ -159,8 +199,45 @@ namespace Skeletom.Essentials.Utils
         public class HttpHeaders
         {
             public string authorization;
-            public string contentType;
+            public string contentType = "application/json";
             public Dictionary<string, string> customHeaders = new Dictionary<string, string>();
+
+            public bool Equals(HttpHeaders other)
+            {
+                // compare headers irrespective of order
+                if (customHeaders.Keys.Count != other.customHeaders.Keys.Count)
+                {
+                    return false;
+                }
+                bool customEquals = true;
+                foreach (var key in customHeaders.Keys)
+                {
+                    if (!other.customHeaders.ContainsKey(key))
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        customEquals &= customHeaders[key] == other.customHeaders[key];
+                    }
+                }
+                // compare other properties
+                bool authEqual = authorization == other.authorization && authorization != null;
+                bool contentTypeEqual = contentType == other.contentType && contentType != null;
+                return authEqual && contentTypeEqual;
+            }
+
+            public override string ToString()
+            {
+                List<string> pairs = new List<string>();
+                foreach (string key in customHeaders.Keys)
+                {
+                    pairs.Add($"{key}::${customHeaders[key]}");
+                }
+                pairs.Sort();
+
+                return $"{authorization}-${contentType}-${string.Join("-", pairs)}";
+            }
         }
 
 
