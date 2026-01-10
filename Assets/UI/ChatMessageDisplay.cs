@@ -24,25 +24,26 @@ public class ChatMessageDisplay : MonoBehaviour
         {
             Destroy(emote.gameObject);
         }
+        _emotes.Clear();
         foreach (ChatMessage.Fragment fragment in message.fragments)
         {
-
             if (fragment.type == ChatMessage.Fragment.Type.EMOTE)
             {
-                _text.text += "   ";
+                _text.text += "<sprite index=0>";
                 _text.ForceMeshUpdate();
-                float height = (_text.font.characterLookupTable['A'].glyph.metrics.height / _text.font.faceInfo.pointSize) * _text.fontSize;
+                // float height = (_text.font.characterLookupTable['A'].glyph.metrics.height / _text.font.faceInfo.pointSize) * _text.fontSize;
                 TMPro.TMP_TextInfo textInfo = _text.textInfo;
+                Debug.Log(_text.font.faceInfo.descentLine + " : " + _text.font.faceInfo.baseline + " : " + _text.font.faceInfo.ascentLine + " : " + _text.font.faceInfo.pointSize);
                 int charIndex = textInfo.characterCount - 1;
                 // 2. Get character information
                 TMPro.TMP_CharacterInfo charInfo = textInfo.characterInfo[charIndex];
+                float height = charInfo.topLeft.y - charInfo.bottomLeft.y;
                 // 3. Calculate the center of the character in local space
+                Vector3 centerLocal = ((Vector2)charInfo.bottomLeft + (Vector2)charInfo.topRight) / 2;
                 AnimatedTextureDisplay child = Instantiate(_imgPrefab);
                 child.transform.SetParent(_text.transform);
-                // child.transform.sizeDelta = new Vector2(_text.fontSize, _text.fontSize) * 0.75f;
-                Vector3 centerLocal = ((Vector2)charInfo.bottomLeft + (Vector2)charInfo.topRight + new Vector2(0, height)) / 2;
                 child.transform.localPosition = centerLocal;
-                child.transform.localScale = Vector3.one * _text.fontSize;
+                child.transform.localScale = Vector3.one * height;
                 child.DisplayTexture(fragment.image);
                 _emotes.Add(child);
             }
@@ -51,5 +52,10 @@ public class ChatMessageDisplay : MonoBehaviour
                 _text.text += fragment.text.Trim();
             }
         }
+    }
+
+    private void Update()
+    {
+
     }
 }
