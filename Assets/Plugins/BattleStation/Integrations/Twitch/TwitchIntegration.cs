@@ -85,7 +85,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     data = this._socket.GetNextResponse();
                     if (data != null)
                     {
-                        ProcessEventSub(data);
+                        ProcessEventSubEvent(data);
                     }
                 }
             } while (data != null);
@@ -180,7 +180,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }, onError);
         }
 
-        private void ProcessEventSub(string msg)
+        private void ProcessEventSubEvent(string msg)
         {
             try
             {
@@ -362,7 +362,12 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent, Action<ChatMessage> onMessageReady)
         {
-            ChatUser chatter = new ChatUser();
+            ChatUser chatter = new ChatUser(chatEvent.chatter_user_name, chatEvent.color, chatEvent.chatter_user_id);
+            foreach (EventSub.ChatMessageBadge badge in chatEvent.badges)
+            {
+                ChatBadge newBadge = new ChatBadge(badge.info, badge.id);
+                chatter.badges.Add(newBadge);
+            }
             // create a callback for all HTTP dependencies
             List<ChatMessage.Fragment> fragments = new List<ChatMessage.Fragment>();
             int pending = chatEvent.message.fragments.Length;

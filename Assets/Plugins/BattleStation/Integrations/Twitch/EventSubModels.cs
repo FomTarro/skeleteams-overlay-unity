@@ -186,6 +186,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
     [Serializable]
     public class ChatMessageEvent : IEventSubEvent
     {
+        public ChatMessageBadge[] badges = new ChatMessageBadge[0];
         public string broadcaster_user_id;
         public string broadcaster_user_login;
         public string broadcaster_user_name;

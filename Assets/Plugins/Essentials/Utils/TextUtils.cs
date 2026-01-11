@@ -2,8 +2,10 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Skeletom.Essentials.Utils {
-    public static class TextUtils {
+namespace Skeletom.Essentials.Utils
+{
+    public static class TextUtils
+    {
         private static Regex REGEX_MODERN_LANGUAGE_FILTER = new Regex("([^\\u0000-\\ud7ff])");
 
         private static Regex REGEX_PUNCTUATION_FILTER = new Regex("[?.,!#\"/\\ '<>#\t\n;:]+");
@@ -12,15 +14,19 @@ namespace Skeletom.Essentials.Utils {
         /// Filters out characters from a string that do not belong to a modern written language, such as emoji and ancient languages
         /// </summary>
         /// <param name="input">The string to filter</param>
-        public static string FilterModernLanguage(string input) {
-            if (string.IsNullOrEmpty(input)) {
+        public static string FilterModernLanguage(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
                 return input;
             }
             StringBuilder output = new StringBuilder();
             char c = '\0';
-            for (int i = 0; i < input.Length; i++) {
+            for (int i = 0; i < input.Length; i++)
+            {
                 c = FilterModernLanguageChars(input[i]);
-                if (c != '\0') {
+                if (c != '\0')
+                {
                     output.Append(c);
                 }
             }
@@ -32,7 +38,8 @@ namespace Skeletom.Essentials.Utils {
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public static char FilterModernLanguageChars(char input) {
+        public static char FilterModernLanguageChars(char input)
+        {
             return REGEX_MODERN_LANGUAGE_FILTER.IsMatch(input.ToString()) ? '\0' : input;
         }
 
@@ -41,11 +48,14 @@ namespace Skeletom.Essentials.Utils {
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public static int GetIndexOfPunctuation(string input) {
-            if (REGEX_PUNCTUATION_FILTER.IsMatch(input)) {
+        public static int GetIndexOfPunctuation(string input)
+        {
+            if (REGEX_PUNCTUATION_FILTER.IsMatch(input))
+            {
                 return REGEX_PUNCTUATION_FILTER.Match(input).Index;
             }
-            else {
+            else
+            {
                 return -1;
             }
         }
@@ -56,12 +66,15 @@ namespace Skeletom.Essentials.Utils {
         /// <param name="input"></param>
         /// <param name="replaceSpaces">Replace spaces with underscores?</param>
         /// <returns></returns>
-        public static string MakeFilenameSafe(string input, bool replaceSpaces = true) {
-            if (string.IsNullOrEmpty(input)) {
+        public static string MakeFilenameSafe(string input, bool replaceSpaces = true)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
                 return input;
             }
             string output = RemoveInvalidCharacters(input.ToLower().Trim());
-            if (replaceSpaces) {
+            if (replaceSpaces)
+            {
                 output = output.Replace(' ', '_');
             }
             return output;
@@ -72,15 +85,28 @@ namespace Skeletom.Essentials.Utils {
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private static string RemoveInvalidCharacters(string input) {
-            if (string.IsNullOrEmpty(input)) {
+        private static string RemoveInvalidCharacters(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
                 return input;
             }
             string output = FilterModernLanguage(input);
-            foreach (char c in Path.GetInvalidFileNameChars()) {
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
                 output = output.Replace(c.ToString(), string.Empty);
             }
             return output;
+        }
+
+        /// <summary>
+        /// Compresses consecutive whitespace strings into a single whitespace
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static string RemoveConsecutiveWhitespace(string input)
+        {
+            return Regex.Replace(input, @"\s+", " ");
         }
     }
 }

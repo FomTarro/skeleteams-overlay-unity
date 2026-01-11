@@ -1,18 +1,20 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using Skeletom.BattleStation.Graphics.Animations;
 using Skeletom.BattleStation.Integrations;
+using Skeletom.Essentials.Utils;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class ChatMessageDisplay : MonoBehaviour
 {
     [SerializeField]
-    private TMPro.TMP_Text _text;
+    private TMP_Text _text;
+
     [SerializeField]
     private AnimatedTextureDisplay _imgPrefab;
-    [SerializeField]
-    private List<AnimatedTextureDisplay> _emotes = new List<AnimatedTextureDisplay>();
+    private readonly Dictionary<string, AnimatedTextureDisplay> _emotes = new Dictionary<string, AnimatedTextureDisplay>();
+
     [SerializeField]
     private ChatMessage message;
 
@@ -20,42 +22,48 @@ public class ChatMessageDisplay : MonoBehaviour
     {
         this.message = message;
         _text.text = "";
-        foreach (AnimatedTextureDisplay emote in _emotes)
+        foreach (string emote in _emotes.Keys)
         {
-            Destroy(emote.gameObject);
+            Destroy(_emotes[emote].gameObject);
         }
         _emotes.Clear();
         foreach (ChatMessage.Fragment fragment in message.fragments)
         {
             if (fragment.type == ChatMessage.Fragment.Type.EMOTE)
             {
-                _text.text += "<sprite index=0>";
+                string id = Guid.NewGuid().ToString();
+                // Sprite 0 is just a blank square, the link tags allow us to ID the sprite,
+                // So that we can connect emote objects to positions in the text
+                _text.text += $"<link=\"{id}\"><sprite index=0></link>";
                 _text.ForceMeshUpdate();
-                // float height = (_text.font.characterLookupTable['A'].glyph.metrics.height / _text.font.faceInfo.pointSize) * _text.fontSize;
-                TMPro.TMP_TextInfo textInfo = _text.textInfo;
-                Debug.Log(_text.font.faceInfo.descentLine + " : " + _text.font.faceInfo.baseline + " : " + _text.font.faceInfo.ascentLine + " : " + _text.font.faceInfo.pointSize);
-                int charIndex = textInfo.characterCount - 1;
-                // 2. Get character information
-                TMPro.TMP_CharacterInfo charInfo = textInfo.characterInfo[charIndex];
-                float height = charInfo.topLeft.y - charInfo.bottomLeft.y;
-                // 3. Calculate the center of the character in local space
-                Vector3 centerLocal = ((Vector2)charInfo.bottomLeft + (Vector2)charInfo.topRight) / 2;
-                AnimatedTextureDisplay child = Instantiate(_imgPrefab);
-                child.transform.SetParent(_text.transform);
-                child.transform.localPosition = centerLocal;
-                child.transform.localScale = Vector3.one * height;
-                child.DisplayTexture(fragment.image);
-                _emotes.Add(child);
+                AnimatedTextureDisplay emote = Instantiate(_imgPrefab);
+                emote.transform.SetParent(_text.transform);
+                emote.DisplayTexture(fragment.image);
+                _emotes.Add(id, emote);
             }
             else
             {
-                _text.text += fragment.text.Trim();
+                _text.text += TextUtils.RemoveConsecutiveWhitespace(fragment.text);
             }
         }
     }
 
     private void Update()
     {
-
+        foreach (TMP_LinkInfo linkInfo in _text.textInfo.linkInfo)
+        {
+            string id = linkInfo.GetLinkID();
+            if (id != null && id.Length > 0 && _emotes.ContainsKey(id))
+            {
+                AnimatedTextureDisplay emote = _emotes[id];
+                // Calculate the center of the character in local space
+                TMP_CharacterInfo charInfo = _text.textInfo.characterInfo[linkInfo.linkTextfirstCharacterIndex];
+                Vector3 centerLocal = ((Vector2)charInfo.bottomLeft + (Vector2)charInfo.topRight) / 2;
+                // float height = (_text.font.characterLookupTable['A'].glyph.metrics.height / _text.font.faceInfo.pointSize) * _text.fontSize;
+                float glyphHeight = charInfo.topLeft.y - charInfo.bottomLeft.y;
+                emote.transform.localPosition = centerLocal;
+                emote.transform.localScale = Vector3.one * glyphHeight;
+            }
+        }
     }
 }

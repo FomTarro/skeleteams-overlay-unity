@@ -1970,7 +1970,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: wow<sprite index="0">!!
+  m_text: wow <sprite index="0">!! <link=1><sprite index=0></link>!!
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2551,7 +2551,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _text: {fileID: 980558138}
   _imgPrefab: {fileID: 8462231630397331135, guid: 87e56bc837d49fa4d9b23b4cdb0dcf85, type: 3}
-  _emotes: []
   message:
     chatter:
       displayName: 
@@ -2560,6 +2559,7 @@ MonoBehaviour:
       avatar:
         frames: []
         name: 
+      badges: []
     fragments: []
 --- !u!224 &1330760452
 RectTransform:

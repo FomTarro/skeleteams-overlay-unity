@@ -33,6 +33,28 @@ namespace Skeletom.BattleStation.Integrations
         public Color displayColor;
         public string id;
         public ChatImage avatar;
+        public List<ChatBadge> badges = new List<ChatBadge>();
+
+        public ChatUser(string displayName, string displayColorHex, string id)
+        {
+            this.displayName = displayName;
+            ColorUtility.TryParseHtmlString(displayColorHex, out this.displayColor);
+            this.id = id;
+        }
+    }
+
+    [Serializable]
+    public class ChatBadge
+    {
+        public ChatImage image;
+        public string displayName;
+        public string id;
+
+        public ChatBadge(string displayName, string id)
+        {
+            this.displayName = displayName;
+            this.id = id;
+        }
     }
 
     [Serializable]
@@ -88,6 +110,15 @@ namespace Skeletom.BattleStation.Integrations
         {
             if (img != null)
             {
+                UncacheChatImage(img);
+                CHAT_IMAGE_CACHE[img.name] = img;
+            }
+        }
+
+        protected void UncacheChatImage(ChatImage img)
+        {
+            if (img != null)
+            {
                 if (CHAT_IMAGE_CACHE.ContainsKey(img.name))
                 {
                     foreach (ChatImage.Frame frame in CHAT_IMAGE_CACHE[img.name].frames)
@@ -95,7 +126,6 @@ namespace Skeletom.BattleStation.Integrations
                         Destroy(frame.image);
                     }
                 }
-                CHAT_IMAGE_CACHE[img.name] = img;
             }
         }
 
