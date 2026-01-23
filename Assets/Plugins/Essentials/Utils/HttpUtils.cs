@@ -15,18 +15,18 @@ namespace Skeletom.Essentials.Utils
         // TODO: keep a dictionary of requests that map to their callbacks, such that two identical requests do not race, 
         // and instead the second awaits the first and shares the results. 
 
-        private struct CallbackPair
+        private struct PendingWebRequest
         {
             public Action<UnityWebRequest> onSuccess;
             public Action<HttpError> onError;
-            public CallbackPair(Action<UnityWebRequest> onSuccess, Action<HttpError> onError)
+            public PendingWebRequest(Action<UnityWebRequest> onSuccess, Action<HttpError> onError)
             {
                 this.onSuccess = onSuccess;
                 this.onError = onError;
             }
         }
 
-        private static Dictionary<string, Queue<CallbackPair>> CONTEXTS = new Dictionary<string, Queue<CallbackPair>>();
+        private static Dictionary<string, Queue<PendingWebRequest>> CONTEXTS = new Dictionary<string, Queue<PendingWebRequest>>();
 
         /// <summary>
         /// Makes a GET request to the given URL, executing the corresponding callback on completion.
@@ -102,17 +102,17 @@ namespace Skeletom.Essentials.Utils
 
         private static IEnumerator MakeWebRequest(UnityWebRequest req, HttpHeaders headers, Action<UnityWebRequest> onSuccess, Action<HttpError> onError)
         {
-            // Context system allows for intelligent pooling of 
+            // Context system allows for intelligent pooling of requests and sharing of results
             string contextKey = $"{req.method}-${headers}-${req.url}";
             if (CONTEXTS.ContainsKey(contextKey))
             {
-                CONTEXTS[contextKey].Enqueue(new CallbackPair(onSuccess, onError));
+                CONTEXTS[contextKey].Enqueue(new PendingWebRequest(onSuccess, onError));
                 Debug.Log($"Pending {req.method} Request to: {req.url}, adding response handler to queue...");
             }
             else
             {
-                CONTEXTS[contextKey] = new Queue<CallbackPair>();
-                CONTEXTS[contextKey].Enqueue(new CallbackPair(onSuccess, onError));
+                CONTEXTS[contextKey] = new Queue<PendingWebRequest>();
+                CONTEXTS[contextKey].Enqueue(new PendingWebRequest(onSuccess, onError));
                 Debug.Log($"Making {req.method} Request to: {req.url}");
                 using (req)
                 {
@@ -130,7 +130,7 @@ namespace Skeletom.Essentials.Utils
                     yield return req.SendWebRequest();
                     do
                     {
-                        if (CONTEXTS[contextKey].TryDequeue(out CallbackPair pair))
+                        if (CONTEXTS[contextKey].TryDequeue(out PendingWebRequest pair))
                         {
                             try
                             {
@@ -254,7 +254,7 @@ namespace Skeletom.Essentials.Utils
 
             public override string ToString()
             {
-                return this.statusCode + ": " + this.message;
+                return statusCode + ": " + message;
             }
         }
     }

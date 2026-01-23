@@ -12,7 +12,7 @@ namespace Skeletom.Essentials.Utils
         /// </summary>
         /// <param name="enumerators">Any number of IEnumerators</param>
         /// <returns></returns>
-        public static IEnumerator CombineEnumerators(params IEnumerator[] enumerators)
+        public static IEnumerator CombineEnumerators(Action onAllComplete, params IEnumerator[] enumerators)
         {
             object[] nextObjects = new object[enumerators.Length];
             bool shouldLoop;
@@ -28,6 +28,7 @@ namespace Skeletom.Essentials.Utils
                 yield return nextObjects;
             }
             while (shouldLoop);
+            onAllComplete();
         }
 
         /// <summary>

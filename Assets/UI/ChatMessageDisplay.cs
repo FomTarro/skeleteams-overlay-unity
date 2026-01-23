@@ -16,9 +16,9 @@ public class ChatMessageDisplay : MonoBehaviour
     private readonly Dictionary<string, AnimatedTextureDisplay> _emotes = new Dictionary<string, AnimatedTextureDisplay>();
 
     [SerializeField]
-    private ChatMessage message;
+    private IntegrationChatMessage message;
 
-    public void Display(ChatMessage message)
+    public void Display(IntegrationChatMessage message)
     {
         this.message = message;
         _text.text = "";
@@ -27,9 +27,9 @@ public class ChatMessageDisplay : MonoBehaviour
             Destroy(_emotes[emote].gameObject);
         }
         _emotes.Clear();
-        foreach (ChatMessage.Fragment fragment in message.fragments)
+        foreach (IntegrationChatMessage.Fragment fragment in message.fragments)
         {
-            if (fragment.type == ChatMessage.Fragment.Type.EMOTE)
+            if (fragment.type == IntegrationChatMessage.Fragment.Type.EMOTE)
             {
                 string id = Guid.NewGuid().ToString();
                 // Sprite 0 is just a blank square, the link tags allow us to ID the sprite,

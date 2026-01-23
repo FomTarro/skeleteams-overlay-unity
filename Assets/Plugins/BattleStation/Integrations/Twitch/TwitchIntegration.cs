@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Skeletom.BattleStation.Server;
@@ -74,6 +75,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }));
             FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
         }
+
         private void Update()
         {
             _socket.Tick(Time.deltaTime);
@@ -90,6 +92,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 }
             } while (data != null);
         }
+
 
         public void RequestToken()
         {
@@ -275,9 +278,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         foreach (EmoteData data in response.data)
                         {
                             GetIndividualEmote(data,
-                            (img) =>
+                            (success) =>
                             {
-                                emotes.Add(img);
+                                emotes.Add(success);
                                 onDependencyResolved(data, true);
                             },
                             (err) =>
@@ -360,35 +363,35 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }
         }
 
-        private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent, Action<ChatMessage> onMessageReady)
+        private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent, Action<IntegrationChatMessage> onMessageReady)
         {
-            ChatUser chatter = new ChatUser(chatEvent.chatter_user_name, chatEvent.color, chatEvent.chatter_user_id);
+            IntegrationChatUser chatter = new IntegrationChatUser(chatEvent.chatter_user_name, chatEvent.color, chatEvent.chatter_user_id);
             foreach (EventSub.ChatMessageBadge badge in chatEvent.badges)
             {
                 ChatBadge newBadge = new ChatBadge(badge.info, badge.id);
                 chatter.badges.Add(newBadge);
             }
             // create a callback for all HTTP dependencies
-            List<ChatMessage.Fragment> fragments = new List<ChatMessage.Fragment>();
+            List<IntegrationChatMessage.Fragment> fragments = new List<IntegrationChatMessage.Fragment>();
             int pending = chatEvent.message.fragments.Length;
             void onDependencyResolved(bool status)
             {
                 pending--;
                 if (pending <= 0)
                 {
-                    onMessageReady(new ChatMessage(chatter, fragments));
+                    onMessageReady(new IntegrationChatMessage(chatter, fragments));
                 }
             }
             foreach (EventSub.ChatMessageFragment fragment in chatEvent.message.fragments)
             {
                 if ("emote".Equals(fragment.type))
                 {
-                    var newFragment = new ChatMessage.Fragment(ChatMessage.Fragment.Type.EMOTE, fragment.text);
+                    var newFragment = new IntegrationChatMessage.Fragment(IntegrationChatMessage.Fragment.Type.EMOTE, fragment.text);
                     fragments.Add(newFragment);
                     GetIndividualEmote(new EmoteData(fragment.text, fragment.emote),
-                    (img) =>
+                    (success) =>
                     {
-                        newFragment.image = img;
+                        newFragment.image = success;
                         onDependencyResolved(true);
                     },
                     (err) =>
@@ -398,7 +401,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 }
                 else
                 {
-                    var newFragment = new ChatMessage.Fragment(ChatMessage.Fragment.Type.TEXT, fragment.text);
+                    var newFragment = new IntegrationChatMessage.Fragment(IntegrationChatMessage.Fragment.Type.TEXT, fragment.text);
                     fragments.Add(newFragment);
                     onDependencyResolved(true);
                 }

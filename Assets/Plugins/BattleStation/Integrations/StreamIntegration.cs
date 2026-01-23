@@ -9,8 +9,10 @@ using UnityEngine.Events;
 namespace Skeletom.BattleStation.Integrations
 {
 
+    /// <summary>
+    /// Class used to represent any kind of image that might appear with a chat message (emote, sub badge, avatar)
+    /// </summary>
     [Serializable]
-    // CLass used to represent any kind of image that might appear with a chat message (emote, sub badge, avatar)
     public class ChatImage : AnimatedTextureDisplay.AnimatedTexture
     {
         public string name;
@@ -27,7 +29,7 @@ namespace Skeletom.BattleStation.Integrations
     }
 
     [Serializable]
-    public class ChatUser
+    public class IntegrationChatUser
     {
         public string displayName;
         public Color displayColor;
@@ -35,7 +37,7 @@ namespace Skeletom.BattleStation.Integrations
         public ChatImage avatar;
         public List<ChatBadge> badges = new List<ChatBadge>();
 
-        public ChatUser(string displayName, string displayColorHex, string id)
+        public IntegrationChatUser(string displayName, string displayColorHex, string id)
         {
             this.displayName = displayName;
             ColorUtility.TryParseHtmlString(displayColorHex, out this.displayColor);
@@ -58,7 +60,7 @@ namespace Skeletom.BattleStation.Integrations
     }
 
     [Serializable]
-    public class ChatMessage
+    public class IntegrationChatMessage
     {
         [Serializable]
         public class Fragment
@@ -82,9 +84,9 @@ namespace Skeletom.BattleStation.Integrations
             }
         }
 
-        public ChatUser chatter;
+        public IntegrationChatUser chatter;
         public List<Fragment> fragments = new List<Fragment>();
-        public ChatMessage(ChatUser chatter, IEnumerable<Fragment> fragments)
+        public IntegrationChatMessage(IntegrationChatUser chatter, IEnumerable<Fragment> fragments)
         {
             this.chatter = chatter;
             this.fragments = new List<Fragment>(fragments);
@@ -159,7 +161,7 @@ namespace Skeletom.BattleStation.Integrations
         }
 
         [Serializable]
-        public class ChatMessageEvent : UnityEvent<ChatMessage> { }
+        public class ChatMessageEvent : UnityEvent<IntegrationChatMessage> { }
         public ChatMessageEvent onChatMessage = new ChatMessageEvent();
     }
 }
