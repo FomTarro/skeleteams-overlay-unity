@@ -26,7 +26,7 @@ namespace Skeletom.Essentials.Utils
             }
         }
 
-        private static Dictionary<string, Queue<PendingWebRequest>> CONTEXTS = new Dictionary<string, Queue<PendingWebRequest>>();
+        private static readonly Dictionary<string, Queue<PendingWebRequest>> CONTEXTS = new Dictionary<string, Queue<PendingWebRequest>>();
 
         /// <summary>
         /// Makes a GET request to the given URL, executing the corresponding callback on completion.

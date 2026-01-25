@@ -9,6 +9,11 @@ using UnityEngine;
 public class ChatMessageDisplay : MonoBehaviour
 {
     [SerializeField]
+    private AnimatedTextureDisplay _badge;
+    [SerializeField]
+    private TMP_Text _username;
+
+    [SerializeField]
     private TMP_Text _text;
 
     [SerializeField]
@@ -16,10 +21,16 @@ public class ChatMessageDisplay : MonoBehaviour
     private readonly Dictionary<string, AnimatedTextureDisplay> _emotes = new Dictionary<string, AnimatedTextureDisplay>();
 
     [SerializeField]
-    private IntegrationChatMessage message;
+    private StreamingPlatformChatMessage message;
 
-    public void Display(IntegrationChatMessage message)
+    public void Display(StreamingPlatformChatMessage message)
     {
+        if (message.chatter.badges.Count > 0)
+        {
+            _badge.DisplayTexture(message.chatter.badges[0].image);
+        }
+        _username.text = message.chatter.displayName;
+        _username.color = message.chatter.displayColor;
         this.message = message;
         _text.text = "";
         foreach (string emote in _emotes.Keys)
@@ -27,9 +38,9 @@ public class ChatMessageDisplay : MonoBehaviour
             Destroy(_emotes[emote].gameObject);
         }
         _emotes.Clear();
-        foreach (IntegrationChatMessage.Fragment fragment in message.fragments)
+        foreach (StreamingPlatformChatMessage.Fragment fragment in message.fragments)
         {
-            if (fragment.type == IntegrationChatMessage.Fragment.Type.EMOTE)
+            if (fragment.type == StreamingPlatformChatMessage.Fragment.Type.EMOTE)
             {
                 string id = Guid.NewGuid().ToString();
                 // Sprite 0 is just a blank square, the link tags allow us to ID the sprite,

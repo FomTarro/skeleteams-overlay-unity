@@ -21,10 +21,15 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private const string USERS_ENDPOINT = "https://api.twitch.tv/helix/users";
         private const string EVENTSUB_SUBSCRIPTION_ENDPOINT = "https://api.twitch.tv/helix/eventsub/subscriptions";
-        private const string EMOTES_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes/set";
+
+        private const string EMOTES_SET_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes/set";
         private string EMOTES_INDIVIDUAL_ENDPOINT = "";
         private const string EMOTES_GLOBAL_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes/global";
         private const string EMOTES_CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes";
+
+        private const string BADGES_GLOBAL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges/global";
+        public const string BADGES_CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges";
+
         private const string VALIDATE_ENDPOINT = "https://id.twitch.tv/oauth2/validate";
 
         private static readonly string[] USER_TOKEN_SCOPES = {
@@ -49,15 +54,18 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private readonly Dictionary<string, Action<string>> _subscriptions = new Dictionary<string, Action<string>>();
 
-        private HttpUtils.HttpHeaders GetHeaders()
+        private HttpUtils.HttpHeaders Headers
         {
-            return new HttpUtils.HttpHeaders()
+            get
             {
-                authorization = USER_TOKEN,
-                customHeaders = {
-                    {"Client-Id", CLIENT_ID}
-                }
-            };
+                return new HttpUtils.HttpHeaders()
+                {
+                    authorization = USER_TOKEN,
+                    customHeaders = {
+                        {"Client-Id", CLIENT_ID}
+                    }
+                };
+            }
         }
 
         public override void Initialize()
@@ -162,7 +170,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             string query = users.Count > 0 ? string.Join('&', users.Select(user => "login=" + user)) : "";
             string url = $"{USERS_ENDPOINT}{query}";
             StartCoroutine(
-                HttpUtils.GetRequest(url, GetHeaders(),
+                HttpUtils.GetRequest(url, Headers,
                     (str) =>
                     {
                         onSuccess(JsonUtility.FromJson<DataResponse<UserData>>(str).data);
@@ -207,6 +215,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         {
                             GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
                             GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
+                            GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
+                            GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
                         },
                         (err) =>
                         {
@@ -234,185 +244,200 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }
         }
 
-        public void GetGlobalEmotes(Action<List<ChatImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetGlobalEmotes(Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
         {
             Debug.Log("Fetching global emotes.");
             string url = EMOTES_GLOBAL_ENDPOINT;
             GetBatchEmotes(url, onSuccess, onError);
         }
 
-        public void GetChannelEmotes(string broadcasterId, Action<List<ChatImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetChannelEmotes(string broadcasterId, Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
         {
             Debug.Log($"Fetching channel emotes for Broadcaster ID: {broadcasterId}");
             string url = $"{EMOTES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
 
-        public void GetSetEmotes(string setId, Action<List<ChatImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetSetEmotes(string setId, Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
         {
             Debug.Log($"Fetching set emotes for set ID: {setId}");
-            string url = $"{EMOTES_ENDPOINT}?emote_set_id={setId}";
+            string url = $"{EMOTES_SET_ENDPOINT}?emote_set_id={setId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
 
-        private void GetBatchEmotes(string url, Action<List<ChatImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        private void GetBatchEmotes(string url, Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
         {
             StartCoroutine(
-                HttpUtils.GetRequest(url, GetHeaders(),
+                HttpUtils.GetRequest(url, Headers,
                     (str) =>
                     {
                         EmoteDataResponse response = JsonUtility.FromJson<EmoteDataResponse>(str);
-                        List<ChatImage> emotes = new List<ChatImage>();
-                        int pending = response.data.Count;
-                        void onDependencyResolved(EmoteData data, bool status)
-                        {
-                            pending--;
-                            Debug.Log($"Waiting on {pending} more emotes to resolve...");
-                            if (pending <= 0)
+                        List<StreamingPlatformImage> emotes = new List<StreamingPlatformImage>();
+                        DependencyManager manager = new(
+                            () =>
                             {
                                 Debug.Log($"{emotes.Count} total emotes resolved!");
                                 onSuccess(emotes);
+                            },
+                            (key, pending) =>
+                            {
+                                Debug.Log($"Waiting on {pending} more emotes to resolve...");
                             }
-                        }
+                        );
                         EMOTES_INDIVIDUAL_ENDPOINT = response.template;
                         foreach (EmoteData data in response.data)
                         {
+                            string taskId = Guid.NewGuid().ToString();
+                            manager.AddDependency(taskId);
                             GetIndividualEmote(data,
                             (success) =>
                             {
                                 emotes.Add(success);
-                                onDependencyResolved(data, true);
+                                manager.ResolveDependency(taskId);
                             },
                             (err) =>
                             {
                                 Debug.LogError(err);
-                                onDependencyResolved(data, false);
+                                manager.ResolveDependency(taskId);
                             });
                         }
+                        manager.Enable(true);
                     },
                     onError
                 )
             );
         }
 
-        public void GetIndividualEmote(EmoteData data, Action<ChatImage> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetIndividualEmote(EmoteData data, Action<StreamingPlatformImage> onSuccess, Action<HttpUtils.HttpError> onError)
         {
             string key = data.name;
-            // Debug.Log($"Fetching individual emotes with name: {key}");
-            // TODO: Abstract this out to a dedicated handler component for all image types.
-            // Ideally we could just call "GetImage(...)" and it would know what to do.
-
-            // If the emote is already cached, return it immediately.
-            if (CHAT_IMAGE_CACHE.ContainsKey(key))
-            {
-                onSuccess(CHAT_IMAGE_CACHE[key]);
-            }
-            // If another request is already processing this emote, wait for that.
-            else if (CHAT_IMAGE_PENDING_CONTEXTS.ContainsKey(key))
-            {
-                CHAT_IMAGE_PENDING_CONTEXTS[key].Enqueue(new ChatImageCallbackPair(onSuccess, onError));
-            }
-            // If nothing is processing this emote, make a request to get and process it.
-            else
-            {
-                CHAT_IMAGE_PENDING_CONTEXTS[key] = new Queue<ChatImageCallbackPair>();
-                CHAT_IMAGE_PENDING_CONTEXTS[key].Enqueue(new ChatImageCallbackPair(onSuccess, onError));
-                string format = data.format[^1];
-                string scale = data.scale[^1];
-                string url = EMOTES_INDIVIDUAL_ENDPOINT
-                .Replace("{{id}}", data.id)
-                .Replace("{{format}}", format)
-                .Replace("{{theme_mode}}", "light")
-                .Replace("{{scale}}", scale);
-                StartCoroutine(
-                    HttpUtils.GetBytesRequest(url, GetHeaders(),
-                        (bytes) =>
-                        {
-                            if ("animated".Equals(format))
-                            {
-                                var frames = GifToTextureDecoder.Decode(bytes).Select(
-                                    frame => new ChatImage.Frame(frame.texture, frame.delay)
-                                );
-                                CacheChatImage(new ChatImage(key, frames));
-                                Debug.Log($"Resolved animated emote: {key}");
-                                HandleChatImageContext(key, CHAT_IMAGE_CACHE[key], null);
-                            }
-                            else
-                            {
-                                var tex = new Texture2D(2, 2);
-                                if (tex.LoadImage(bytes))
-                                {
-                                    CacheChatImage(new ChatImage(key, tex));
-                                    Debug.Log($"Resolved static emote: {key}");
-                                    HandleChatImageContext(key, CHAT_IMAGE_CACHE[key], null);
-                                }
-                                else
-                                {
-                                    HandleChatImageContext(key, null, new HttpUtils.HttpError(500, $"Unable to convert emote to Texture2D for {key}"));
-                                }
-                            }
-                        },
-                        (err) =>
-                        {
-                            Debug.LogError($"Error while resolving emote: {key} - {err}");
-                            HandleChatImageContext(key, null, err);
-                        }
-
-                    )
-                );
-            }
+            string format = data.format[^1];
+            string scale = data.scale[^1];
+            string url = EMOTES_INDIVIDUAL_ENDPOINT
+            .Replace("{{id}}", data.id)
+            .Replace("{{format}}", format)
+            .Replace("{{theme_mode}}", "light")
+            .Replace("{{scale}}", scale);
+            ImageHandler.GetImageFromRemote(url, Headers, key, onSuccess, onError);
         }
 
-        private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent, Action<IntegrationChatMessage> onMessageReady)
+        public void GetGlobalBadges(Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
         {
-            IntegrationChatUser chatter = new IntegrationChatUser(chatEvent.chatter_user_name, chatEvent.color, chatEvent.chatter_user_id);
-            foreach (EventSub.ChatMessageBadge badge in chatEvent.badges)
-            {
-                ChatBadge newBadge = new ChatBadge(badge.info, badge.id);
-                chatter.badges.Add(newBadge);
-            }
+            Debug.Log("Fetching global badges.");
+            GetBatchBadges(BADGES_GLOBAL_ENDPOINT, onSuccess, onError);
+        }
+
+        public void GetChannelBadges(string broadcasterId, Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        {
+            Debug.Log($"Fetching channel badges for Broadcaster ID: {broadcasterId}");
+            string url = $"{BADGES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
+            GetBatchBadges(url, onSuccess, onError);
+        }
+
+        private void GetBatchBadges(string url, Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        {
+            StartCoroutine(
+               HttpUtils.GetRequest(url, Headers,
+               (str) =>
+               {
+                   BadgeSetDataResponse response = JsonUtility.FromJson<BadgeSetDataResponse>(str);
+                   List<StreamingPlatformImage> badges = new List<StreamingPlatformImage>();
+                   DependencyManager manager = new(
+                       () =>
+                       {
+                           Debug.Log($"{badges.Count} total badges resolved!");
+                           onSuccess(badges);
+                       },
+                       (key, pending) =>
+                       {
+                           Debug.Log($"Waiting on {pending} more badges to resolve...");
+                       }
+                   );
+                   foreach (BadgeSetData data in response.data)
+                   {
+                       foreach (BadgeVersionData version in data.versions)
+                       {
+                           string taskId = Guid.NewGuid().ToString();
+                           manager.AddDependency(taskId);
+                           ImageHandler.GetImageFromRemote(version.image_url_1x, Headers, $"badge_{data.set_id}_{version.id}",
+                           (success) =>
+                           {
+                               badges.Add(success);
+                               manager.ResolveDependency(taskId);
+                           },
+                           (err) =>
+                           {
+                               Debug.LogError(err);
+                               manager.ResolveDependency(taskId);
+                           });
+                       }
+                   }
+                   manager.Enable(true);
+               },
+               onError)
+            );
+        }
+
+        private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent, Action<StreamingPlatformChatMessage> onMessageReady)
+        {
+            StreamingPlatformChatUser chatter = new StreamingPlatformChatUser(chatEvent.chatter_user_name, chatEvent.color, chatEvent.chatter_user_id);
+            List<StreamingPlatformChatMessage.Fragment> fragments = new List<StreamingPlatformChatMessage.Fragment>();
             // create a callback for all HTTP dependencies
-            List<IntegrationChatMessage.Fragment> fragments = new List<IntegrationChatMessage.Fragment>();
-            int pending = chatEvent.message.fragments.Length;
-            void onDependencyResolved(bool status)
-            {
-                pending--;
-                if (pending <= 0)
-                {
-                    onMessageReady(new IntegrationChatMessage(chatter, fragments));
-                }
-            }
+            DependencyManager manager = new(
+                () => { onMessageReady(new StreamingPlatformChatMessage(chatter, fragments)); }
+            );
             foreach (EventSub.ChatMessageFragment fragment in chatEvent.message.fragments)
             {
+                string taskId = Guid.NewGuid().ToString();
+                manager.AddDependency(taskId);
                 if ("emote".Equals(fragment.type))
                 {
-                    var newFragment = new IntegrationChatMessage.Fragment(IntegrationChatMessage.Fragment.Type.EMOTE, fragment.text);
+                    var newFragment = new StreamingPlatformChatMessage.Fragment(StreamingPlatformChatMessage.Fragment.Type.EMOTE, fragment.text);
                     fragments.Add(newFragment);
                     GetIndividualEmote(new EmoteData(fragment.text, fragment.emote),
                     (success) =>
                     {
                         newFragment.image = success;
-                        onDependencyResolved(true);
+                        manager.ResolveDependency(taskId);
                     },
                     (err) =>
                     {
-                        onDependencyResolved(false);
+                        manager.ResolveDependency(taskId);
                     });
                 }
                 else
                 {
-                    var newFragment = new IntegrationChatMessage.Fragment(IntegrationChatMessage.Fragment.Type.TEXT, fragment.text);
+                    var newFragment = new StreamingPlatformChatMessage.Fragment(StreamingPlatformChatMessage.Fragment.Type.TEXT, fragment.text);
                     fragments.Add(newFragment);
-                    onDependencyResolved(true);
+                    manager.ResolveDependency(taskId);
                 }
             }
+            foreach (EventSub.ChatMessageBadge badge in chatEvent.badges)
+            {
+                StreamingPlatformBadge newBadge = new StreamingPlatformBadge(badge.info, badge.id);
+                chatter.badges.Add(newBadge);
+                string taskId = Guid.NewGuid().ToString();
+                manager.AddDependency(taskId);
+                ImageHandler.GetImageFromCache($"badge_{badge.set_id}_{badge.id}",
+                    (success) =>
+                    {
+                        newBadge.image = success;
+                        manager.ResolveDependency(taskId);
+                    },
+                    (err) =>
+                    {
+                        manager.ResolveDependency(taskId);
+                    }
+                );
+            }
+            manager.Enable(true);
         }
 
         private void SubscribeToEvent<T>(EventSub.IEventSubscriptionRequest payload, Action<string> onSuccess, Action<HttpUtils.HttpError> onError, Action<T> onEvent) where T : EventSub.IEventSubEvent
         {
             string eventType = payload.GetSubscriptionType();
             StartCoroutine(
-                HttpUtils.PostRequest(EVENTSUB_SUBSCRIPTION_ENDPOINT, JsonUtility.ToJson(payload), GetHeaders(),
+                HttpUtils.PostRequest(EVENTSUB_SUBSCRIPTION_ENDPOINT, JsonUtility.ToJson(payload), Headers,
                     (success) =>
                     {
                         EventSub.SubscriptionResponse response = JsonUtility.FromJson<EventSub.SubscriptionResponse>(success);

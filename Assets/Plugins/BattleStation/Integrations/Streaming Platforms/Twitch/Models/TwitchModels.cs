@@ -90,4 +90,35 @@ namespace Skeletom.BattleStation.Integrations.Twitch
     }
 
     #endregion
+
+    #region Badges API
+
+    [Serializable]
+    public class BadgeSetDataResponse : DataResponse<BadgeSetData>
+    {
+
+    }
+
+    [Serializable]
+    public class BadgeSetData
+    {
+        public string set_id;
+        public BadgeVersionData[] versions;
+
+    }
+
+    [Serializable]
+    public class BadgeVersionData
+    {
+        public string id;
+        public string image_url_1x;
+        public string image_url_2x;
+        public string image_url_4x;
+        public string title;
+        public string description;
+        public string click_action;
+        public string click_url;
+    }
+
+    #endregion
 }

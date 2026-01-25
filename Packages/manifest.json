@@ -1,7 +1,5 @@
 {
   "dependencies": {
-    "com.coffee.ui-effect": "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
-    "com.nobi.roundedcorners": "https://github.com/kirevdokimov/Unity-UI-Rounded-Corners.git",
     "com.unity.collab-proxy": "2.7.1",
     "com.unity.feature.2d": "2.0.1",
     "com.unity.ide.rider": "3.0.36",

@@ -1,21 +1,5 @@
 {
   "dependencies": {
-    "com.coffee.ui-effect": {
-      "version": "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.ugui": "1.0.0"
-      },
-      "hash": "4e30651290ab5c914237f2af4e3bdbef661feb93"
-    },
-    "com.nobi.roundedcorners": {
-      "version": "https://github.com/kirevdokimov/Unity-UI-Rounded-Corners.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "33135342e868201eb0d4cef821ecab90caca373e"
-    },
     "com.unity.2d.animation": {
       "version": "9.1.0",
       "depth": 1,
