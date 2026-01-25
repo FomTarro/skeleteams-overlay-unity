@@ -94,12 +94,6 @@ namespace Skeletom.BattleStation.Integrations.Twitch
     #region Badges API
 
     [Serializable]
-    public class BadgeSetDataResponse : DataResponse<BadgeSetData>
-    {
-
-    }
-
-    [Serializable]
     public class BadgeSetData
     {
         public string set_id;

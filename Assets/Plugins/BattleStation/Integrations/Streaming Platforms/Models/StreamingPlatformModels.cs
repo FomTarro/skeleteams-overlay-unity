@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Skeletom.BattleStation.Graphics.Animations;
+using Skeletom.Essentials.Utils;
 using UnityEngine;
 
 namespace Skeletom.BattleStation.Integrations
@@ -8,7 +9,22 @@ namespace Skeletom.BattleStation.Integrations
     [Serializable]
     public class StreamingPlatformError
     {
+        [Serializable]
+        public enum ErrorCode { RemoteError, ApplicationError }
+        public ErrorCode errorCode;
         public string message;
+
+        public StreamingPlatformError(ErrorCode errorCode, string message)
+        {
+            this.errorCode = errorCode;
+            this.message = message;
+        }
+
+        public StreamingPlatformError(HttpUtils.HttpError error)
+        {
+            errorCode = ErrorCode.RemoteError;
+            message = error.message;
+        }
     }
 
     /// <summary>

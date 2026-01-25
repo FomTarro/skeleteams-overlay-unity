@@ -14,15 +14,15 @@ namespace Skeletom.BattleStation.Integrations
         private struct ContextCallback
         {
             public Action<StreamingPlatformImage> onSuccess;
-            public Action<HttpUtils.HttpError> onError;
-            public ContextCallback(Action<StreamingPlatformImage> onSuccess, Action<HttpUtils.HttpError> onError)
+            public Action<StreamingPlatformError> onError;
+            public ContextCallback(Action<StreamingPlatformImage> onSuccess, Action<StreamingPlatformError> onError)
             {
                 this.onSuccess = onSuccess;
                 this.onError = onError;
             }
         }
 
-        private void ResolveContext(string key, StreamingPlatformImage img, HttpUtils.HttpError err)
+        private void ResolveContext(string key, StreamingPlatformImage img, StreamingPlatformError err)
         {
             if (PENDING_CONTEXTS.ContainsKey(key))
             {
@@ -38,7 +38,7 @@ namespace Skeletom.BattleStation.Integrations
                             }
                             catch (Exception e)
                             {
-                                pair.onError(new HttpUtils.HttpError(500, e.Message));
+                                pair.onError(new StreamingPlatformError(StreamingPlatformError.ErrorCode.ApplicationError, e.Message));
                             }
                         }
                         else
@@ -103,7 +103,7 @@ namespace Skeletom.BattleStation.Integrations
         /// <param name="key">The key name to store the image as.</param>
         /// <param name="onSuccess">Callback function that receives the image if successful.</param>
         /// <param name="onError">Callback function to handle errors of any kind.</param>
-        public void GetImageFromRemote(string url, HttpUtils.HttpHeaders headers, string key, Action<StreamingPlatformImage> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetImageFromRemote(string url, HttpUtils.HttpHeaders headers, string key, Action<StreamingPlatformImage> onSuccess, Action<StreamingPlatformError> onError)
         {
             // If the emote is already cached, return it immediately.
             if (IMAGE_CACHE.ContainsKey(key))
@@ -145,14 +145,17 @@ namespace Skeletom.BattleStation.Integrations
                                 }
                                 else
                                 {
-                                    ResolveContext(key, null, new HttpUtils.HttpError(500, $"Unable to convert emote to Texture2D for {key}"));
+                                    ResolveContext(key, null, new StreamingPlatformError(
+                                        StreamingPlatformError.ErrorCode.ApplicationError,
+                                     $"Unable to convert image to Texture2D for {key}")
+                                    );
                                 }
                             }
                         },
                         (err) =>
                         {
-                            Debug.LogError($"Error while resolving emote: {key} - {err}");
-                            ResolveContext(key, null, err);
+                            Debug.LogError($"Error while resolving image: {key} - {err}");
+                            ResolveContext(key, null, new StreamingPlatformError(err));
                         }
                     )
                 );

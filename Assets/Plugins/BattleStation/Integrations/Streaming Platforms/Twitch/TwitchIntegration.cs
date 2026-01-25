@@ -165,7 +165,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             );
         }
 
-        public void GetUserInfo(ICollection<string> users, Action<List<UserData>> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetUserInfo(ICollection<string> users, Action<List<UserData>> onSuccess, Action<StreamingPlatformError> onError)
         {
             string query = users.Count > 0 ? string.Join('&', users.Select(user => "login=" + user)) : "";
             string url = $"{USERS_ENDPOINT}{query}";
@@ -177,13 +177,13 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     },
                     (err) =>
                     {
-                        onError(err);
+                        onError(new StreamingPlatformError(err));
                     }
                 )
             );
         }
 
-        public void GetSelfUserInfo(Action<UserData> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetSelfUserInfo(Action<UserData> onSuccess, Action<StreamingPlatformError> onError)
         {
             GetUserInfo(new string[0], (list) =>
             {
@@ -244,28 +244,28 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }
         }
 
-        public void GetGlobalEmotes(Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetGlobalEmotes(Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
         {
             Debug.Log("Fetching global emotes.");
             string url = EMOTES_GLOBAL_ENDPOINT;
             GetBatchEmotes(url, onSuccess, onError);
         }
 
-        public void GetChannelEmotes(string broadcasterId, Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetChannelEmotes(string broadcasterId, Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
         {
             Debug.Log($"Fetching channel emotes for Broadcaster ID: {broadcasterId}");
             string url = $"{EMOTES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
 
-        public void GetSetEmotes(string setId, Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetSetEmotes(string setId, Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
         {
             Debug.Log($"Fetching set emotes for set ID: {setId}");
             string url = $"{EMOTES_SET_ENDPOINT}?emote_set_id={setId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
 
-        private void GetBatchEmotes(string url, Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        private void GetBatchEmotes(string url, Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
         {
             StartCoroutine(
                 HttpUtils.GetRequest(url, Headers,
@@ -303,12 +303,15 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         }
                         manager.Enable(true);
                     },
-                    onError
+                    (err) =>
+                    {
+                        onError(new StreamingPlatformError(err));
+                    }
                 )
             );
         }
 
-        public void GetIndividualEmote(EmoteData data, Action<StreamingPlatformImage> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetIndividualEmote(EmoteData data, Action<StreamingPlatformImage> onSuccess, Action<StreamingPlatformError> onError)
         {
             string key = data.name;
             string format = data.format[^1];
@@ -321,26 +324,26 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             ImageHandler.GetImageFromRemote(url, Headers, key, onSuccess, onError);
         }
 
-        public void GetGlobalBadges(Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetGlobalBadges(Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
         {
             Debug.Log("Fetching global badges.");
             GetBatchBadges(BADGES_GLOBAL_ENDPOINT, onSuccess, onError);
         }
 
-        public void GetChannelBadges(string broadcasterId, Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        public void GetChannelBadges(string broadcasterId, Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
         {
             Debug.Log($"Fetching channel badges for Broadcaster ID: {broadcasterId}");
             string url = $"{BADGES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
             GetBatchBadges(url, onSuccess, onError);
         }
 
-        private void GetBatchBadges(string url, Action<List<StreamingPlatformImage>> onSuccess, Action<HttpUtils.HttpError> onError)
+        private void GetBatchBadges(string url, Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
         {
             StartCoroutine(
                HttpUtils.GetRequest(url, Headers,
                (str) =>
                {
-                   BadgeSetDataResponse response = JsonUtility.FromJson<BadgeSetDataResponse>(str);
+                   DataResponse<BadgeSetData> response = JsonUtility.FromJson<DataResponse<BadgeSetData>>(str);
                    List<StreamingPlatformImage> badges = new List<StreamingPlatformImage>();
                    DependencyManager manager = new(
                        () =>
@@ -374,7 +377,10 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                    }
                    manager.Enable(true);
                },
-               onError)
+               (err) =>
+               {
+                   onError(new StreamingPlatformError(err));
+               })
             );
         }
 
@@ -433,7 +439,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             manager.Enable(true);
         }
 
-        private void SubscribeToEvent<T>(EventSub.IEventSubscriptionRequest payload, Action<string> onSuccess, Action<HttpUtils.HttpError> onError, Action<T> onEvent) where T : EventSub.IEventSubEvent
+        private void SubscribeToEvent<T>(EventSub.IEventSubscriptionRequest payload, Action<string> onSuccess, Action<StreamingPlatformError> onError, Action<T> onEvent) where T : EventSub.IEventSubEvent
         {
             string eventType = payload.GetSubscriptionType();
             StartCoroutine(
@@ -453,7 +459,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     (err) =>
                     {
                         Debug.LogError($"Error subscribing to {eventType} - {err}");
-                        onError(err);
+                        onError(new StreamingPlatformError(err));
                     }
                 )
             );
