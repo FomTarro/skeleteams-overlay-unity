@@ -5,6 +5,7 @@ using System.Linq;
 using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.IO;
 using Skeletom.Essentials.Utils;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Skeletom.BattleStation.Integrations.Twitch
@@ -101,6 +102,70 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             } while (data != null);
         }
 
+        private void ProcessEventSubEvent(string msg)
+        {
+            try
+            {
+                EventSub.EventMessage<EventSub.EventPayload<string>> message = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<string>>>(msg);
+                if ("session_welcome".Equals(message.metadata.message_type))
+                {
+                    EventSub.EventMessage<EventSub.WelcomePayload> session = JsonUtility.FromJson<EventSub.EventMessage<EventSub.WelcomePayload>>(msg);
+                    string sessionId = session.payload.session.id;
+                    _subscriptions.Clear();
+                    // Kick off all HTTP subscriptions
+                    SubscribeToEvent<EventSub.ChatMessageEvent>(
+                        new EventSub.ChatMessageSubscriptionRequest(sessionId)
+                        {
+                            condition = new EventSub.ChatMessageEventCondition()
+                            {
+                                broadcaster_user_id = BROADCASTER_ID,
+                                user_id = BROADCASTER_ID
+                            }
+                        },
+                        (success) =>
+                        {
+                            GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
+                            GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
+                            GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
+                            GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
+                            SubscribeToEvent<EventSub.ChannelPointRedeemEvent>(
+                                new EventSub.ChannelPointRedeemSubscriptionRequest(sessionId)
+                                {
+                                    condition = new EventSub.ChannelPointRedeemEventCondition()
+                                    {
+                                        broadcaster_user_id = BROADCASTER_ID,
+                                    }
+                                },
+                                (success) => { },
+                                (err) => { },
+                                (message) =>
+                                {
+                                    PrepareChannelRedeem(message, onChatRedeem.Invoke);
+                                }
+                            );
+                        },
+                        (err) => { },
+                        (message) =>
+                        {
+                            PrepareChatMessage(message, onChatMessage.Invoke);
+                        }
+                    );
+                }
+                else if ("notification".Equals(message.metadata.message_type))
+                {
+                    Debug.Log(msg);
+                    if (_subscriptions.ContainsKey(message.payload.subscription.id))
+                    {
+                        _subscriptions[message.payload.subscription.id](msg);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+        }
+
 
         public void RequestToken()
         {
@@ -165,7 +230,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             );
         }
 
-        public void GetUserInfo(ICollection<string> users, Action<List<UserData>> onSuccess, Action<StreamingPlatformError> onError)
+        public void GetUserInfo(ICollection<string> users, Action<List<UserData>> onSuccess, Action<StreamError> onError)
         {
             string query = users.Count > 0 ? string.Join('&', users.Select(user => "login=" + user)) : "";
             string url = $"{USERS_ENDPOINT}{query}";
@@ -173,17 +238,33 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 HttpUtils.GetRequest(url, Headers,
                     (str) =>
                     {
-                        onSuccess(JsonUtility.FromJson<DataResponse<UserData>>(str).data);
+                        var users = JsonUtility.FromJson<DataResponse<UserData>>(str).data;
+                        foreach (UserData user in users)
+                        {
+                            ImageHandler.GetFromRemote(
+                                user.profile_image_url, Headers,
+                                $"avatar_{user.login}", (success) =>
+                                {
+                                    // TODO: how to get user avatars intelligently when we often only have the login id
+                                    // Can we cache user data, then fetch from the stored URL as needed?
+                                },
+                                (err) =>
+                                {
+
+                                }
+                            );
+                        }
+                        onSuccess(users);
                     },
                     (err) =>
                     {
-                        onError(new StreamingPlatformError(err));
+                        onError(new StreamError(err));
                     }
                 )
             );
         }
 
-        public void GetSelfUserInfo(Action<UserData> onSuccess, Action<StreamingPlatformError> onError)
+        public void GetSelfUserInfo(Action<UserData> onSuccess, Action<StreamError> onError)
         {
             GetUserInfo(new string[0], (list) =>
             {
@@ -191,88 +272,35 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }, onError);
         }
 
-        private void ProcessEventSubEvent(string msg)
-        {
-            try
-            {
-                EventSub.EventMessage<EventSub.EventPayload<string>> message = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<string>>>(msg);
-                if ("session_welcome".Equals(message.metadata.message_type))
-                {
-                    EventSub.EventMessage<EventSub.WelcomePayload> session = JsonUtility.FromJson<EventSub.EventMessage<EventSub.WelcomePayload>>(msg);
-                    string sessionId = session.payload.session.id;
-                    _subscriptions.Clear();
-                    // Kick off all HTTP subscriptions
-                    SubscribeToEvent<EventSub.ChatMessageEvent>(
-                        new EventSub.ChatMessageSubscriptionRequest(sessionId)
-                        {
-                            condition = new EventSub.ChatMessageEventCondition()
-                            {
-                                broadcaster_user_id = BROADCASTER_ID,
-                                user_id = BROADCASTER_ID
-                            }
-                        },
-                        (success) =>
-                        {
-                            GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
-                            GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
-                            GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
-                            GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
-                        },
-                        (err) =>
-                        {
-
-                        },
-                        (message) =>
-                        {
-                            PrepareChatMessage(message, onChatMessage.Invoke);
-                        }
-                    );
-
-                }
-                else if ("notification".Equals(message.metadata.message_type))
-                {
-                    Debug.Log(msg);
-                    if (_subscriptions.ContainsKey(message.payload.subscription.id))
-                    {
-                        _subscriptions[message.payload.subscription.id](msg);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e);
-            }
-        }
-
-        public void GetGlobalEmotes(Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
+        public void GetGlobalEmotes(Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log("Fetching global emotes.");
             string url = EMOTES_GLOBAL_ENDPOINT;
             GetBatchEmotes(url, onSuccess, onError);
         }
 
-        public void GetChannelEmotes(string broadcasterId, Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
+        public void GetChannelEmotes(string broadcasterId, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log($"Fetching channel emotes for Broadcaster ID: {broadcasterId}");
             string url = $"{EMOTES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
 
-        public void GetSetEmotes(string setId, Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
+        public void GetSetEmotes(string setId, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log($"Fetching set emotes for set ID: {setId}");
             string url = $"{EMOTES_SET_ENDPOINT}?emote_set_id={setId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
 
-        private void GetBatchEmotes(string url, Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
+        private void GetBatchEmotes(string url, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             StartCoroutine(
                 HttpUtils.GetRequest(url, Headers,
                     (str) =>
                     {
                         EmoteDataResponse response = JsonUtility.FromJson<EmoteDataResponse>(str);
-                        List<StreamingPlatformImage> emotes = new List<StreamingPlatformImage>();
+                        List<StreamImage> emotes = new List<StreamImage>();
                         DependencyManager manager = new(
                             () =>
                             {
@@ -305,13 +333,13 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     },
                     (err) =>
                     {
-                        onError(new StreamingPlatformError(err));
+                        onError(new StreamError(err));
                     }
                 )
             );
         }
 
-        public void GetIndividualEmote(EmoteData data, Action<StreamingPlatformImage> onSuccess, Action<StreamingPlatformError> onError)
+        public void GetIndividualEmote(EmoteData data, Action<StreamImage> onSuccess, Action<StreamError> onError)
         {
             string key = data.name;
             string format = data.format[^1];
@@ -321,30 +349,30 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             .Replace("{{format}}", format)
             .Replace("{{theme_mode}}", "light")
             .Replace("{{scale}}", scale);
-            ImageHandler.GetImageFromRemote(url, Headers, key, onSuccess, onError);
+            ImageHandler.GetFromRemote(url, Headers, key, onSuccess, onError);
         }
 
-        public void GetGlobalBadges(Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
+        public void GetGlobalBadges(Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log("Fetching global badges.");
             GetBatchBadges(BADGES_GLOBAL_ENDPOINT, onSuccess, onError);
         }
 
-        public void GetChannelBadges(string broadcasterId, Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
+        public void GetChannelBadges(string broadcasterId, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log($"Fetching channel badges for Broadcaster ID: {broadcasterId}");
             string url = $"{BADGES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
             GetBatchBadges(url, onSuccess, onError);
         }
 
-        private void GetBatchBadges(string url, Action<List<StreamingPlatformImage>> onSuccess, Action<StreamingPlatformError> onError)
+        private void GetBatchBadges(string url, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             StartCoroutine(
                HttpUtils.GetRequest(url, Headers,
                (str) =>
                {
                    DataResponse<BadgeSetData> response = JsonUtility.FromJson<DataResponse<BadgeSetData>>(str);
-                   List<StreamingPlatformImage> badges = new List<StreamingPlatformImage>();
+                   List<StreamImage> badges = new List<StreamImage>();
                    DependencyManager manager = new(
                        () =>
                        {
@@ -362,7 +390,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                        {
                            string taskId = Guid.NewGuid().ToString();
                            manager.AddDependency(taskId);
-                           ImageHandler.GetImageFromRemote(version.image_url_1x, Headers, $"badge_{data.set_id}_{version.id}",
+                           ImageHandler.GetFromRemote(version.image_url_1x, Headers,
+                           $"badge_{data.set_id}_{version.id}",
                            (success) =>
                            {
                                badges.Add(success);
@@ -379,26 +408,27 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                },
                (err) =>
                {
-                   onError(new StreamingPlatformError(err));
+                   onError(new StreamError(err));
                })
             );
         }
 
-        private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent, Action<StreamingPlatformChatMessage> onMessageReady)
+        private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent, Action<StreamChatMessage> onMessageReady)
         {
-            StreamingPlatformChatUser chatter = new StreamingPlatformChatUser(chatEvent.chatter_user_name, chatEvent.color, chatEvent.chatter_user_id);
-            List<StreamingPlatformChatMessage.Fragment> fragments = new List<StreamingPlatformChatMessage.Fragment>();
+            StreamChatUser chatter = new StreamChatUser(chatEvent.chatter_user_name, chatEvent.chatter_user_id, chatEvent.color);
+            List<StreamChatMessage.Fragment> fragments = new List<StreamChatMessage.Fragment>();
             // create a callback for all HTTP dependencies
             DependencyManager manager = new(
-                () => { onMessageReady(new StreamingPlatformChatMessage(chatter, fragments)); }
+                () => { onMessageReady(new StreamChatMessage(chatEvent.message_id, chatter, fragments)); }
             );
+            // TODO: get user avatar? Seems like too much for every chat message.
             foreach (EventSub.ChatMessageFragment fragment in chatEvent.message.fragments)
             {
                 string taskId = Guid.NewGuid().ToString();
                 manager.AddDependency(taskId);
                 if ("emote".Equals(fragment.type))
                 {
-                    var newFragment = new StreamingPlatformChatMessage.Fragment(StreamingPlatformChatMessage.Fragment.Type.EMOTE, fragment.text);
+                    var newFragment = new StreamChatMessage.Fragment(StreamChatMessage.Fragment.Type.EMOTE, fragment.text);
                     fragments.Add(newFragment);
                     GetIndividualEmote(new EmoteData(fragment.text, fragment.emote),
                     (success) =>
@@ -413,18 +443,19 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 }
                 else
                 {
-                    var newFragment = new StreamingPlatformChatMessage.Fragment(StreamingPlatformChatMessage.Fragment.Type.TEXT, fragment.text);
+                    var newFragment = new StreamChatMessage.Fragment(StreamChatMessage.Fragment.Type.TEXT, fragment.text);
                     fragments.Add(newFragment);
                     manager.ResolveDependency(taskId);
                 }
             }
             foreach (EventSub.ChatMessageBadge badge in chatEvent.badges)
             {
-                StreamingPlatformBadge newBadge = new StreamingPlatformBadge(badge.info, badge.id);
-                chatter.badges.Add(newBadge);
                 string taskId = Guid.NewGuid().ToString();
                 manager.AddDependency(taskId);
-                ImageHandler.GetImageFromCache($"badge_{badge.set_id}_{badge.id}",
+                StreamBadge newBadge = new StreamBadge(badge.info, badge.id);
+                chatter.badges.Add(newBadge);
+                ImageHandler.GetFromCache(
+                    $"badge_{badge.set_id}_{badge.id}",
                     (success) =>
                     {
                         newBadge.image = success;
@@ -439,7 +470,19 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             manager.Enable(true);
         }
 
-        private void SubscribeToEvent<T>(EventSub.IEventSubscriptionRequest payload, Action<string> onSuccess, Action<StreamingPlatformError> onError, Action<T> onEvent) where T : EventSub.IEventSubEvent
+        private void PrepareChannelRedeem(EventSub.ChannelPointRedeemEvent redeemEvent, Action<StreamChatRedeem> onRedeemReady)
+        {
+            StreamChatUser chatter = new StreamChatUser(redeemEvent.user_name, redeemEvent.user_id);
+            DependencyManager manager = new(
+                () => { onRedeemReady(new StreamChatRedeem(chatter, redeemEvent.reward.title, redeemEvent.reward.id, redeemEvent.reward.cost)); }
+            );
+            // TODO: we're going to need to collect info at some point, just setting this up for later
+            string taskId = Guid.NewGuid().ToString();
+            manager.AddDependency(taskId);
+            manager.Enable(true);
+        }
+
+        private void SubscribeToEvent<T>(EventSub.IEventSubscriptionRequest payload, Action<string> onSuccess, Action<StreamError> onError, Action<T> onEvent) where T : EventSub.IEventSubEvent
         {
             string eventType = payload.GetSubscriptionType();
             StartCoroutine(
@@ -459,7 +502,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     (err) =>
                     {
                         Debug.LogError($"Error subscribing to {eventType} - {err}");
-                        onError(new StreamingPlatformError(err));
+                        onError(new StreamError(err));
                     }
                 )
             );

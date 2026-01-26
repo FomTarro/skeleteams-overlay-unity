@@ -11,14 +11,14 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
     }
 
     [Serializable]
-    public class EventSubSubscriptionRequest<T> : IEventSubscriptionRequest where T : ICondition
+    public class EventSubscriptionRequest<T> : IEventSubscriptionRequest where T : ICondition
     {
         public string type;
         public string version = "1";
         public T condition;
         public Transport transport;
 
-        public EventSubSubscriptionRequest(string sessionId)
+        public EventSubscriptionRequest(string sessionId)
         {
             transport = new Transport()
             {
@@ -106,7 +106,13 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
         public string type;
     }
 
-    public interface IEventSubEvent { }
+    public interface IEventSubEvent
+    {
+        public string ToString()
+        {
+            return JsonUtility.ToJson(this);
+        }
+    }
 
     #endregion
 
@@ -133,7 +139,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
     #region Chat Message Event
 
     [Serializable]
-    public class ChatMessageSubscriptionRequest : EventSubSubscriptionRequest<ChatMessageEventCondition>
+    public class ChatMessageSubscriptionRequest : EventSubscriptionRequest<ChatMessageEventCondition>
     {
         public ChatMessageSubscriptionRequest(string sessionId) : base(sessionId)
         {
@@ -196,6 +202,149 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
         public string message_id;
         public ChatMessage message;
         public string color;
+    }
+
+    #endregion
+
+    #region Chat Message Delete Event
+
+    [Serializable]
+    public class ChatMessageDeletionSubscriptionRequest : EventSubscriptionRequest<ChatMessageDeletionEventCondition>
+    {
+        public ChatMessageDeletionSubscriptionRequest(string sessionId) : base(sessionId)
+        {
+            type = "channel.chat.message";
+        }
+    }
+
+    [Serializable]
+    public class ChatMessageDeletionEventCondition : ICondition
+    {
+        public string broadcaster_user_id;
+        public string user_id;
+    }
+
+    [Serializable]
+    public class ChatMessageDeletionEvent : IEventSubEvent
+    {
+        public string broadcaster_user_id;
+        public string broadcaster_user_login;
+        public string broadcaster_user_name;
+        public string target_user_id;
+        public string target_user_login;
+        public string target_user_name;
+        public string message_id;
+    }
+
+    #endregion
+
+    #region Channel Point Redeem Event 
+
+    [Serializable]
+    public class ChannelPointRedeemSubscriptionRequest : EventSubscriptionRequest<ChannelPointRedeemEventCondition>
+    {
+        public ChannelPointRedeemSubscriptionRequest(string sessionId) : base(sessionId)
+        {
+            type = "channel.channel_points_custom_reward_redemption.add";
+        }
+    }
+
+    [Serializable]
+    public class ChannelPointRedeemEventCondition : ICondition
+    {
+        public string broadcaster_user_id;
+        public string reward_id;
+    }
+
+    [Serializable]
+    public class ChannelPointRedeemReward
+    {
+        public string id;
+        public string title;
+        public int cost;
+        public string prompt;
+    }
+
+    [Serializable]
+    public class ChannelPointRedeemEvent : IEventSubEvent
+    {
+        public string id;
+        public string broadcaster_user_id;
+        public string broadcaster_user_login;
+        public string broadcaster_user_name;
+        public string user_id;
+        public string user_login;
+        public string user_name;
+        public string user_input;
+        public string status;
+        public ChannelPointRedeemReward reward;
+        public string redeemed_at;
+    }
+
+    #endregion
+
+    #region Channel Update Event
+
+    [Serializable]
+    public class ChannelUpdateSubscriptionRequest : EventSubscriptionRequest<ChannelUpdateEventCondition>
+    {
+        public ChannelUpdateSubscriptionRequest(string sessionId) : base(sessionId)
+        {
+            type = "channel.update";
+            version = "2";
+        }
+    }
+
+    [Serializable]
+    public class ChannelUpdateEventCondition : ICondition
+    {
+        public string broadcaster_user_id;
+    }
+
+    [Serializable]
+    public class ChannelUpdateEvent : IEventSubEvent
+    {
+        public string broadcaster_id;
+        public string broadcaster_user_login;
+        public string broadcaster_user_name;
+        public string title;
+        public string language;
+        public string category_id;
+        public string category_name;
+        public string[] content_classification_labels;
+    }
+
+    #endregion
+
+    #region Channel Follow Event
+
+    [Serializable]
+    public class ChannelFollowSubscriptionRequest : EventSubscriptionRequest<ChannelFollowEventCondition>
+    {
+        public ChannelFollowSubscriptionRequest(string sessionId) : base(sessionId)
+        {
+            type = "channel.update";
+            version = "2";
+        }
+    }
+
+    [Serializable]
+    public class ChannelFollowEventCondition : ICondition
+    {
+        public string broadcaster_user_id;
+        public string moderator_user_id;
+    }
+
+    [SerializeField]
+    public class ChannelFollowEvent : IEventSubEvent
+    {
+        public string user_id;
+        public string user_login;
+        public string user_name;
+        public string broadcaster_user_id;
+        public string broadcaster_user_login;
+        public string broadcaster_user_name;
+        public string followed_at;
     }
 
     #endregion

@@ -21,9 +21,9 @@ public class ChatMessageDisplay : MonoBehaviour
     private readonly Dictionary<string, AnimatedTextureDisplay> _emotes = new Dictionary<string, AnimatedTextureDisplay>();
 
     [SerializeField]
-    private StreamingPlatformChatMessage message;
+    private StreamChatMessage message;
 
-    public void Display(StreamingPlatformChatMessage message)
+    public void Display(StreamChatMessage message)
     {
         if (message.chatter.badges.Count > 0)
         {
@@ -38,9 +38,9 @@ public class ChatMessageDisplay : MonoBehaviour
             Destroy(_emotes[emote].gameObject);
         }
         _emotes.Clear();
-        foreach (StreamingPlatformChatMessage.Fragment fragment in message.fragments)
+        foreach (StreamChatMessage.Fragment fragment in message.fragments)
         {
-            if (fragment.type == StreamingPlatformChatMessage.Fragment.Type.EMOTE)
+            if (fragment.type == StreamChatMessage.Fragment.Type.EMOTE)
             {
                 string id = Guid.NewGuid().ToString();
                 // Sprite 0 is just a blank square, the link tags allow us to ID the sprite,

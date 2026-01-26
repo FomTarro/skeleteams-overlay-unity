@@ -103,7 +103,7 @@ namespace Skeletom.Essentials.Utils
         private static IEnumerator MakeWebRequest(UnityWebRequest req, HttpHeaders headers, Action<UnityWebRequest> onSuccess, Action<HttpError> onError)
         {
             // Context system allows for intelligent pooling of requests and sharing of results
-            string contextKey = $"{req.method}-${headers}-${req.url}";
+            string contextKey = $"{req.method}-{headers}-{req.url}-{req.uploadHandler?.data.GetHashCode()}";
             if (CONTEXTS.ContainsKey(contextKey))
             {
                 CONTEXTS[contextKey].Enqueue(new PendingWebRequest(onSuccess, onError));

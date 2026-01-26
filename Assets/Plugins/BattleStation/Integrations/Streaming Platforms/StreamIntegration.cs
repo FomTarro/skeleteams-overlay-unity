@@ -1,22 +1,24 @@
 using System;
-using System.Collections.Generic;
-using Skeletom.BattleStation.Graphics.Animations;
 using Skeletom.Essentials.IO;
-using Skeletom.Essentials.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace Skeletom.BattleStation.Integrations
 {
-    [RequireComponent(typeof(StreamIntegrationImageHandler))]
+    [RequireComponent(typeof(StreamImageHandler))]
     public abstract class StreamIntegration<T, K> : Integration<T, K> where T : StreamIntegration<T, K> where K : BaseSaveData
     {
         [SerializeField]
-        private StreamIntegrationImageHandler _imageHandler;
-        public StreamIntegrationImageHandler ImageHandler => _imageHandler ??= GetComponent<StreamIntegrationImageHandler>() ?? gameObject.AddComponent<StreamIntegrationImageHandler>();
+        private StreamImageHandler _imageHandler;
+        public StreamImageHandler ImageHandler => _imageHandler ??= GetComponent<StreamImageHandler>() ?? gameObject.AddComponent<StreamImageHandler>();
 
         [Serializable]
-        public class ChatMessageEvent : UnityEvent<StreamingPlatformChatMessage> { }
+        public class ChatMessageEvent : UnityEvent<StreamChatMessage> { }
         public ChatMessageEvent onChatMessage = new ChatMessageEvent();
+        public ChatMessageEvent onChatMessageDeleted = new ChatMessageEvent();
+
+        [Serializable]
+        public class ChatRedeemEvent : UnityEvent<StreamChatRedeem> { }
+        public ChatRedeemEvent onChatRedeem = new ChatRedeemEvent();
     }
 }

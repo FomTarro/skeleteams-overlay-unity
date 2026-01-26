@@ -1,59 +1,62 @@
 using System;
 using System.Collections.Generic;
 
-public struct DependencyManager
+namespace Skeletom.BattleStation.Integrations
 {
-    private readonly ISet<string> pendingTasks;
-    private readonly Queue<string> taskQueue;
-    private readonly Action onAllComplete;
-    private readonly Action<string, int> onOneComplete;
-    private bool allowChecks;
-    public DependencyManager(Action onAllComplete, Action<string, int> onOneComplete = null)
+    public class DependencyManager
     {
-        pendingTasks = new HashSet<string>();
-        taskQueue = new Queue<string>();
-        this.onAllComplete = onAllComplete;
-        this.onOneComplete = onOneComplete;
-        allowChecks = false;
-    }
-
-    public readonly void AddDependency(string key)
-    {
-        pendingTasks.Add(key);
-    }
-
-    public readonly void ResolveDependency(string key)
-    {
-        if (!allowChecks)
+        private readonly ISet<string> pendingTasks;
+        private readonly Queue<string> taskQueue;
+        private readonly Action onAllComplete;
+        private readonly Action<string, int> onOneComplete;
+        private bool allowChecks;
+        public DependencyManager(Action onAllComplete, Action<string, int> onOneComplete = null)
         {
-            taskQueue.Enqueue(key);
+            pendingTasks = new HashSet<string>();
+            taskQueue = new Queue<string>();
+            this.onAllComplete = onAllComplete;
+            this.onOneComplete = onOneComplete;
+            allowChecks = false;
         }
-        else
+
+        public void AddDependency(string key)
         {
-            if (pendingTasks.Contains(key))
+            pendingTasks.Add(key);
+        }
+
+        public void ResolveDependency(string key)
+        {
+            if (!allowChecks)
             {
-                pendingTasks.Remove(key);
-                onOneComplete?.Invoke(key, pendingTasks.Count);
-                if (pendingTasks.Count <= 0)
+                taskQueue.Enqueue(key);
+            }
+            else
+            {
+                if (pendingTasks.Contains(key))
                 {
-                    onAllComplete?.Invoke();
+                    pendingTasks.Remove(key);
+                    onOneComplete?.Invoke(key, pendingTasks.Count);
+                    if (pendingTasks.Count <= 0)
+                    {
+                        onAllComplete?.Invoke();
+                    }
                 }
             }
         }
-    }
 
-    public void Enable(bool toggle)
-    {
-        allowChecks = toggle;
-        if (allowChecks && taskQueue.Count > 0)
+        public void Enable(bool toggle)
         {
-            do
+            allowChecks = toggle;
+            if (allowChecks && taskQueue.Count > 0)
             {
-                if (taskQueue.TryDequeue(out string key))
+                do
                 {
-                    ResolveDependency(key);
-                }
-            } while (taskQueue.Count > 0);
+                    if (taskQueue.TryDequeue(out string key))
+                    {
+                        ResolveDependency(key);
+                    }
+                } while (taskQueue.Count > 0);
+            }
         }
     }
 }

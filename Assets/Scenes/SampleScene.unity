@@ -1619,6 +1619,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  onChatRedeem:
+    m_PersistentCalls:
+      m_Calls: []
   _webServer: {fileID: 835040116}
   _tokenRedirectPage: {fileID: 4900000, guid: 8c572cfe1f55d8b4f80f1c64e50ae70e, type: 3}
 --- !u!4 &687667458
@@ -1648,6 +1651,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7b7368e1ce3c8d45968410de8dc63cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _maximumCachedItems: -1
 --- !u!1001 &699140955
 PrefabInstance:
   m_ObjectHideFlags: 0
