@@ -127,6 +127,16 @@ namespace Skeletom.BattleStation.Integrations
     }
 
     [Serializable]
+    public class StreamChatMessageDeletion
+    {
+        public string id;
+        public StreamChatMessageDeletion(string id)
+        {
+            this.id = id;
+        }
+    }
+
+    [Serializable]
     public class StreamChatRedeem
     {
         public string name;

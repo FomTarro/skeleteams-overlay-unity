@@ -24,12 +24,13 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private const string EVENTSUB_SUBSCRIPTION_ENDPOINT = "https://api.twitch.tv/helix/eventsub/subscriptions";
 
         private const string EMOTES_SET_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes/set";
-        private string EMOTES_INDIVIDUAL_ENDPOINT = "";
+        private string EMOTES_INDIVIDUAL_ENDPOINT = "https://static-cdn.jtvnw.net/emoticons/v2/{id}/{static}/{light}/{scale}";
         private const string EMOTES_GLOBAL_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes/global";
         private const string EMOTES_CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes";
 
         private const string BADGES_GLOBAL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges/global";
         public const string BADGES_CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges";
+        public const string BADGES_INDIVIDUAL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges";
 
         private const string VALIDATE_ENDPOINT = "https://id.twitch.tv/oauth2/validate";
 
@@ -112,44 +113,59 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     EventSub.EventMessage<EventSub.WelcomePayload> session = JsonUtility.FromJson<EventSub.EventMessage<EventSub.WelcomePayload>>(msg);
                     string sessionId = session.payload.session.id;
                     _subscriptions.Clear();
-                    // Kick off all HTTP subscriptions
-                    SubscribeToEvent<EventSub.ChatMessageEvent>(
-                        new EventSub.ChatMessageSubscriptionRequest(sessionId)
+                    DependencyManager subscriptionsManager = new(
+                        () =>
                         {
-                            condition = new EventSub.ChatMessageEventCondition()
-                            {
-                                broadcaster_user_id = BROADCASTER_ID,
-                                user_id = BROADCASTER_ID
-                            }
-                        },
-                        (success) =>
-                        {
+                            // Subscribing to events is time-sensitive (sessionId will be invalidated after 10s of inactivity),
+                            // So let's do our subscriptions before we do the heavy caching operation
                             GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
                             GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
                             GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
                             GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
-                            SubscribeToEvent<EventSub.ChannelPointRedeemEvent>(
-                                new EventSub.ChannelPointRedeemSubscriptionRequest(sessionId)
-                                {
-                                    condition = new EventSub.ChannelPointRedeemEventCondition()
-                                    {
-                                        broadcaster_user_id = BROADCASTER_ID,
-                                    }
-                                },
-                                (success) => { },
-                                (err) => { },
-                                (message) =>
-                                {
-                                    PrepareChannelRedeem(message, onChatRedeem.Invoke);
-                                }
-                            );
                         },
-                        (err) => { },
-                        (message) =>
+                        (key, pending) =>
                         {
-                            PrepareChatMessage(message, onChatMessage.Invoke);
+
                         }
                     );
+                    // Kick off all HTTP subscriptions
+                    string messageCreateId = Guid.NewGuid().ToString();
+                    subscriptionsManager.AddDependency(messageCreateId);
+                    SubscribeToChatMessageEvent(sessionId,
+                    (success) =>
+                    {
+                        subscriptionsManager.ResolveDependency(messageCreateId);
+                    },
+                    (err) =>
+                    {
+                        subscriptionsManager.ResolveDependency(messageCreateId);
+                    }, PrepareChatMessage);
+
+                    string messageDeleteId = Guid.NewGuid().ToString();
+                    subscriptionsManager.AddDependency(messageDeleteId);
+                    SubscribeToChatMessageDeletionEvent(sessionId,
+                    (success) =>
+                    {
+                        subscriptionsManager.ResolveDependency(messageDeleteId);
+                    },
+                    (err) =>
+                    {
+                        subscriptionsManager.ResolveDependency(messageDeleteId);
+                    }, PrepareChatMessageDeletion);
+
+                    string channelPointRedeemId = Guid.NewGuid().ToString();
+                    subscriptionsManager.AddDependency(channelPointRedeemId);
+                    SubscribeToChannelPointRedeemEvent(sessionId,
+                    (success) =>
+                    {
+                        subscriptionsManager.ResolveDependency(channelPointRedeemId);
+                    },
+                    (err) =>
+                    {
+                        subscriptionsManager.ResolveDependency(channelPointRedeemId);
+                    }, PrepareChannelRedeem);
+
+                    subscriptionsManager.Enable(true);
                 }
                 else if ("notification".Equals(message.metadata.message_type))
                 {
@@ -413,13 +429,70 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             );
         }
 
-        private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent, Action<StreamChatMessage> onMessageReady)
+        #region EventSub
+
+        private void SubscribeToEvent<T>(EventSub.IEventSubscriptionRequest payload, Action<string> onSuccess, Action<StreamError> onError, Action<T> onEvent) where T : EventSub.IEventSubEvent
+        {
+            string eventType = payload.GetSubscriptionType();
+            StartCoroutine(
+                HttpUtils.PostRequest(EVENTSUB_SUBSCRIPTION_ENDPOINT, JsonUtility.ToJson(payload), Headers,
+                    (success) =>
+                    {
+                        EventSub.SubscriptionResponse response = JsonUtility.FromJson<EventSub.SubscriptionResponse>(success);
+                        EventSub.SubscriptionData data = response.data[0];
+                        _subscriptions[data.id] = (msg) =>
+                        {
+                            EventSub.EventMessage<EventSub.EventPayload<T>> obj = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<T>>>(msg);
+                            onEvent(obj.payload.@event);
+                        };
+                        Debug.Log($"Subscribed to {eventType} - {data.id}");
+                        onSuccess(success);
+                    },
+                    (err) =>
+                    {
+                        Debug.LogError($"Error subscribing to {eventType} - {err}");
+                        onError(new StreamError(err));
+                    }
+                )
+            );
+        }
+
+        private void SubscribeToChatMessageEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChatMessageEvent> onEvent)
+        {
+            SubscribeToEvent(
+                new EventSub.ChatMessageSubscriptionRequest(sessionId)
+                {
+                    condition = new EventSub.ChatMessageEventCondition()
+                    {
+                        broadcaster_user_id = BROADCASTER_ID,
+                        user_id = BROADCASTER_ID
+                    }
+                },
+                onSuccess, onError, onEvent
+            );
+        }
+
+        private void SubscribeToChatMessageDeletionEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChatMessageDeletionEvent> onEvent)
+        {
+            SubscribeToEvent(
+                    new EventSub.ChatMessageDeletionSubscriptionRequest(sessionId)
+                    {
+                        condition = new EventSub.ChatMessageDeletionEventCondition()
+                        {
+                            broadcaster_user_id = BROADCASTER_ID,
+                        }
+                    },
+                    onSuccess, onError, onEvent
+                );
+        }
+
+        private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent)
         {
             StreamChatUser chatter = new StreamChatUser(chatEvent.chatter_user_name, chatEvent.chatter_user_id, chatEvent.color);
             List<StreamChatMessage.Fragment> fragments = new List<StreamChatMessage.Fragment>();
             // create a callback for all HTTP dependencies
             DependencyManager manager = new(
-                () => { onMessageReady(new StreamChatMessage(chatEvent.message_id, chatter, fragments)); }
+                () => { onChatMessage.Invoke(new StreamChatMessage(chatEvent.message_id, chatter, fragments)); }
             );
             // TODO: get user avatar? Seems like too much for every chat message.
             foreach (EventSub.ChatMessageFragment fragment in chatEvent.message.fragments)
@@ -470,11 +543,31 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             manager.Enable(true);
         }
 
-        private void PrepareChannelRedeem(EventSub.ChannelPointRedeemEvent redeemEvent, Action<StreamChatRedeem> onRedeemReady)
+        private void PrepareChatMessageDeletion(EventSub.ChatMessageDeletionEvent chatEvent)
+        {
+            StreamChatMessageDeletion deletion = new StreamChatMessageDeletion(chatEvent.message_id);
+            onChatMessageDeleted.Invoke(deletion);
+        }
+
+        private void SubscribeToChannelPointRedeemEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelPointRedeemEvent> onEvent)
+        {
+            SubscribeToEvent(
+                new EventSub.ChannelPointRedeemSubscriptionRequest(sessionId)
+                {
+                    condition = new EventSub.ChannelPointRedeemEventCondition()
+                    {
+                        broadcaster_user_id = BROADCASTER_ID,
+                    }
+                },
+                onSuccess, onError, onEvent
+            );
+        }
+
+        private void PrepareChannelRedeem(EventSub.ChannelPointRedeemEvent redeemEvent)
         {
             StreamChatUser chatter = new StreamChatUser(redeemEvent.user_name, redeemEvent.user_id);
             DependencyManager manager = new(
-                () => { onRedeemReady(new StreamChatRedeem(chatter, redeemEvent.reward.title, redeemEvent.reward.id, redeemEvent.reward.cost)); }
+                () => { onChatRedeem.Invoke(new StreamChatRedeem(chatter, redeemEvent.reward.title, redeemEvent.reward.id, redeemEvent.reward.cost)); }
             );
             // TODO: we're going to need to collect info at some point, just setting this up for later
             string taskId = Guid.NewGuid().ToString();
@@ -482,31 +575,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             manager.Enable(true);
         }
 
-        private void SubscribeToEvent<T>(EventSub.IEventSubscriptionRequest payload, Action<string> onSuccess, Action<StreamError> onError, Action<T> onEvent) where T : EventSub.IEventSubEvent
-        {
-            string eventType = payload.GetSubscriptionType();
-            StartCoroutine(
-                HttpUtils.PostRequest(EVENTSUB_SUBSCRIPTION_ENDPOINT, JsonUtility.ToJson(payload), Headers,
-                    (success) =>
-                    {
-                        EventSub.SubscriptionResponse response = JsonUtility.FromJson<EventSub.SubscriptionResponse>(success);
-                        EventSub.SubscriptionData data = response.data[0];
-                        _subscriptions[data.id] = (msg) =>
-                        {
-                            EventSub.EventMessage<EventSub.EventPayload<T>> obj = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<T>>>(msg);
-                            onEvent(obj.payload.@event);
-                        };
-                        Debug.Log($"Subscribed to {eventType} - {data.id}");
-                        onSuccess(success);
-                    },
-                    (err) =>
-                    {
-                        Debug.LogError($"Error subscribing to {eventType} - {err}");
-                        onError(new StreamError(err));
-                    }
-                )
-            );
-        }
+        #endregion
+
+        #region File IO
 
         public override void FromSaveData(IntegrationData data)
         {
@@ -536,5 +607,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         {
             public string token;
         }
+
+        #endregion
     }
 }

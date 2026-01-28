@@ -213,7 +213,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
     {
         public ChatMessageDeletionSubscriptionRequest(string sessionId) : base(sessionId)
         {
-            type = "channel.chat.message";
+            type = "channel.chat.message_delete";
         }
     }
 
