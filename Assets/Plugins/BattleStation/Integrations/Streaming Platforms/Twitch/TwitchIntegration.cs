@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Skeletom.BattleStation.Integrations.Twitch.EventSub;
 using Skeletom.BattleStation.Server;
+using Skeletom.Essentials.Collections;
 using Skeletom.Essentials.IO;
 using Skeletom.Essentials.Utils;
 using UnityEngine;
@@ -28,8 +29,10 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private const string EMOTES_CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes";
 
         private const string BADGES_GLOBAL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges/global";
-        public const string BADGES_CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges";
-        public const string BADGES_INDIVIDUAL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges";
+        private const string BADGES_CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges";
+        private const string BADGES_INDIVIDUAL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges";
+
+        private const string CHANNEL_INFO_ENDPOINT = "https://api.twitch.tv/helix/channels";
 
         private const string VALIDATE_ENDPOINT = "https://id.twitch.tv/oauth2/validate";
 
@@ -82,6 +85,12 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 SetToken(data.token);
                 return new EndpointResponse(200, "OK");
             }));
+            // Set up refresh endpoint
+            _webServer.RegisterEndpoint(new Endpoint("/twitch/reload", (req) =>
+            {
+                Initialize();
+                return new EndpointResponse(200, "Reload Requested");
+            }));
             FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
         }
 
@@ -102,62 +111,74 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             } while (data != null);
         }
 
+        // Rolling cache for preventing duplicate messages from being processed
+        private readonly LRUDictionary<string, EventSub.EventMessage<EventSub.EventPayload<string>>> RECENT_EVENTS = new(1000, (del) => {});
+
         private void ProcessEventSubEvent(string msg)
         {
             try
             {
                 EventSub.EventMessage<EventSub.EventPayload<string>> message = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<string>>>(msg);
-                if ("session_welcome".Equals(message.metadata.message_type))
+                Debug.Log(msg);
+                if(!RECENT_EVENTS.ContainsKey(message.metadata.message_id))
                 {
-                    EventSub.EventMessage<EventSub.WelcomePayload> session = JsonUtility.FromJson<EventSub.EventMessage<EventSub.WelcomePayload>>(msg);
-                    string sessionId = session.payload.session.id;
-                    _subscriptions.Clear();
-                    DependencyManager subscriptionsManager = new(
-                        () =>
-                        {
-                            Debug.Log("Caching emotes and badges...");
-                            // Subscribing to events is time-sensitive (sessionId will be invalidated after 10s of inactivity),
-                            // So let's do our subscriptions before we do the heavy caching operation
-                            GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
-                            GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
-                            GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
-                            GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
-                        },
-                        (key, pending) =>
-                        {
+                    RECENT_EVENTS.Add(message.metadata.message_id, message);
+                    if ("session_welcome".Equals(message.metadata.message_type))
+                    {
+                        EventSub.EventMessage<EventSub.WelcomePayload> session = JsonUtility.FromJson<EventSub.EventMessage<EventSub.WelcomePayload>>(msg);
+                        string sessionId = session.payload.session.id;
+                        _subscriptions.Clear();
+                        DependencyManager subscriptionsManager = new(
+                            () =>
+                            {
+                                Debug.Log("EventSub subscriptions complete, caching emotes and badges...");
+                                // Subscribing to events is time-sensitive (sessionId will be invalidated after 10s of inactivity),
+                                // So let's do our subscriptions before we do the heavy caching operation
+                                GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
+                                GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
+                                GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
+                                GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
+                            },
+                            (key, pending) =>
+                            {
 
+                            }
+                        );
+
+                        string AwaitSubscription<T>(Action<string, Action<string>, Action<StreamError>, Action<T>> action, Action<T> onEvent) where T : IEventSubEvent
+                        {
+                            string id = Guid.NewGuid().ToString();
+                            subscriptionsManager.AddDependency(id);
+                            action(sessionId,
+                            (success) =>
+                            {
+                                subscriptionsManager.ResolveDependency(id);
+                            },
+                            (err) =>
+                            {
+                                subscriptionsManager.ResolveDependency(id);
+                            }, onEvent);
+                            return id;
                         }
-                    );
-
-                    string AwaitSubscription<T>(Action<string, Action<string>, Action<StreamError>, Action<T>> action, Action<T> onEvent) where T : IEventSubEvent
-                    {
-                        string id = Guid.NewGuid().ToString();
-                        subscriptionsManager.AddDependency(id);
-                        action(sessionId,
-                        (success) =>
-                        {
-                            subscriptionsManager.ResolveDependency(id);
-                        },
-                        (err) =>
-                        {
-                            subscriptionsManager.ResolveDependency(id);
-                        }, onEvent);
-                        return id;
+                        // Kick off all HTTP subscriptions
+                        AwaitSubscription<EventSub.ChatMessageEvent>(SubscribeToChatMessageEvent, PrepareChatMessage);
+                        AwaitSubscription<EventSub.ChatMessageDeletionEvent>(SubscribeToChatMessageDeletionEvent, PrepareChatMessageDeletion);
+                        AwaitSubscription<EventSub.ChannelPointRedeemEvent>(SubscribeToChannelPointRedeemEvent, PrepareChannelRedeem);   
+                        AwaitSubscription<EventSub.ChannelFollowEvent>(SubscribeToChannelFollowEvent, PrepareChannelFollow);
+                        AwaitSubscription<EventSub.ChannelUpdateEvent>(SubscribeToChannelUpdateEvent, PrepareChannelUpdate);
+                        subscriptionsManager.Enable(true);
                     }
-                    // Kick off all HTTP subscriptions
-                    AwaitSubscription<EventSub.ChatMessageEvent>(SubscribeToChatMessageEvent, PrepareChatMessage);
-                    AwaitSubscription<EventSub.ChatMessageDeletionEvent>(SubscribeToChatMessageDeletionEvent, PrepareChatMessageDeletion);
-                    AwaitSubscription<EventSub.ChannelPointRedeemEvent>(SubscribeToChannelPointRedeemEvent, PrepareChannelRedeem);   
-                    AwaitSubscription<EventSub.ChannelFollowEvent>(SubscribeToChannelFollowEvent, PrepareChannelFollow);
-                    AwaitSubscription<EventSub.ChannelUpdateEvent>(SubscribeToChannelUpdateEvent, PrepareChannelUpdate);
-                    subscriptionsManager.Enable(true);
+                    else if ("notification".Equals(message.metadata.message_type))
+                    {
+                        if (_subscriptions.ContainsKey(message.payload.subscription.id))
+                        {
+                            _subscriptions[message.payload.subscription.id](msg);
+                        }
+                    }
                 }
-                else if ("notification".Equals(message.metadata.message_type))
+                else
                 {
-                    if (_subscriptions.ContainsKey(message.payload.subscription.id))
-                    {
-                        _subscriptions[message.payload.subscription.id](msg);
-                    }
+                    Debug.LogWarning($"Duplicate event recieved with ID: {message.metadata.message_id}");
                 }
             }
             catch (Exception e)
@@ -166,6 +187,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }
         }
 
+        #region Tokens
 
         public void RequestToken()
         {
@@ -187,7 +209,22 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             GetSelfUserInfo((user) =>
             {
                 BROADCASTER_ID = user.id;
-                // TODO: this probably sets off all the registration and subscription events, lol
+                Debug.Log($"Acquired Broadcaster ID: {BROADCASTER_ID}");
+                GetSelfChannelInfo((channel) =>
+                {
+                    StreamInfo info = new()
+                    {
+                        title = channel.title,
+                        language = channel.broadcaster_language,
+                        categoryId = channel.game_id,
+                        categoryName = channel.game_name,
+                        tags = new List<string>(channel.tags)
+                    };
+                    onStreamInfoUpdate.Invoke(info);
+                }, (err) =>
+                {
+                    Debug.LogError(err);
+                });
                 _socket.Start("wss://eventsub.wss.twitch.tv/ws",
                     () =>
                     {
@@ -230,9 +267,44 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             );
         }
 
+        #endregion
+
+        #region Channel Info
+
+        public void GetChannelInfo(ICollection<string> channels, Action<List<ChannelData>> onSuccess, Action<StreamError> onError)
+        {
+            string query = channels.Count > 0 ? $"?{string.Join('&', channels.Select(channel => "broadcaster_id=" + channel))}" : "";
+            string url = $"{CHANNEL_INFO_ENDPOINT}{query}";
+            StartCoroutine(
+                HttpUtils.GetRequest(url, Headers,
+                    (str) =>
+                    {
+                        var channels = JsonUtility.FromJson<DataResponse<ChannelData>>(str).data;
+                        onSuccess(channels);
+                    },
+                    (err) =>
+                    {
+                        onError(new StreamError(err));
+                    }
+                )
+            );
+        }
+
+        public void GetSelfChannelInfo(Action<ChannelData> onSuccess, Action<StreamError> onError)
+        {
+            GetChannelInfo(new string[1]{BROADCASTER_ID}, (list) =>
+            {
+                onSuccess(list[0]);
+            }, onError);
+        }
+
+        #endregion
+
+        #region User Info
+
         public void GetUserInfo(ICollection<string> users, Action<List<UserData>> onSuccess, Action<StreamError> onError)
         {
-            string query = users.Count > 0 ? string.Join('&', users.Select(user => "login=" + user)) : "";
+            string query = users.Count > 0 ? $"?{string.Join('&', users.Select(user => "login=" + user))}" : "";
             string url = $"{USERS_ENDPOINT}{query}";
             StartCoroutine(
                 HttpUtils.GetRequest(url, Headers,
@@ -272,6 +344,10 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }, onError);
         }
 
+        #endregion
+
+        #region Emotes
+
         public void GetGlobalEmotes(Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log("Fetching global emotes.");
@@ -292,7 +368,6 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             string url = $"{EMOTES_SET_ENDPOINT}?emote_set_id={setId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
-
         private void GetBatchEmotes(string url, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             StartCoroutine(
@@ -301,35 +376,57 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     {
                         EmoteDataResponse response = JsonUtility.FromJson<EmoteDataResponse>(str);
                         List<StreamImage> emotes = new List<StreamImage>();
-                        DependencyManager manager = new(
-                            () =>
-                            {
-                                Debug.Log($"{emotes.Count} total emotes resolved!");
-                                onSuccess(emotes);
-                            },
-                            (key, pending) =>
-                            {
-                                Debug.Log($"Waiting on {pending} more emotes to resolve...");
-                            }
-                        );
                         EMOTES_INDIVIDUAL_ENDPOINT = response.template;
-                        foreach (EmoteData data in response.data)
+                        // TODO: chunk this in to groups of like 50 to avoid timeouts
+                        var chunks = CollectionUtils.Chunk(response.data, 50);
+                        int count = chunks.Count;
+                        if(count > 0)
                         {
-                            string taskId = Guid.NewGuid().ToString();
-                            manager.AddDependency(taskId);
-                            GetIndividualEmote(data,
-                            (success) =>
+                            void batch(int index)
                             {
-                                emotes.Add(success);
-                                manager.ResolveDependency(taskId);
-                            },
-                            (err) =>
-                            {
-                                Debug.LogError(err);
-                                manager.ResolveDependency(taskId);
-                            });
+                                if(index < count){
+                                    Debug.Log($"Handling emote chunk {index} of {count}...");
+                                    DependencyManager chunkManager = new(
+                                        () =>
+                                        {
+                                            Debug.Log($"{emotes.Count} total emotes resolved!");
+                                            onSuccess(emotes);
+                                            batch(index+1);
+                                        },
+                                        (key, pending) =>
+                                        {
+                                            Debug.Log($"Waiting on {pending} more emotes to resolve...");
+                                        }
+                                    );
+                                    foreach(var data in chunks[index])
+                                    {
+                                        string taskId = Guid.NewGuid().ToString();
+                                        chunkManager.AddDependency(taskId);
+                                        GetIndividualEmote(data,
+                                        (success) =>
+                                        {
+                                            emotes.Add(success);
+                                            chunkManager.ResolveDependency(taskId);
+                                        },
+                                        (err) =>
+                                        {
+                                            Debug.LogError(err);
+                                            chunkManager.ResolveDependency(taskId);
+                                        });
+                                    }
+                                    chunkManager.Enable(true);
+                                }
+                                else
+                                {
+                                    onSuccess(emotes);
+                                }
+                            }
+                            batch(0);
                         }
-                        manager.Enable(true);
+                        else
+                        {
+                            onSuccess(emotes);
+                        }
                     },
                     (err) =>
                     {
@@ -352,6 +449,10 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             ImageHandler.GetFromRemote(url, Headers, key, onSuccess, onError);
         }
 
+        #endregion
+
+        #region Badges
+
         public void GetGlobalBadges(Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log("Fetching global badges.");
@@ -371,40 +472,61 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                HttpUtils.GetRequest(url, Headers,
                (str) =>
                {
-                   DataResponse<BadgeSetData> response = JsonUtility.FromJson<DataResponse<BadgeSetData>>(str);
-                   List<StreamImage> badges = new List<StreamImage>();
-                   DependencyManager manager = new(
-                       () =>
-                       {
-                           Debug.Log($"{badges.Count} total badges resolved!");
-                           onSuccess(badges);
-                       },
-                       (key, pending) =>
-                       {
-                           Debug.Log($"Waiting on {pending} more badges to resolve...");
-                       }
-                   );
-                   foreach (BadgeSetData data in response.data)
-                   {
-                       foreach (BadgeVersionData version in data.versions)
-                       {
-                           string taskId = Guid.NewGuid().ToString();
-                           manager.AddDependency(taskId);
-                           ImageHandler.GetFromRemote(version.image_url_1x, Headers,
-                           $"badge_{data.set_id}_{version.id}",
-                           (success) =>
-                           {
-                               badges.Add(success);
-                               manager.ResolveDependency(taskId);
-                           },
-                           (err) =>
-                           {
-                               Debug.LogError(err);
-                               manager.ResolveDependency(taskId);
-                           });
-                       }
-                   }
-                   manager.Enable(true);
+                    DataResponse<BadgeSetData> response = JsonUtility.FromJson<DataResponse<BadgeSetData>>(str);
+                    List<StreamImage> badges = new List<StreamImage>();
+                    var chunks = CollectionUtils.Chunk(response.data, 50);
+                    int count = chunks.Count;
+                    if(count > 0)
+                    {
+                        void batch(int index)
+                        {
+                            if(index < count){
+                                Debug.Log($"Handling badge chunk {index} of {count}...");
+                                DependencyManager chunkManager = new(
+                                    () =>
+                                    {
+                                        Debug.Log($"{badges.Count} total badges resolved!");
+                                        onSuccess(badges);
+                                        batch(index+1);
+                                    },
+                                    (key, pending) =>
+                                    {
+                                        Debug.Log($"Waiting on {pending} more badges to resolve...");
+                                    }
+                                );
+                                foreach (BadgeSetData data in chunks[index])
+                                {
+                                    foreach (BadgeVersionData version in data.versions)
+                                    {
+                                        string taskId = Guid.NewGuid().ToString();
+                                        chunkManager.AddDependency(taskId);
+                                        ImageHandler.GetFromRemote(version.image_url_1x, Headers,
+                                        $"badge_{data.set_id}_{version.id}",
+                                        (success) =>
+                                        {
+                                            badges.Add(success);
+                                            chunkManager.ResolveDependency(taskId);
+                                        },
+                                        (err) =>
+                                        {
+                                            Debug.LogError(err);
+                                            chunkManager.ResolveDependency(taskId);
+                                        });
+                                    }
+                                }
+                                chunkManager.Enable(true);
+                            }
+                            else
+                            {
+                                onSuccess(badges);
+                            }
+                        }
+                        batch(0);
+                    }
+                    else
+                    {
+                        onSuccess(badges);
+                    }
                },
                (err) =>
                {
@@ -412,6 +534,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                })
             );
         }
+
+        #endregion
 
         #region EventSub
 
@@ -557,6 +681,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             // TODO: we're going to need to collect info at some point, just setting this up for later
             string taskId = Guid.NewGuid().ToString();
             manager.AddDependency(taskId);
+            manager.ResolveDependency(taskId);
             manager.Enable(true);
         }
 
@@ -584,6 +709,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             // TODO: we're going to need to collect info at some point, just setting this up for later
             string taskId = Guid.NewGuid().ToString();
             manager.AddDependency(taskId);
+            manager.ResolveDependency(taskId);
             manager.Enable(true);
         }
 
@@ -603,19 +729,21 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private void PrepareChannelUpdate(EventSub.ChannelUpdateEvent updateEvent)
         {
-            StreamInfo info = new StreamInfo(
-                updateEvent.title, 
-                updateEvent.language,
-                updateEvent.category_id,
-                updateEvent.category_name,
-                updateEvent.content_classification_labels
-            );
+            StreamInfo info = new()
+            {
+                title = updateEvent.title,
+                language = updateEvent.language,
+                categoryId = updateEvent.category_id,
+                categoryName = updateEvent.category_name,
+                tags = new List<string>()
+            };
             DependencyManager manager = new(
                 () => { onStreamInfoUpdate.Invoke(info); }
             );
             // TODO: we're going to need to collect info at some point, just setting this up for later
             string taskId = Guid.NewGuid().ToString();
             manager.AddDependency(taskId);
+            manager.ResolveDependency(taskId);
             manager.Enable(true);
         }
 

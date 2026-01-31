@@ -59,16 +59,7 @@ namespace Skeletom.BattleStation.Integrations
         public string language;
         public string categoryId;
         public string categoryName;
-        public List<string> labels = new List<string>();
-
-        public StreamInfo(string title, string language, string categoryId, string categoryName, ICollection<string> labels)
-        {
-            this.title = title;
-            this.language = language;
-            this.categoryId = categoryId;
-            this.categoryName = categoryName;
-            this.labels = new List<string>(labels);
-        }
+        public List<string> tags = new List<string>();
     }
 
     [Serializable]

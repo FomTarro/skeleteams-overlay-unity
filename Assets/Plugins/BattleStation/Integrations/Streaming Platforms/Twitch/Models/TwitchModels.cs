@@ -49,6 +49,24 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
     #endregion
 
+    #region Channel Data API
+
+    [Serializable]
+    public class ChannelData
+    {
+        public string broadcaster_id;
+        public string broadcaster_user_login;
+        public string broadcaster_user_name;
+        public string broadcaster_language;
+        public string game_id;
+        public string game_name;
+        public string title;
+        public int delay;
+        public string[] tags;
+    }
+
+    #endregion
+
     #region Emotes API 
 
     [Serializable]

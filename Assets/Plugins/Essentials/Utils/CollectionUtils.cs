@@ -95,5 +95,14 @@ namespace Skeletom.Essentials.Utils
             }
             return true;
         }
+
+        public static List<List<T>> Chunk<T>(this List<T> me, int size)
+        {   
+            var list = new List<List<T>>();
+            for (int i = 0; i < me.Count; i += size){
+                list.Add(me.GetRange(i, Math.Min(size, me.Count - i)));
+            }
+            return list;
+        } 
     }
 }
