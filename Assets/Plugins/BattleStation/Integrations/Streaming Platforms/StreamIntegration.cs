@@ -14,13 +14,21 @@ namespace Skeletom.BattleStation.Integrations
 
         [Serializable]
         public class ChatMessageEvent : UnityEvent<StreamChatMessage> { }
-        public ChatMessageEvent onChatMessage = new ChatMessageEvent();
+        public ChatMessageEvent onChatMessage = new();
         [Serializable]
         public class ChatMessageDeletionEvent : UnityEvent<StreamChatMessageDeletion> { }
-        public ChatMessageDeletionEvent onChatMessageDeleted = new ChatMessageDeletionEvent();
+        public ChatMessageDeletionEvent onChatMessageDelete = new ChatMessageDeletionEvent();
 
         [Serializable]
         public class ChatRedeemEvent : UnityEvent<StreamChatRedeem> { }
-        public ChatRedeemEvent onChatRedeem = new ChatRedeemEvent();
+        public ChatRedeemEvent onChatRedeem = new();
+
+        [Serializable]
+        public class ChannelFollowEvent : UnityEvent<StreamChannelFollow> { }
+        public ChannelFollowEvent onChannelFollow = new();
+
+        [Serializable]
+        public class StreamInfoUpdateEvent : UnityEvent<StreamInfo> { }
+        public StreamInfoUpdateEvent onStreamInfoUpdate = new();
     }
 }

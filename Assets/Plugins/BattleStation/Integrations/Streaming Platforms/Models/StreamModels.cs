@@ -52,6 +52,25 @@ namespace Skeletom.BattleStation.Integrations
         }
     }
 
+    [SerializeField]
+    public class StreamInfo
+    {
+        public string title;
+        public string language;
+        public string categoryId;
+        public string categoryName;
+        public List<string> labels = new List<string>();
+
+        public StreamInfo(string title, string language, string categoryId, string categoryName, ICollection<string> labels)
+        {
+            this.title = title;
+            this.language = language;
+            this.categoryId = categoryId;
+            this.categoryName = categoryName;
+            this.labels = new List<string>(labels);
+        }
+    }
+
     [Serializable]
     public class StreamChatUser
     {
@@ -150,6 +169,26 @@ namespace Skeletom.BattleStation.Integrations
             this.name = name;
             this.id = id;
             this.cost = cost;
+        }
+    }
+
+    [SerializeField]
+    public class StreamChannelFollow
+    {
+        public DateTime timestamp;
+        public StreamChatUser follower;
+
+        public StreamChannelFollow(StreamChatUser follower, string timestamp)
+        {
+            this.follower = follower;
+            try
+            {
+                DateTime.TryParse(timestamp, out this.timestamp);
+            }
+            catch(Exception e)
+            {
+                Debug.LogWarning(e);
+            }
         }
     }
 }

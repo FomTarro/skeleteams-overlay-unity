@@ -1,11 +1,10 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Skeletom.BattleStation.Integrations.Twitch.EventSub;
 using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.IO;
 using Skeletom.Essentials.Utils;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Skeletom.BattleStation.Integrations.Twitch
@@ -24,7 +23,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private const string EVENTSUB_SUBSCRIPTION_ENDPOINT = "https://api.twitch.tv/helix/eventsub/subscriptions";
 
         private const string EMOTES_SET_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes/set";
-        private string EMOTES_INDIVIDUAL_ENDPOINT = "https://static-cdn.jtvnw.net/emoticons/v2/{id}/{static}/{light}/{scale}";
+        private string EMOTES_INDIVIDUAL_ENDPOINT = "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
         private const string EMOTES_GLOBAL_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes/global";
         private const string EMOTES_CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes";
 
@@ -116,6 +115,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     DependencyManager subscriptionsManager = new(
                         () =>
                         {
+                            Debug.Log("Caching emotes and badges...");
                             // Subscribing to events is time-sensitive (sessionId will be invalidated after 10s of inactivity),
                             // So let's do our subscriptions before we do the heavy caching operation
                             GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
@@ -128,48 +128,32 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
                         }
                     );
+
+                    string AwaitSubscription<T>(Action<string, Action<string>, Action<StreamError>, Action<T>> action, Action<T> onEvent) where T : IEventSubEvent
+                    {
+                        string id = Guid.NewGuid().ToString();
+                        subscriptionsManager.AddDependency(id);
+                        action(sessionId,
+                        (success) =>
+                        {
+                            subscriptionsManager.ResolveDependency(id);
+                        },
+                        (err) =>
+                        {
+                            subscriptionsManager.ResolveDependency(id);
+                        }, onEvent);
+                        return id;
+                    }
                     // Kick off all HTTP subscriptions
-                    string messageCreateId = Guid.NewGuid().ToString();
-                    subscriptionsManager.AddDependency(messageCreateId);
-                    SubscribeToChatMessageEvent(sessionId,
-                    (success) =>
-                    {
-                        subscriptionsManager.ResolveDependency(messageCreateId);
-                    },
-                    (err) =>
-                    {
-                        subscriptionsManager.ResolveDependency(messageCreateId);
-                    }, PrepareChatMessage);
-
-                    string messageDeleteId = Guid.NewGuid().ToString();
-                    subscriptionsManager.AddDependency(messageDeleteId);
-                    SubscribeToChatMessageDeletionEvent(sessionId,
-                    (success) =>
-                    {
-                        subscriptionsManager.ResolveDependency(messageDeleteId);
-                    },
-                    (err) =>
-                    {
-                        subscriptionsManager.ResolveDependency(messageDeleteId);
-                    }, PrepareChatMessageDeletion);
-
-                    string channelPointRedeemId = Guid.NewGuid().ToString();
-                    subscriptionsManager.AddDependency(channelPointRedeemId);
-                    SubscribeToChannelPointRedeemEvent(sessionId,
-                    (success) =>
-                    {
-                        subscriptionsManager.ResolveDependency(channelPointRedeemId);
-                    },
-                    (err) =>
-                    {
-                        subscriptionsManager.ResolveDependency(channelPointRedeemId);
-                    }, PrepareChannelRedeem);
-
+                    AwaitSubscription<EventSub.ChatMessageEvent>(SubscribeToChatMessageEvent, PrepareChatMessage);
+                    AwaitSubscription<EventSub.ChatMessageDeletionEvent>(SubscribeToChatMessageDeletionEvent, PrepareChatMessageDeletion);
+                    AwaitSubscription<EventSub.ChannelPointRedeemEvent>(SubscribeToChannelPointRedeemEvent, PrepareChannelRedeem);   
+                    AwaitSubscription<EventSub.ChannelFollowEvent>(SubscribeToChannelFollowEvent, PrepareChannelFollow);
+                    AwaitSubscription<EventSub.ChannelUpdateEvent>(SubscribeToChannelUpdateEvent, PrepareChannelUpdate);
                     subscriptionsManager.Enable(true);
                 }
                 else if ("notification".Equals(message.metadata.message_type))
                 {
-                    Debug.Log(msg);
                     if (_subscriptions.ContainsKey(message.payload.subscription.id))
                     {
                         _subscriptions[message.payload.subscription.id](msg);
@@ -475,15 +459,16 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private void SubscribeToChatMessageDeletionEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChatMessageDeletionEvent> onEvent)
         {
             SubscribeToEvent(
-                    new EventSub.ChatMessageDeletionSubscriptionRequest(sessionId)
+                new EventSub.ChatMessageDeletionSubscriptionRequest(sessionId)
+                {
+                    condition = new EventSub.ChatMessageDeletionEventCondition()
                     {
-                        condition = new EventSub.ChatMessageDeletionEventCondition()
-                        {
-                            broadcaster_user_id = BROADCASTER_ID,
-                        }
-                    },
-                    onSuccess, onError, onEvent
-                );
+                        broadcaster_user_id = BROADCASTER_ID,
+                        user_id = BROADCASTER_ID
+                    }
+                },
+                onSuccess, onError, onEvent
+            );
         }
 
         private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent)
@@ -546,7 +531,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private void PrepareChatMessageDeletion(EventSub.ChatMessageDeletionEvent chatEvent)
         {
             StreamChatMessageDeletion deletion = new StreamChatMessageDeletion(chatEvent.message_id);
-            onChatMessageDeleted.Invoke(deletion);
+            onChatMessageDelete.Invoke(deletion);
         }
 
         private void SubscribeToChannelPointRedeemEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelPointRedeemEvent> onEvent)
@@ -568,6 +553,65 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             StreamChatUser chatter = new StreamChatUser(redeemEvent.user_name, redeemEvent.user_id);
             DependencyManager manager = new(
                 () => { onChatRedeem.Invoke(new StreamChatRedeem(chatter, redeemEvent.reward.title, redeemEvent.reward.id, redeemEvent.reward.cost)); }
+            );
+            // TODO: we're going to need to collect info at some point, just setting this up for later
+            string taskId = Guid.NewGuid().ToString();
+            manager.AddDependency(taskId);
+            manager.Enable(true);
+        }
+
+        private void SubscribeToChannelFollowEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelFollowEvent> onEvent)
+        {
+            SubscribeToEvent(
+                new EventSub.ChannelFollowSubscriptionRequest(sessionId)
+                {
+                    condition = new EventSub.ChannelFollowEventCondition()
+                    {
+                        broadcaster_user_id = BROADCASTER_ID,
+                        moderator_user_id = BROADCASTER_ID
+                    }
+                },
+                onSuccess, onError, onEvent
+            );
+        }
+
+        private void PrepareChannelFollow(EventSub.ChannelFollowEvent followEvent)
+        {
+            StreamChatUser chatter = new StreamChatUser(followEvent.user_name, followEvent.user_id);
+            DependencyManager manager = new(
+                () => { onChannelFollow.Invoke(new StreamChannelFollow(chatter, followEvent.followed_at)); }
+            );
+            // TODO: we're going to need to collect info at some point, just setting this up for later
+            string taskId = Guid.NewGuid().ToString();
+            manager.AddDependency(taskId);
+            manager.Enable(true);
+        }
+
+        private void SubscribeToChannelUpdateEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelUpdateEvent> onEvent)
+        {
+            SubscribeToEvent(
+                new EventSub.ChannelUpdateSubscriptionRequest(sessionId)
+                {
+                    condition = new EventSub.ChannelUpdateEventCondition()
+                    {
+                        broadcaster_user_id = BROADCASTER_ID,
+                    }
+                },
+                onSuccess, onError, onEvent
+            );
+        }
+
+        private void PrepareChannelUpdate(EventSub.ChannelUpdateEvent updateEvent)
+        {
+            StreamInfo info = new StreamInfo(
+                updateEvent.title, 
+                updateEvent.language,
+                updateEvent.category_id,
+                updateEvent.category_name,
+                updateEvent.content_classification_labels
+            );
+            DependencyManager manager = new(
+                () => { onStreamInfoUpdate.Invoke(info); }
             );
             // TODO: we're going to need to collect info at some point, just setting this up for later
             string taskId = Guid.NewGuid().ToString();

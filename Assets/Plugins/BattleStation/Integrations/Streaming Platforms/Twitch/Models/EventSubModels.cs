@@ -323,7 +323,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
     {
         public ChannelFollowSubscriptionRequest(string sessionId) : base(sessionId)
         {
-            type = "channel.update";
+            type = "channel.follow";
             version = "2";
         }
     }
