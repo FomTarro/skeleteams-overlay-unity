@@ -121,7 +121,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             name = emoteName;
             id = fragment.id;
             format = fragment.format;
-            scale = new string[] { "1.0" };
+            scale = new string[] { "1.0", "2.0", "4.0" };
         }
     }
 

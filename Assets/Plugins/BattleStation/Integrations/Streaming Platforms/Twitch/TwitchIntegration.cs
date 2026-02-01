@@ -22,6 +22,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private readonly string[] USER_TOKEN_SCOPES = {
             "chat:read",
+            "bits:read",
             "user:read:chat",
             "channel:read:redemptions",
             "channel:read:subscriptions",
@@ -112,9 +113,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             string data = null;
             do
             {
-                if (this._socket != null)
+                if (_socket != null)
                 {
-                    data = this._socket.GetNextResponse();
+                    data = _socket.GetNextResponse();
                     if (data != null)
                     {
                         ProcessEventSubEvent(data);
@@ -147,9 +148,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                 // So let's do our subscriptions before we do the heavy caching operation
                                 // GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
                                 // GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
-                                // GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
-                                // GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
-                                GetChatters((chatters) => {Debug.Log(string.Join(", ", chatters.Select(chatter => chatter.user_name))); }, (err) => { Debug.LogError(err); });
+                                GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
+                                GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
+                                // GetCurrentChatUsers((chatters) => {Debug.Log(string.Join(", ", chatters.Select(chatter => chatter.displayName))); }, (err) => { Debug.LogError(err); });
                             },
                             (key, pending) =>
                             {
@@ -304,7 +305,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         public void GetSelfChannelInfo(Action<ChannelData> onSuccess, Action<StreamError> onError)
         {
-            GetChannelInfo(new string[1]{BROADCASTER_ID}, (list) =>
+            GetChannelInfo(new string[]{BROADCASTER_ID}, (list) =>
             {
                 onSuccess(list[0]);
             }, onError);
@@ -314,9 +315,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         #region User Info
 
-        public void GetUserInfo(ICollection<string> users, Action<List<UserData>> onSuccess, Action<StreamError> onError)
+        public void GetUserInfo(ICollection<string> userLoginNames, Action<List<UserData>> onSuccess, Action<StreamError> onError)
         {
-            string query = users.Count > 0 ? $"?{string.Join('&', users.Select(user => "login=" + user))}" : "";
+            string query = userLoginNames.Count > 0 ? $"?{string.Join('&', userLoginNames.Select(user => "login=" + user))}" : "";
             string url = $"{API.USER_INFO_ENDPOINT}{query}";
             StartCoroutine(
                 HttpUtils.GetRequest(url, Headers,
@@ -360,11 +361,12 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         #region Chatters
 
-        public void GetChatters(Action<List<ChatterData>> onSuccess, Action<StreamError> onError)
+        // TODO: shoudl this return a standardized Stream object, or the raw Twitch data model?
+        public override void GetCurrentChatUsers(Action<List<StreamChatUser>> onSuccess, Action<StreamError> onError)
         {
             string url = $"{API.CHATTERS_ENDPOINT}?broadcaster_id={BROADCASTER_ID}&moderator_id={BROADCASTER_ID}";
-            List<ChatterData> chatters = new List<ChatterData>();
-            void GetNextPage(string after = null)
+            List<StreamChatUser> chatters = new();
+            void GetPage(string after = null)
             {
                 string paginatedUrl = $"{url}{(after != null ? $"&after={after}" : "")}";
                 StartCoroutine(
@@ -372,10 +374,13 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         (str) =>
                         {
                             var page = JsonUtility.FromJson<PaginatedDataResponse<ChatterData>>(str);
-                            chatters.AddRange(page.data);
+                            foreach(ChatterData chatter in page.data)
+                            {
+                                chatters.Add(new StreamChatUser(chatter.user_name, chatter.user_id));
+                            }
                             if(page.pagination != null && !string.IsNullOrEmpty(page.pagination.cursor))
                             {
-                                GetNextPage(page.pagination.cursor);
+                                GetPage(page.pagination.cursor);
                             }
                             else
                             {
@@ -389,7 +394,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     )
                 );
             }
-            GetNextPage();
+            GetPage();
         }
 
         #endregion
@@ -526,7 +531,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     int count = chunks.Count;
                     if(count > 0)
                     {
-                        void Batch(int index)
+                        void GetBatch(int index)
                         {
                             if(index < count){
                                 Debug.Log($"Handling badge chunk {index} of {count}...");
@@ -535,7 +540,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                     {
                                         Debug.Log($"{badges.Count} total badges resolved!");
                                         onSuccess(badges);
-                                        Batch(index+1);
+                                        GetBatch(index+1);
                                     },
                                     (key, pending) =>
                                     {
@@ -569,7 +574,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                 onSuccess(badges);
                             }
                         }
-                        Batch(0);
+                        GetBatch(0);
                     }
                     else
                     {
@@ -793,6 +798,20 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             manager.AddDependency(taskId);
             manager.ResolveDependency(taskId);
             manager.Enable(true);
+        }
+
+        private void SubscribeToChannelCheerEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelCheerEvent> onEvent)
+        {
+            SubscribeToEvent(
+                new EventSub.ChannelCheerSubscriptionRequest(sessionId)
+                {
+                    condition = new EventSub.ChannelCheerEventCondition()
+                    {
+                        broadcaster_user_id = BROADCASTER_ID,
+                    }
+                },
+                onSuccess, onError, onEvent
+            );
         }
 
         #endregion

@@ -67,6 +67,7 @@ namespace Skeletom.BattleStation.Integrations
     {
         public string displayName;
         public string id;
+        // TODO: Color and badges should be moved to be a function of chat messages
         public Color displayColor;
         public StreamImage avatar;
         public List<StreamBadge> badges = new List<StreamBadge>();
@@ -161,6 +162,14 @@ namespace Skeletom.BattleStation.Integrations
             this.id = id;
             this.cost = cost;
         }
+    }
+
+    [Serializable]
+    public class StreamPaidChatMessage
+    {
+        // TODO, what happens if the message has emotes?
+        public int amount;
+        public string currency;
     }
 
     [SerializeField]

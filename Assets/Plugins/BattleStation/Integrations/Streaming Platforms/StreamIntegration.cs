@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Skeletom.Essentials.IO;
 using UnityEngine;
 using UnityEngine.Events;
@@ -10,7 +11,23 @@ namespace Skeletom.BattleStation.Integrations
     {
         [SerializeField]
         private StreamImageHandler _imageHandler;
-        public StreamImageHandler ImageHandler => _imageHandler ??= GetComponent<StreamImageHandler>() ?? gameObject.AddComponent<StreamImageHandler>();
+        public StreamImageHandler ImageHandler
+        {
+            get
+            {
+                if(_imageHandler == null)
+                {
+                    _imageHandler = GetComponent<StreamImageHandler>();
+                    if(_imageHandler == null)
+                    {
+                        _imageHandler = gameObject.AddComponent<StreamImageHandler>();
+                    }
+                }
+                return _imageHandler;
+            }
+        }
+
+        #region Events
 
         [Serializable]
         public class ChatMessageEvent : UnityEvent<StreamChatMessage> { }
@@ -30,5 +47,13 @@ namespace Skeletom.BattleStation.Integrations
         [Serializable]
         public class StreamInfoUpdateEvent : UnityEvent<StreamInfo> { }
         public StreamInfoUpdateEvent onStreamInfoUpdate = new();
+
+        #endregion
+
+        #region API
+
+        public abstract void GetCurrentChatUsers(Action<List<StreamChatUser>> onSuccess, Action<StreamError> onError);
+
+        #endregion
     }
 }

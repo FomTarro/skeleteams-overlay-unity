@@ -348,4 +348,38 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
     }
 
     #endregion
+
+    #region Channel Cheer Event
+
+    [Serializable]
+     public class ChannelCheerSubscriptionRequest : EventSubscriptionRequest<ChannelCheerEventCondition>
+    {
+        public ChannelCheerSubscriptionRequest(string sessionId) : base(sessionId)
+        {
+            type = "channel.cheer";
+        }
+    }
+
+    [Serializable]
+    public class ChannelCheerEventCondition : ICondition
+    {
+        public string broadcaster_user_id;
+    }
+
+    [SerializeField]
+    public class ChannelCheerEvent : IEventSubEvent
+    {
+        public bool is_anonymous;
+        public string user_id;
+        public string user_login;
+        public string user_name;
+        public string broadcaster_user_id;
+        public string broadcaster_user_login;
+        public string broadcaster_user_name;
+        public string message;
+        public int bits;
+    }
+
+    #endregion
 }
+
