@@ -107,21 +107,21 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string id;
         public string name;
         public EmoteImages images;
-        public string[] format = new string[0];
-        public string[] scale = new string[0];
-        public string[] theme_mode = new string[0];
-
-        public EmoteData()
-        {
-
-        }
+        public string[] format = new string[] { "static" };
+        public string[] scale = new string[] { "1.0", "2.0", "4.0" };
+        public string[] theme_mode = new string[] { "light" };
 
         public EmoteData(string emoteName, EventSub.ChatMessageFragmentEmote fragment)
         {
             name = emoteName;
             id = fragment.id;
             format = fragment.format;
-            scale = new string[] { "1.0", "2.0", "4.0" };
+        }
+
+        public EmoteData(string emoteName, string emoteId)
+        {
+            name = emoteName;
+            id = emoteId;
         }
     }
 

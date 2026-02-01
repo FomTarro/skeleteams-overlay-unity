@@ -349,6 +349,151 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
 
     #endregion
 
+    #region Channel Subscription New Event
+
+    [Serializable]
+    public class ChannelSubNewSubscriptionRequest : EventSubscriptionRequest<ChannelSubNewEventCondition>
+    {
+        public ChannelSubNewSubscriptionRequest(string sessionId) : base(sessionId)
+        {
+            type = "channel.subscribe";
+            version = "1";
+        }
+    }
+
+    [Serializable]
+    public class ChannelSubNewEventCondition : ICondition
+    {
+        public string broadcaster_user_id;
+    }
+
+    [SerializeField]
+    public class ChannelSubNewEvent : IEventSubEvent
+    {
+        public string user_id;
+        public string user_login;
+        public string user_name;
+        public string broadcaster_user_id;
+        public string broadcaster_user_login;
+        public string broadcaster_user_name;
+        public string tier;
+        public bool is_gift;
+    }
+
+    #endregion
+
+    #region Channel Subscription Gift Event
+
+    [Serializable]
+    public class ChannelSubGiftSubscriptionRequest : EventSubscriptionRequest<ChannelSubGiftEventCondition>
+    {
+        public ChannelSubGiftSubscriptionRequest(string sessionId) : base(sessionId)
+        {
+            type = "channel.subscription.gift";
+            version = "1";
+        }
+    }
+
+    [Serializable]
+    public class ChannelSubGiftEventCondition : ICondition
+    {
+        public string broadcaster_user_id;
+    }
+
+    [SerializeField]
+    public class ChannelSubGiftEvent : IEventSubEvent
+    {
+        public string user_id;
+        public string user_login;
+        public string user_name;
+        public string broadcaster_user_id;
+        public string broadcaster_user_login;
+        public string broadcaster_user_name;
+        public int total;
+        public string tier;
+        public int cumulative_total;
+        public bool is_anonymous;
+    }
+
+    #endregion
+
+    #region Channel Subscription Renewal Event
+
+    [Serializable]
+    public class ChannelSubRenewalSubscriptionRequest : EventSubscriptionRequest<ChannelSubRenewalEventCondition>
+    {
+        public ChannelSubRenewalSubscriptionRequest(string sessionId) : base(sessionId)
+        {
+            type = "channel.subscription.message";
+            version = "1";
+        }
+    }
+
+    [Serializable]
+    public class ChannelSubRenewalEventCondition : ICondition
+    {
+        public string broadcaster_user_id;
+    }
+
+    [SerializeField]
+    public class ChannelSubRenewalEvent : IEventSubEvent
+    {
+        public string user_id;
+        public string user_login;
+        public string user_name;
+        public string broadcaster_user_id;
+        public string broadcaster_user_login;
+        public string broadcaster_user_name;
+        // TODO: Yet another way to represent a chat message, how fun
+        // "message": {
+        //     "text": "Love the stream! FevziGG",
+        //     "emotes": [
+        //         {
+        //             "begin": 23,
+        //             "end": 30,
+        //             "id": "302976485"
+        //         }
+        //     ]
+        // },
+        public int cumulative_months;
+        public int streak_months;
+        public int duration_months;
+    }
+
+    #endregion
+
+    #region Channel Raid Event
+
+    [Serializable]
+    public class ChannelRaidSubscriptionRequest : EventSubscriptionRequest<ChannelRaidEventCondition>
+    {
+        public ChannelRaidSubscriptionRequest(string sessionId) : base(sessionId)
+        {
+            type = "channel.raid";
+            version = "1";
+        }
+    }
+
+    [Serializable]
+    public class ChannelRaidEventCondition : ICondition
+    {
+        public string to_broadcaster_user_id;
+    }
+
+    [SerializeField]
+    public class ChannelRaidEvent : IEventSubEvent
+    {
+        public string from_broadcaster_user_id;
+        public string from_broadcaster_user_login;
+        public string from_broadcaster_user_name;
+        public string to_broadcaster_user_id;
+        public string to_broadcaster_user_login;
+        public string to_broadcaster_user_name;
+        public int viewers;
+    }
+
+    #endregion
+
     #region Channel Cheer Event
 
     [Serializable]

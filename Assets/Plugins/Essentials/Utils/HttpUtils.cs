@@ -8,13 +8,8 @@ using UnityEngine.Networking;
 
 namespace Skeletom.Essentials.Utils
 {
-
     public static class HttpUtils
     {
-
-        // TODO: keep a dictionary of requests that map to their callbacks, such that two identical requests do not race, 
-        // and instead the second awaits the first and shares the results. 
-
         private struct PendingWebRequest
         {
             public Action<UnityWebRequest> onSuccess;

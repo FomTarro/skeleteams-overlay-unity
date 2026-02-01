@@ -63,7 +63,7 @@ namespace Skeletom.BattleStation.Integrations
     }
 
     [Serializable]
-    public class StreamChatUser
+    public class StreamUser
     {
         public string displayName;
         public string id;
@@ -72,14 +72,14 @@ namespace Skeletom.BattleStation.Integrations
         public StreamImage avatar;
         public List<StreamBadge> badges = new List<StreamBadge>();
 
-        public StreamChatUser(string displayName, string id, string displayColorHex)
+        public StreamUser(string displayName, string id, string displayColorHex)
         {
             this.displayName = displayName;
             this.id = id;
             ColorUtility.TryParseHtmlString(displayColorHex, out this.displayColor);
         }
 
-        public StreamChatUser(string displayName, string id)
+        public StreamUser(string displayName, string id)
         {
             this.displayName = displayName;
             this.id = id;
@@ -127,9 +127,9 @@ namespace Skeletom.BattleStation.Integrations
         }
 
         public string id;
-        public StreamChatUser chatter;
+        public StreamUser chatter;
         public List<Fragment> fragments = new List<Fragment>();
-        public StreamChatMessage(string id, StreamChatUser chatter, ICollection<Fragment> fragments)
+        public StreamChatMessage(string id, StreamUser chatter, ICollection<Fragment> fragments)
         {
             this.id = id;
             this.chatter = chatter;
@@ -153,9 +153,9 @@ namespace Skeletom.BattleStation.Integrations
         public string name;
         public string id;
         public int cost;
-        public StreamChatUser redeemer;
+        public StreamUser redeemer;
 
-        public StreamChatRedeem(StreamChatUser redeemer, string name, string id, int cost)
+        public StreamChatRedeem(StreamUser redeemer, string name, string id, int cost)
         {
             this.redeemer = redeemer;
             this.name = name;
@@ -176,9 +176,9 @@ namespace Skeletom.BattleStation.Integrations
     public class StreamChannelFollow
     {
         public DateTime timestamp;
-        public StreamChatUser follower;
+        public StreamUser follower;
 
-        public StreamChannelFollow(StreamChatUser follower, string timestamp)
+        public StreamChannelFollow(StreamUser follower, string timestamp)
         {
             this.follower = follower;
             try
@@ -189,6 +189,33 @@ namespace Skeletom.BattleStation.Integrations
             {
                 Debug.LogWarning(e);
             }
+        }
+    }
+
+    [SerializeField]
+    public class StreamChannelPaidSubscription
+    {
+        public StreamUser subscriber;
+        public bool isGifted;
+        public string tier;
+        public int streak;
+
+        public StreamChannelPaidSubscription(StreamUser follower)
+        {
+            this.subscriber = follower;
+        }
+    }
+
+    [SerializeField]
+    public class StreamRaid
+    {
+        public StreamUser raider;
+        public int viewers;
+
+        public StreamRaid(StreamUser raider, int viewers)
+        {
+            this.raider = raider;
+            this.viewers = viewers;
         }
     }
 }

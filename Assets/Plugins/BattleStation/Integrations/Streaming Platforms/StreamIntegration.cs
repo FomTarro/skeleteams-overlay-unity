@@ -9,6 +9,8 @@ namespace Skeletom.BattleStation.Integrations
     [RequireComponent(typeof(StreamImageHandler))]
     public abstract class StreamIntegration<T, K> : Integration<T, K> where T : StreamIntegration<T, K> where K : BaseSaveData
     {
+        #region Caches
+
         [SerializeField]
         private StreamImageHandler _imageHandler;
         public StreamImageHandler ImageHandler
@@ -27,6 +29,8 @@ namespace Skeletom.BattleStation.Integrations
             }
         }
 
+        #endregion
+
         #region Events
 
         [Serializable]
@@ -37,6 +41,10 @@ namespace Skeletom.BattleStation.Integrations
         public ChatMessageDeletionEvent onChatMessageDelete = new ChatMessageDeletionEvent();
 
         [Serializable]
+        public class ChatPaidMessageEvent : UnityEvent<StreamPaidChatMessage> { }
+        public ChatPaidMessageEvent onPaidChatMessage = new();
+
+        [Serializable]
         public class ChatRedeemEvent : UnityEvent<StreamChatRedeem> { }
         public ChatRedeemEvent onChatRedeem = new();
 
@@ -45,14 +53,26 @@ namespace Skeletom.BattleStation.Integrations
         public ChannelFollowEvent onChannelFollow = new();
 
         [Serializable]
+        public class ChannelPaidSubscriptionEvent : UnityEvent<StreamChannelPaidSubscription> { }
+        public ChannelPaidSubscriptionEvent onChannelPaidSubscription = new();
+
+        [Serializable]
+        public class StreamRaidEvent : UnityEvent<StreamRaid> { }
+        public StreamRaidEvent onChannelRaid = new();
+
+        [Serializable]
         public class StreamInfoUpdateEvent : UnityEvent<StreamInfo> { }
         public StreamInfoUpdateEvent onStreamInfoUpdate = new();
 
         #endregion
 
-        #region API
+        #region Public API
 
-        public abstract void GetCurrentChatUsers(Action<List<StreamChatUser>> onSuccess, Action<StreamError> onError);
+        public abstract void GetUserAvatar(StreamUser user, Action<StreamImage> onSuccess, Action<StreamError> onError);
+
+        public abstract void GetCurrentChatUsers(Action<List<StreamUser>> onSuccess, Action<StreamError> onError);
+        public abstract void GetCurrentSubscribers(Action<List<StreamUser>> onSuccess, Action<StreamError> onError);
+        public abstract void GetCurrentFollowers(Action<List<StreamUser>> onSuccess, Action<StreamError> onError);
 
         #endregion
     }

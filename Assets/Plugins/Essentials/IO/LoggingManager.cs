@@ -58,10 +58,9 @@ namespace Skeletom.Essentials.IO
 		[Serializable]
 		public class LogEvent : UnityEvent<LogRecord> { }
 		/// <summary>
-		/// Event fired when a log statement occurs. 
-		/// TODO: hook this up
+		/// Event fired when a log statement occurs.
 		/// </summary>
-		public static LogEvent OnLog = new LogEvent();
+		public static LogEvent OnLog = new();
 
 		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
 		public static void OnBoot()
