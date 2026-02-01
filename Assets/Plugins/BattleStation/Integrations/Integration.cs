@@ -13,5 +13,8 @@ namespace Skeletom.BattleStation.Integrations
         public abstract void FromSaveData(K data);
 
         public abstract K ToSaveData();
+
+        public abstract void Enable();
+        public abstract void Disable();
     }
 }

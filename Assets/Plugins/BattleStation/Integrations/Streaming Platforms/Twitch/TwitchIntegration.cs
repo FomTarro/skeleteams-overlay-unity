@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Skeletom.BattleStation.Integrations.Twitch.EventSub;
 using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.Collections;
 using Skeletom.Essentials.IO;
@@ -15,33 +14,19 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public override string FileName => "twitch.json";
 
         private const string CLIENT_ID = "x2rikvl9behn8k54flc95ulhbq265m";
-        private const string USER_TOKEN_ENDPOINT = "https://id.twitch.tv/oauth2/authorize";
-        private const string USER_TOKEN_REDIRECT = "http://localhost:61616/twitch/oauth2";
         private string USER_TOKEN = "NO_TOKEN_SET";
         private string BROADCASTER_ID = "NO_ID_SET";
 
-        private const string USERS_ENDPOINT = "https://api.twitch.tv/helix/users";
-        private const string EVENTSUB_SUBSCRIPTION_ENDPOINT = "https://api.twitch.tv/helix/eventsub/subscriptions";
+        // This allows us to swap out endpoints for mock ones against a testing engine
+        private readonly IEndpoints API = new TwitchAPI();
 
-        private const string EMOTES_SET_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes/set";
-        private string EMOTES_INDIVIDUAL_ENDPOINT = "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
-        private const string EMOTES_GLOBAL_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes/global";
-        private const string EMOTES_CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/chat/emotes";
-
-        private const string BADGES_GLOBAL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges/global";
-        private const string BADGES_CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges";
-        private const string BADGES_INDIVIDUAL_ENDPOINT = "https://api.twitch.tv/helix/chat/badges";
-
-        private const string CHANNEL_INFO_ENDPOINT = "https://api.twitch.tv/helix/channels";
-
-        private const string VALIDATE_ENDPOINT = "https://id.twitch.tv/oauth2/validate";
-
-        private static readonly string[] USER_TOKEN_SCOPES = {
+        private readonly string[] USER_TOKEN_SCOPES = {
             "chat:read",
             "user:read:chat",
             "channel:read:redemptions",
             "channel:read:subscriptions",
             "moderator:read:followers",
+            "moderator:read:chatters"
         };
 
         [Header("Networking")]
@@ -72,26 +57,53 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }
         }
 
-        public override void Initialize()
+        private List<Endpoint> WebServerEndpoints { 
+            get { 
+                return new()
+                {
+                    new Endpoint("/twitch/oauth2", (req) =>
+                    {
+                        return new EndpointResponse(200, _tokenRedirectPage.text);
+                    }),
+                    new Endpoint("/twitch/token", (req) =>
+                    {
+                        TokenRedirectData data = JsonUtility.FromJson<TokenRedirectData>(req.body);
+                        SetToken(data.token);
+                        return new EndpointResponse(200, "OK");
+                    }),
+                    // TODO: this probably goes in the integration manager
+                    new Endpoint("/twitch/reload", (req) =>
+                    {
+                        Enable();
+                        return new EndpointResponse(200, "Reload Requested");
+                    })
+                };
+         }
+        }
+
+        public override void Enable()
         {
             // Set up token ingest endpoints 
-            _webServer.RegisterEndpoint(new Endpoint("/twitch/oauth2", (req) =>
+            foreach(Endpoint endpoint in WebServerEndpoints)
             {
-                return new EndpointResponse(200, _tokenRedirectPage.text);
-            }));
-            _webServer.RegisterEndpoint(new Endpoint("/twitch/token", (req) =>
-            {
-                TokenRedirectData data = JsonUtility.FromJson<TokenRedirectData>(req.body);
-                SetToken(data.token);
-                return new EndpointResponse(200, "OK");
-            }));
-            // Set up refresh endpoint
-            _webServer.RegisterEndpoint(new Endpoint("/twitch/reload", (req) =>
-            {
-                Initialize();
-                return new EndpointResponse(200, "Reload Requested");
-            }));
+                _webServer.RegisterEndpoint(endpoint);
+            }
             FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+        }
+
+        public override void Disable()
+        {
+            foreach(Endpoint endpoint in WebServerEndpoints)
+            {
+                _webServer.UnregisterEndpoint(endpoint);
+            }
+            _socket.Stop();
+        }
+
+        public override void Initialize()
+        {
+            // TODO: move this to a manager
+            Enable();
         }
 
         private void Update()
@@ -119,7 +131,6 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             try
             {
                 EventSub.EventMessage<EventSub.EventPayload<string>> message = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<string>>>(msg);
-                Debug.Log(msg);
                 if(!RECENT_EVENTS.ContainsKey(message.metadata.message_id))
                 {
                     RECENT_EVENTS.Add(message.metadata.message_id, message);
@@ -134,10 +145,11 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                 Debug.Log("EventSub subscriptions complete, caching emotes and badges...");
                                 // Subscribing to events is time-sensitive (sessionId will be invalidated after 10s of inactivity),
                                 // So let's do our subscriptions before we do the heavy caching operation
-                                GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
-                                GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
-                                GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
-                                GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
+                                // GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
+                                // GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
+                                // GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
+                                // GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
+                                GetChatters((chatters) => {Debug.Log(string.Join(", ", chatters.Select(chatter => chatter.user_name))); }, (err) => { Debug.LogError(err); });
                             },
                             (key, pending) =>
                             {
@@ -145,7 +157,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                             }
                         );
 
-                        string AwaitSubscription<T>(Action<string, Action<string>, Action<StreamError>, Action<T>> action, Action<T> onEvent) where T : IEventSubEvent
+                        string Subscribe<T>(Action<string, Action<string>, Action<StreamError>, Action<T>> action, Action<T> onEvent) where T : EventSub.IEventSubEvent
                         {
                             string id = Guid.NewGuid().ToString();
                             subscriptionsManager.AddDependency(id);
@@ -161,11 +173,11 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                             return id;
                         }
                         // Kick off all HTTP subscriptions
-                        AwaitSubscription<EventSub.ChatMessageEvent>(SubscribeToChatMessageEvent, PrepareChatMessage);
-                        AwaitSubscription<EventSub.ChatMessageDeletionEvent>(SubscribeToChatMessageDeletionEvent, PrepareChatMessageDeletion);
-                        AwaitSubscription<EventSub.ChannelPointRedeemEvent>(SubscribeToChannelPointRedeemEvent, PrepareChannelRedeem);   
-                        AwaitSubscription<EventSub.ChannelFollowEvent>(SubscribeToChannelFollowEvent, PrepareChannelFollow);
-                        AwaitSubscription<EventSub.ChannelUpdateEvent>(SubscribeToChannelUpdateEvent, PrepareChannelUpdate);
+                        Subscribe<EventSub.ChatMessageEvent>(SubscribeToChatMessageEvent, PrepareChatMessage);
+                        Subscribe<EventSub.ChatMessageDeletionEvent>(SubscribeToChatMessageDeletionEvent, PrepareChatMessageDeletion);
+                        Subscribe<EventSub.ChannelPointRedeemEvent>(SubscribeToChannelPointRedeemEvent, PrepareChannelRedeem);   
+                        Subscribe<EventSub.ChannelFollowEvent>(SubscribeToChannelFollowEvent, PrepareChannelFollow);
+                        Subscribe<EventSub.ChannelUpdateEvent>(SubscribeToChannelUpdateEvent, PrepareChannelUpdate);
                         subscriptionsManager.Enable(true);
                     }
                     else if ("notification".Equals(message.metadata.message_type))
@@ -191,9 +203,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         public void RequestToken()
         {
-            string userToken = USER_TOKEN_ENDPOINT
+            string userToken = API.USER_TOKEN_ENDPOINT
             + "?client_id=" + CLIENT_ID
-            + "&redirect_uri=" + USER_TOKEN_REDIRECT
+            + "&redirect_uri=" + API.USER_TOKEN_REDIRECT
             + "&response_type=token"
             + "&state=" + "http://localhost:" + _webServer.Port + "/twitch/token"
             + "&scope=" + string.Join(" ", USER_TOKEN_SCOPES);
@@ -225,7 +237,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 {
                     Debug.LogError(err);
                 });
-                _socket.Start("wss://eventsub.wss.twitch.tv/ws",
+                _socket.Start(API.EVENTSUB_SOCKET_ENDPOINT,
                     () =>
                     {
                         Debug.Log("Twitch EventSub Socket connected!");
@@ -252,7 +264,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 authorization = token
             };
             StartCoroutine(
-                HttpUtils.GetRequest(VALIDATE_ENDPOINT, headers,
+                HttpUtils.GetRequest(API.TOKEN_VALIDATION_ENDPOINT, headers,
                     (str) =>
                     {
                         TokenValidationResponse response = JsonUtility.FromJson<TokenValidationResponse>(str);
@@ -274,7 +286,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public void GetChannelInfo(ICollection<string> channels, Action<List<ChannelData>> onSuccess, Action<StreamError> onError)
         {
             string query = channels.Count > 0 ? $"?{string.Join('&', channels.Select(channel => "broadcaster_id=" + channel))}" : "";
-            string url = $"{CHANNEL_INFO_ENDPOINT}{query}";
+            string url = $"{API.CHANNEL_INFO_ENDPOINT}{query}";
             StartCoroutine(
                 HttpUtils.GetRequest(url, Headers,
                     (str) =>
@@ -305,7 +317,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public void GetUserInfo(ICollection<string> users, Action<List<UserData>> onSuccess, Action<StreamError> onError)
         {
             string query = users.Count > 0 ? $"?{string.Join('&', users.Select(user => "login=" + user))}" : "";
-            string url = $"{USERS_ENDPOINT}{query}";
+            string url = $"{API.USER_INFO_ENDPOINT}{query}";
             StartCoroutine(
                 HttpUtils.GetRequest(url, Headers,
                     (str) =>
@@ -346,28 +358,65 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         #endregion
 
+        #region Chatters
+
+        public void GetChatters(Action<List<ChatterData>> onSuccess, Action<StreamError> onError)
+        {
+            string url = $"{API.CHATTERS_ENDPOINT}?broadcaster_id={BROADCASTER_ID}&moderator_id={BROADCASTER_ID}";
+            List<ChatterData> chatters = new List<ChatterData>();
+            void GetNextPage(string after = null)
+            {
+                string paginatedUrl = $"{url}{(after != null ? $"&after={after}" : "")}";
+                StartCoroutine(
+                    HttpUtils.GetRequest(paginatedUrl, Headers,
+                        (str) =>
+                        {
+                            var page = JsonUtility.FromJson<PaginatedDataResponse<ChatterData>>(str);
+                            chatters.AddRange(page.data);
+                            if(page.pagination != null && !string.IsNullOrEmpty(page.pagination.cursor))
+                            {
+                                GetNextPage(page.pagination.cursor);
+                            }
+                            else
+                            {
+                                onSuccess(chatters);   
+                            }
+                        },
+                        (err) =>
+                        {
+                            onError(new StreamError(err));
+                        }
+                    )
+                );
+            }
+            GetNextPage();
+        }
+
+        #endregion
+
         #region Emotes
 
         public void GetGlobalEmotes(Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log("Fetching global emotes.");
-            string url = EMOTES_GLOBAL_ENDPOINT;
+            string url = API.EMOTES_GLOBAL_ENDPOINT;
             GetBatchEmotes(url, onSuccess, onError);
         }
 
         public void GetChannelEmotes(string broadcasterId, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log($"Fetching channel emotes for Broadcaster ID: {broadcasterId}");
-            string url = $"{EMOTES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
+            string url = $"{API.EMOTES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
 
         public void GetSetEmotes(string setId, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log($"Fetching set emotes for set ID: {setId}");
-            string url = $"{EMOTES_SET_ENDPOINT}?emote_set_id={setId}";
+            string url = $"{API.EMOTES_SET_ENDPOINT}?emote_set_id={setId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
+
         private void GetBatchEmotes(string url, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             StartCoroutine(
@@ -376,13 +425,12 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     {
                         EmoteDataResponse response = JsonUtility.FromJson<EmoteDataResponse>(str);
                         List<StreamImage> emotes = new List<StreamImage>();
-                        EMOTES_INDIVIDUAL_ENDPOINT = response.template;
-                        // TODO: chunk this in to groups of like 50 to avoid timeouts
+                        // EMOTES_INDIVIDUAL_ENDPOINT = response.template;
                         var chunks = CollectionUtils.Chunk(response.data, 50);
                         int count = chunks.Count;
                         if(count > 0)
                         {
-                            void batch(int index)
+                            void Batch(int index)
                             {
                                 if(index < count){
                                     Debug.Log($"Handling emote chunk {index} of {count}...");
@@ -391,7 +439,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                         {
                                             Debug.Log($"{emotes.Count} total emotes resolved!");
                                             onSuccess(emotes);
-                                            batch(index+1);
+                                            Batch(index+1);
                                         },
                                         (key, pending) =>
                                         {
@@ -421,7 +469,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                     onSuccess(emotes);
                                 }
                             }
-                            batch(0);
+                            Batch(0);
                         }
                         else
                         {
@@ -441,7 +489,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             string key = data.name;
             string format = data.format[^1];
             string scale = data.scale[^1];
-            string url = EMOTES_INDIVIDUAL_ENDPOINT
+            string url = API.EMOTES_INDIVIDUAL_ENDPOINT
             .Replace("{{id}}", data.id)
             .Replace("{{format}}", format)
             .Replace("{{theme_mode}}", "light")
@@ -456,13 +504,13 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public void GetGlobalBadges(Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log("Fetching global badges.");
-            GetBatchBadges(BADGES_GLOBAL_ENDPOINT, onSuccess, onError);
+            GetBatchBadges(API.BADGES_GLOBAL_ENDPOINT, onSuccess, onError);
         }
 
         public void GetChannelBadges(string broadcasterId, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
             Debug.Log($"Fetching channel badges for Broadcaster ID: {broadcasterId}");
-            string url = $"{BADGES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
+            string url = $"{API.BADGES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
             GetBatchBadges(url, onSuccess, onError);
         }
 
@@ -478,7 +526,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     int count = chunks.Count;
                     if(count > 0)
                     {
-                        void batch(int index)
+                        void Batch(int index)
                         {
                             if(index < count){
                                 Debug.Log($"Handling badge chunk {index} of {count}...");
@@ -487,7 +535,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                     {
                                         Debug.Log($"{badges.Count} total badges resolved!");
                                         onSuccess(badges);
-                                        batch(index+1);
+                                        Batch(index+1);
                                     },
                                     (key, pending) =>
                                     {
@@ -521,7 +569,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                 onSuccess(badges);
                             }
                         }
-                        batch(0);
+                        Batch(0);
                     }
                     else
                     {
@@ -543,7 +591,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         {
             string eventType = payload.GetSubscriptionType();
             StartCoroutine(
-                HttpUtils.PostRequest(EVENTSUB_SUBSCRIPTION_ENDPOINT, JsonUtility.ToJson(payload), Headers,
+                HttpUtils.PostRequest(API.EVENTSUB_SUBSCRIPTION_ENDPOINT, JsonUtility.ToJson(payload), Headers,
                     (success) =>
                     {
                         EventSub.SubscriptionResponse response = JsonUtility.FromJson<EventSub.SubscriptionResponse>(success);

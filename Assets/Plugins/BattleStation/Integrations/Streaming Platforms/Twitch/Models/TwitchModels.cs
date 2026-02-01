@@ -13,6 +13,20 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public List<T> data;
     }
 
+    [Serializable]
+    public class PaginatedDataResponse<T> : DataResponse<T>
+    {
+        public Page pagination;
+        public int total;
+    }
+
+    [Serializable]
+    public class Page
+    {
+        public string cursor;
+    }
+
+
     #endregion
 
     #region Validate Token API 
@@ -63,6 +77,18 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string title;
         public int delay;
         public string[] tags;
+    }
+
+    #endregion
+
+    #region Chatters Data API
+
+    [Serializable]
+    public class ChatterData
+    {
+        public string user_id;
+        public string user_login;
+        public string user_name;
     }
 
     #endregion
