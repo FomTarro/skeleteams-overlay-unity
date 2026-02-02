@@ -70,7 +70,7 @@ namespace Skeletom.BattleStation.Integrations
         // TODO: Color and badges should be moved to be a function of chat messages
         public Color displayColor;
         public StreamImage avatar;
-        public List<StreamBadge> badges = new List<StreamBadge>();
+        public List<StreamBadge> badges = new();
 
         public StreamUser(string displayName, string id, string displayColorHex)
         {
@@ -128,7 +128,7 @@ namespace Skeletom.BattleStation.Integrations
 
         public string id;
         public StreamUser chatter;
-        public List<Fragment> fragments = new List<Fragment>();
+        public List<Fragment> fragments = new();
         public StreamChatMessage(string id, StreamUser chatter, ICollection<Fragment> fragments)
         {
             this.id = id;
@@ -200,9 +200,9 @@ namespace Skeletom.BattleStation.Integrations
         public string tier;
         public int streak;
 
-        public StreamChannelPaidSubscription(StreamUser follower)
+        public StreamChannelPaidSubscription(StreamUser subscriber)
         {
-            this.subscriber = follower;
+            this.subscriber = subscriber;
         }
     }
 

@@ -1597,7 +1597,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 687667456}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79eacb2aa58a89d44aab09e275722d9e, type: 3}
   m_Name: 
@@ -1622,10 +1622,19 @@ MonoBehaviour:
   onChatMessageDelete:
     m_PersistentCalls:
       m_Calls: []
+  onPaidChatMessage:
+    m_PersistentCalls:
+      m_Calls: []
   onChatRedeem:
     m_PersistentCalls:
       m_Calls: []
   onChannelFollow:
+    m_PersistentCalls:
+      m_Calls: []
+  onChannelPaidSubscription:
+    m_PersistentCalls:
+      m_Calls: []
+  onChannelRaid:
     m_PersistentCalls:
       m_Calls: []
   onStreamInfoUpdate:
@@ -2974,6 +2983,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1938792294}
   m_CullTransparentMesh: 1
+--- !u!1 &1953411253
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1953411255}
+  - component: {fileID: 1953411254}
+  m_Layer: 0
+  m_Name: OBS Integration
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1953411254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1953411253}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87e9ec235e9b2eb5d80941fa09b50630, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _initializationOrder: 0
+--- !u!4 &1953411255
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1953411253}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1982004617
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4502,3 +4556,4 @@ SceneRoots:
   - {fileID: 404186381}
   - {fileID: 687667458}
   - {fileID: 835040117}
+  - {fileID: 1953411255}

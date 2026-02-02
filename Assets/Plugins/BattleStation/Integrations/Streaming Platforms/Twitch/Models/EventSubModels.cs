@@ -16,11 +16,11 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
         public string type;
         public string version = "1";
         public T condition;
-        public Transport transport;
+        public SubscriptionTransport transport;
 
         public EventSubscriptionRequest(string sessionId)
         {
-            transport = new Transport()
+            transport = new SubscriptionTransport()
             {
                 session_id = sessionId
             };
@@ -40,7 +40,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
     public interface ICondition { }
 
     [Serializable]
-    public class Transport
+    public class SubscriptionTransport
     {
         public string method = "websocket";
         public string session_id;
@@ -59,7 +59,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
     {
         // TODO: not sure how to easily get this back out;
         // public T condition;
-        public Transport transport;
+        public SubscriptionTransport transport;
         public int cost;
         public string created_at;
         public string status;
@@ -116,6 +116,25 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
 
     #endregion
 
+    #region Shared Models
+
+    [Serializable]
+    public class GenericMessage
+    {
+        public string text;
+        public GenericMessageEmote[] emotes = new GenericMessageEmote[0];
+    }
+
+    [Serializable]
+    public class GenericMessageEmote
+    {
+        public int begin;
+        public int end;
+        public string id;
+    }
+
+    #endregion
+
     #region Welcome Event
 
     [Serializable]
@@ -153,7 +172,6 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
         public string broadcaster_user_id;
         public string user_id;
     }
-
 
     [Serializable]
     public class ChatMessage
@@ -444,17 +462,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
         public string broadcaster_user_id;
         public string broadcaster_user_login;
         public string broadcaster_user_name;
-        // TODO: Yet another way to represent a chat message, how fun
-        // "message": {
-        //     "text": "Love the stream! FevziGG",
-        //     "emotes": [
-        //         {
-        //             "begin": 23,
-        //             "end": 30,
-        //             "id": "302976485"
-        //         }
-        //     ]
-        // },
+        public GenericMessage message;
         public int cumulative_months;
         public int streak_months;
         public int duration_months;

@@ -68,11 +68,11 @@ namespace Skeletom.BattleStation.Integrations
 
         #region Public API
 
-        public abstract void GetUserAvatar(StreamUser user, Action<StreamImage> onSuccess, Action<StreamError> onError);
+        // public abstract void GetUserAvatar(StreamUser user, Action<StreamImage> onSuccess, Action<StreamError> onError);
 
         public abstract void GetCurrentChatUsers(Action<List<StreamUser>> onSuccess, Action<StreamError> onError);
-        public abstract void GetCurrentSubscribers(Action<List<StreamUser>> onSuccess, Action<StreamError> onError);
-        public abstract void GetCurrentFollowers(Action<List<StreamUser>> onSuccess, Action<StreamError> onError);
+        // public abstract void GetCurrentSubscribers(Action<List<StreamUser>> onSuccess, Action<StreamError> onError);
+        // public abstract void GetCurrentFollowers(Action<List<StreamUser>> onSuccess, Action<StreamError> onError);
 
         #endregion
     }

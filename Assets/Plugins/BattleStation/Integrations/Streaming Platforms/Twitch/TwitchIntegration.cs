@@ -162,7 +162,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                             }
                         );
 
-                        string Subscribe<T>(Action<string, Action<string>, Action<StreamError>, Action<T>> action, Action<T> onEvent) where T : EventSub.IEventSubEvent
+                        string Subscribe<T>(Action<string, Action<EventSub.SubscriptionResponse>, Action<StreamError>, Action<T>> action, Action<T> onEvent) where T : EventSub.IEventSubEvent
                         {
                             string id = Guid.NewGuid().ToString();
                             subscriptionsManager.AddDependency(id);
@@ -183,7 +183,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         Subscribe<EventSub.ChannelCheerEvent>(SubscribeToChannelCheerEvent, PrepareChannelCheer);
                         Subscribe<EventSub.ChannelPointRedeemEvent>(SubscribeToChannelPointRedeemEvent, PrepareChannelRedeem);   
                         Subscribe<EventSub.ChannelFollowEvent>(SubscribeToChannelFollowEvent, PrepareChannelFollow);
-                        Subscribe<EventSub.ChannelSubNewEvent>(SubscribeToChannelSubscriptionEvent, PrepareChannelSubscription);
+                        Subscribe<EventSub.ChannelSubNewEvent>(SubscribeToChannelSubNewEvent, PrepareChannelSubscription);
                         Subscribe<EventSub.ChannelRaidEvent>(SubscribeToChannelRaidEvent, PrepareChannelRaid);
                         Subscribe<EventSub.ChannelUpdateEvent>(SubscribeToChannelUpdateEvent, PrepareChannelUpdate);
                         subscriptionsManager.Enable(true);
@@ -324,9 +324,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         #region User Info
 
-        public void GetUserInfo(ICollection<string> userLoginNames, Action<List<UserData>> onSuccess, Action<StreamError> onError)
+        public void GetUserInfo(ICollection<string> userIds, Action<List<UserData>> onSuccess, Action<StreamError> onError)
         {
-            string query = userLoginNames.Count > 0 ? $"?{string.Join('&', userLoginNames.Select(user => "login=" + user))}" : "";
+            string query = userIds.Count > 0 ? $"?{string.Join('&', userIds.Select(id => "id=" + id))}" : "";
             string url = $"{API.USER_INFO_ENDPOINT}{query}";
             StartCoroutine(
                 HttpUtils.GetRequest(url, Headers,
@@ -602,7 +602,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         #region EventSub
 
         // Generic
-        private void SubscribeToEvent<T>(EventSub.IEventSubscriptionRequest payload, Action<string> onSuccess, Action<StreamError> onError, Action<T> onEvent) where T : EventSub.IEventSubEvent
+        private void SubscribeToEvent<T>(EventSub.IEventSubscriptionRequest payload, Action<EventSub.SubscriptionResponse> onSuccess, Action<StreamError> onError, Action<T> onEvent) where T : EventSub.IEventSubEvent
         {
             string eventType = payload.GetSubscriptionType();
             StartCoroutine(
@@ -617,7 +617,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                             onEvent(obj.payload.@event);
                         };
                         Debug.Log($"Subscribed to {eventType} - {data.id}");
-                        onSuccess(success);
+                        onSuccess(response);
                     },
                     (err) =>
                     {
@@ -629,7 +629,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         }
 
         // Chat Messages
-        private void SubscribeToChatMessageEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChatMessageEvent> onEvent)
+        private void SubscribeToChatMessageEvent(string sessionId, Action<EventSub.SubscriptionResponse> onSuccess, Action<StreamError> onError, Action<EventSub.ChatMessageEvent> onEvent)
         {
             SubscribeToEvent(
                 new EventSub.ChatMessageSubscriptionRequest(sessionId)
@@ -643,7 +643,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 onSuccess, onError, onEvent
             );
         }
-        private void SubscribeToChatMessageDeletionEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChatMessageDeletionEvent> onEvent)
+        private void SubscribeToChatMessageDeletionEvent(string sessionId, Action<EventSub.SubscriptionResponse> onSuccess, Action<StreamError> onError, Action<EventSub.ChatMessageDeletionEvent> onEvent)
         {
             SubscribeToEvent(
                 new EventSub.ChatMessageDeletionSubscriptionRequest(sessionId)
@@ -660,8 +660,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent)
         {
-            StreamUser chatter = new StreamUser(chatEvent.chatter_user_name, chatEvent.chatter_user_id, chatEvent.color);
-            List<StreamChatMessage.Fragment> fragments = new List<StreamChatMessage.Fragment>();
+            StreamUser chatter = new(chatEvent.chatter_user_name, chatEvent.chatter_user_id);
+            List<StreamChatMessage.Fragment> fragments = new();
+            List<StreamBadge> badges = new();
             // create a callback for all HTTP dependencies
             DependencyManager manager = new(
                 () => { onChatMessage.Invoke(new StreamChatMessage(chatEvent.message_id, chatter, fragments)); }
@@ -697,8 +698,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             {
                 string taskId = Guid.NewGuid().ToString();
                 manager.AddDependency(taskId);
-                StreamBadge newBadge = new StreamBadge(badge.info, badge.id);
-                chatter.badges.Add(newBadge);
+                StreamBadge newBadge = new(badge.info, badge.id);
+                badges.Add(newBadge);
                 ImageHandler.GetFromCache(
                     $"badge_{badge.set_id}_{badge.id}",
                     (success) =>
@@ -720,7 +721,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             onChatMessageDelete.Invoke(deletion);
         }
 
-        private void SubscribeToChannelCheerEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelCheerEvent> onEvent)
+        private void SubscribeToChannelCheerEvent(string sessionId, Action<EventSub.SubscriptionResponse> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelCheerEvent> onEvent)
         {
             SubscribeToEvent(
                 new EventSub.ChannelCheerSubscriptionRequest(sessionId)
@@ -751,7 +752,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         }
 
         // Redeems
-        private void SubscribeToChannelPointRedeemEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelPointRedeemEvent> onEvent)
+        private void SubscribeToChannelPointRedeemEvent(string sessionId, Action<EventSub.SubscriptionResponse> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelPointRedeemEvent> onEvent)
         {
             SubscribeToEvent(
                 new EventSub.ChannelPointRedeemSubscriptionRequest(sessionId)
@@ -777,8 +778,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             manager.Enable(true);
         }
 
-        // Follow/Subscribe
-        private void SubscribeToChannelFollowEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelFollowEvent> onEvent)
+        // Follow
+        private void SubscribeToChannelFollowEvent(string sessionId, Action<EventSub.SubscriptionResponse> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelFollowEvent> onEvent)
         {
             SubscribeToEvent(
                 new EventSub.ChannelFollowSubscriptionRequest(sessionId)
@@ -805,7 +806,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             manager.Enable(true);
         }
 
-        private void SubscribeToChannelSubscriptionEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelSubNewEvent> onEvent)
+        // Subscriptions
+        private void SubscribeToChannelSubNewEvent(string sessionId, Action<EventSub.SubscriptionResponse> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelSubNewEvent> onEvent)
         {
             SubscribeToEvent(
                 new EventSub.ChannelSubNewSubscriptionRequest(sessionId)
@@ -821,8 +823,14 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private void PrepareChannelSubscription(EventSub.ChannelSubNewEvent subEvent)
         {
             StreamUser chatter = new(subEvent.user_name, subEvent.user_id);
+            StreamChannelPaidSubscription sub = new(chatter)
+            {
+                tier = subEvent.tier,
+                isGifted = subEvent.is_gift,
+                streak = 0,
+            };
             DependencyManager manager = new(
-                () => { onChannelPaidSubscription.Invoke(new StreamChannelPaidSubscription(chatter)); }
+                () => { onChannelPaidSubscription.Invoke(sub); }
             );
             // TODO: we're going to need to collect info at some point, just setting this up for later
             string taskId = Guid.NewGuid().ToString();
@@ -831,8 +839,41 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             manager.Enable(true);
         }
 
+        // TODO: This and gift subs
+        // private void SubscribeToChannelSubRenewalEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelSubGiftEvent> onEvent)
+        // {
+        //     SubscribeToEvent(
+        //         new EventSub.ChannelSubRenewalSubscriptionRequest(sessionId)
+        //         {
+        //             condition = new EventSub.ChannelSubRenewalEventCondition()
+        //             {
+        //                 broadcaster_user_id = BROADCASTER_ID,
+        //             }
+        //         },
+        //         onSuccess, onError, onEvent
+        //     );
+        // }
+        // private void PrepareChannelSubscription(EventSub.ChannelSubRenewalEvent subEvent)
+        // {
+        //     StreamUser chatter = new(subEvent.user_name, subEvent.user_id);
+        //     StreamChannelPaidSubscription sub = new(chatter)
+        //     {
+        //         tier = subEvent.,
+        //         isGifted = false,
+        //         streak = 0,
+        //     };
+        //     DependencyManager manager = new(
+        //         () => { onChannelPaidSubscription.Invoke(sub); }
+        //     );
+        //     // TODO: we're going to need to collect info at some point, just setting this up for later
+        //     string taskId = Guid.NewGuid().ToString();
+        //     manager.AddDependency(taskId);
+        //     manager.ResolveDependency(taskId);
+        //     manager.Enable(true);
+        // }
+
         // Raids
-        private void SubscribeToChannelRaidEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelRaidEvent> onEvent)
+        private void SubscribeToChannelRaidEvent(string sessionId, Action<EventSub.SubscriptionResponse> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelRaidEvent> onEvent)
         {
             SubscribeToEvent(
                 new EventSub.ChannelRaidSubscriptionRequest(sessionId)
@@ -859,7 +900,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         }
 
         // Channel Info
-        private void SubscribeToChannelUpdateEvent(string sessionId, Action<string> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelUpdateEvent> onEvent)
+        private void SubscribeToChannelUpdateEvent(string sessionId, Action<EventSub.SubscriptionResponse> onSuccess, Action<StreamError> onError, Action<EventSub.ChannelUpdateEvent> onEvent)
         {
             SubscribeToEvent(
                 new EventSub.ChannelUpdateSubscriptionRequest(sessionId)
