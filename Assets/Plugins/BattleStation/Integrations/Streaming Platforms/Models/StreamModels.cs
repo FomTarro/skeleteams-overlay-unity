@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using Skeletom.BattleStation.Graphics.Animations;
 using Skeletom.Essentials.Utils;
 using UnityEngine;

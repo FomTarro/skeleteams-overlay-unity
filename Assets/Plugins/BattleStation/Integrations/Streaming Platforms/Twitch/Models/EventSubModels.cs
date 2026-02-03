@@ -47,7 +47,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
     }
 
     [Serializable]
-    public class SubscriptionResponse : DataResponse<SubscriptionData>
+    public class SubscriptionResponse : API.DataResponse<SubscriptionData>
     {
         public int max_total_cost;
         public int total;
@@ -186,12 +186,12 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
         public string type;
         public string text;
         public string cheermote;
-        public ChatMessageFragmentEmote emote;
+        public ChatMessageEmote emote;
         public string mention;
     }
 
     [Serializable]
-    public class ChatMessageFragmentEmote
+    public class ChatMessageEmote
     {
         public string emote_set_id;
         public string[] format = new string[0];
@@ -252,6 +252,48 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
         public string target_user_login;
         public string target_user_name;
         public string message_id;
+    }
+
+    #endregion
+
+    #region Chat Bits Used Event
+
+    [Serializable]
+    public class ChatBitsUsedSubscriptionRequest : EventSubscriptionRequest<ChatBitsUsedEventCondition>
+    {
+        public ChatBitsUsedSubscriptionRequest(string sessionId) : base(sessionId)
+        {
+            type = "channel.bits.use";
+        }
+    }
+
+    [Serializable]
+    public class ChatBitsUsedEventCondition : ICondition
+    {
+        public string broadcaster_user_id;
+    }
+
+    [SerializeField]
+    public class ChatPowerUp
+    {
+        public string type;
+        public object emote;
+        public string message_effect_id;
+    }
+
+    [Serializable]
+    public class ChatBitsUsedEvent : IEventSubEvent
+    {
+        public string user_id;
+        public string user_login;
+        public string user_name;
+        public string broadcaster_user_id;
+        public string broadcaster_user_login;
+        public string broadcaster_user_name;
+        public int bits;
+        public string type;
+        public ChatMessage message;
+        public ChatPowerUp power_up;
     }
 
     #endregion
@@ -369,6 +411,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
 
     #region Channel Subscription New Event
 
+    // User has gone from non-sub to sub. Not a chat message.
     [Serializable]
     public class ChannelSubNewSubscriptionRequest : EventSubscriptionRequest<ChannelSubNewEventCondition>
     {
@@ -402,6 +445,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
 
     #region Channel Subscription Gift Event
 
+    // User has gifted subs to other users. Not a chat message.
     [Serializable]
     public class ChannelSubGiftSubscriptionRequest : EventSubscriptionRequest<ChannelSubGiftEventCondition>
     {
@@ -435,8 +479,9 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
 
     #endregion
 
-    #region Channel Subscription Renewal Event
+    #region Channel Subscription Renew Event
 
+    // User has chosen to share their sub renewal. Includes a chat message.
     [Serializable]
     public class ChannelSubRenewalSubscriptionRequest : EventSubscriptionRequest<ChannelSubRenewalEventCondition>
     {

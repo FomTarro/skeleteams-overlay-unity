@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Skeletom.BattleStation.Integrations.Twitch
+namespace Skeletom.BattleStation.Integrations.Twitch.API
 {
     #region Generic API Response
 
@@ -111,7 +111,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string[] scale = new string[] { "1.0", "2.0", "4.0" };
         public string[] theme_mode = new string[] { "light" };
 
-        public EmoteData(string emoteName, EventSub.ChatMessageFragmentEmote fragment)
+        public EmoteData(string emoteName, EventSub.ChatMessageEmote fragment)
         {
             name = emoteName;
             id = fragment.id;
