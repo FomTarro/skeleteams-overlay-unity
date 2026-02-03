@@ -66,23 +66,12 @@ namespace Skeletom.BattleStation.Integrations
     {
         public string displayName;
         public string id;
-        // TODO: Color and badges should be moved to be a function of chat messages
-        public Color displayColor;
-        public StreamImage avatar;
-        public List<StreamBadge> badges = new();
-
-        public StreamUser(string displayName, string id, string displayColorHex)
-        {
-            this.displayName = displayName;
-            this.id = id;
-            ColorUtility.TryParseHtmlString(displayColorHex, out this.displayColor);
-        }
 
         public StreamUser(string displayName, string id)
         {
             this.displayName = displayName;
             this.id = id;
-            this.displayColor = Color.white;
+            // ColorUtility.TryParseHtmlString(displayColorHex, out this.displayColor);
         }
     }
 
@@ -127,12 +116,16 @@ namespace Skeletom.BattleStation.Integrations
 
         public string id;
         public StreamUser chatter;
-        public List<Fragment> fragments = new();
-        public StreamChatMessage(string id, StreamUser chatter, ICollection<Fragment> fragments)
+        public Color nameColor = Color.white;
+        public List<StreamBadge> badges = new();
+        public List<Fragment> message = new();
+        public StreamChatMessage(string id, StreamUser chatter, string nameColorHexCode, ICollection<StreamBadge> badges, ICollection<Fragment> message)
         {
             this.id = id;
             this.chatter = chatter;
-            this.fragments = new List<Fragment>(fragments);
+            this.message = new List<Fragment>(message);
+            this.badges = new List<StreamBadge>(badges);
+            ColorUtility.TryParseHtmlString(nameColorHexCode, out this.nameColor);
         }
     }
 

@@ -38,7 +38,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         }
 
         // This allows us to swap out endpoints for mock ones against a testing engine
-        private readonly IEndpoints TWITCH_API = new LocalAPI();
+        private readonly IEndpoints TWITCH_API = new TwitchAPI();
 
         private readonly WebSocket _socket = new();
 
@@ -665,7 +665,10 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             List<StreamBadge> badges = new();
             // create a callback for all HTTP dependencies
             DependencyManager manager = new(
-                () => { onChatMessage.Invoke(new StreamChatMessage(chatEvent.message_id, chatter, fragments)); }
+                () => { 
+                    StreamChatMessage message = new(chatEvent.message_id, chatter, chatEvent.color, badges, fragments);
+                    onChatMessage.Invoke(message); 
+                }
             );
             // TODO: get user avatar? Seems like too much for every chat message.
             foreach (EventSub.ChatMessageFragment fragment in chatEvent.message.fragments)

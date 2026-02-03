@@ -25,12 +25,12 @@ public class ChatMessageDisplay : MonoBehaviour
 
     public void Display(StreamChatMessage message)
     {
-        if (message.chatter.badges.Count > 0)
+        if (message.badges.Count > 0)
         {
-            _badge.DisplayTexture(message.chatter.badges[0].image);
+            _badge.DisplayTexture(message.badges[0].image);
         }
         _username.text = message.chatter.displayName;
-        _username.color = message.chatter.displayColor;
+        _username.color = message.nameColor;
         this.message = message;
         _text.text = "";
         foreach (string emote in _emotes.Keys)
@@ -38,7 +38,7 @@ public class ChatMessageDisplay : MonoBehaviour
             Destroy(_emotes[emote].gameObject);
         }
         _emotes.Clear();
-        foreach (StreamChatMessage.Fragment fragment in message.fragments)
+        foreach (StreamChatMessage.Fragment fragment in message.message)
         {
             if (fragment.type == StreamChatMessage.Fragment.Type.EMOTE)
             {
