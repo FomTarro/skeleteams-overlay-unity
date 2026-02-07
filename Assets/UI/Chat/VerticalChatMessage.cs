@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Skeletom.BattleStation.Graphics.Animations;
 using Skeletom.BattleStation.Integrations;
@@ -6,13 +7,18 @@ using Skeletom.Essentials.Utils;
 using TMPro;
 using UnityEngine;
 
-public class ChatMessageDisplay : MonoBehaviour, IChatMessage
+public class VerticalChatMessage : ChatMessageGameObject
 {
+    [SerializeField]
+    private GameObject _avatarMask;
+    [SerializeField]
+    private GameObject _userInfoBox;
     [SerializeField]
     private AnimatedTextureDisplay _badge;
     [SerializeField]
     private TMP_Text _username;
-
+    [SerializeField]
+    private TMP_Text _timestamp;
     [SerializeField]
     private TMP_Text _text;
 
@@ -23,21 +29,33 @@ public class ChatMessageDisplay : MonoBehaviour, IChatMessage
     [SerializeField]
     private StreamChatMessage message;
 
-    public void Display(StreamChatMessage message)
+    public DateTime Timestamp { get { return message.timestamp; } }
+    public string ChatterId { get { return message.chatter.id; } }
+
+
+    public override void DisplayMessage(StreamChatMessage message)
     {
+        this.message = message;
         if (message.badges.Count > 0)
         {
+            _badge.gameObject.SetActive(true);
             _badge.DisplayTexture(message.badges[0].image);
+        }
+        else
+        {
+            _badge.gameObject.SetActive(false);
         }
         _username.text = message.chatter.displayName;
         _username.color = message.nameColor;
-        this.message = message;
+        _timestamp.text = message.timestamp.ToString("hh:mm") + (message.timestamp.Hour > 11 ? " PM" : " AM");
         _text.text = "";
         foreach (string emote in _emotes.Keys)
         {
             Destroy(_emotes[emote].gameObject);
         }
         _emotes.Clear();
+        bool hasText = false;
+
         foreach (StreamChatMessage.Fragment fragment in message.message)
         {
             if (fragment.type == StreamChatMessage.Fragment.Type.EMOTE)
@@ -54,9 +72,25 @@ public class ChatMessageDisplay : MonoBehaviour, IChatMessage
             }
             else
             {
-                _text.text += TextUtils.RemoveConsecutiveWhitespace(fragment.text);
+                string sanitized = TextUtils.RemoveConsecutiveWhitespace(fragment.text);
+                _text.text += sanitized;
+                hasText = true;
             }
         }
+        if (!hasText)
+        {
+            _text.fontSize = 64;
+        }
+        else
+        {
+            _text.fontSize = 24;
+        }
+        _text.text += " ";
+    }
+
+    public override void DisposeMessage()
+    {
+        // no additional cleanup needed
     }
 
     private void Update()
@@ -76,5 +110,11 @@ public class ChatMessageDisplay : MonoBehaviour, IChatMessage
                 emote.transform.localScale = Vector3.one * glyphHeight;
             }
         }
+    }
+
+    public void ToggleUserInfo(bool toggle)
+    {
+        _userInfoBox.SetActive(toggle);
+        _avatarMask.SetActive(toggle);
     }
 }

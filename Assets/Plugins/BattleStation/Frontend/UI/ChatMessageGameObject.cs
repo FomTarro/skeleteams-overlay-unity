@@ -6,4 +6,6 @@ using UnityEngine;
 public abstract class ChatMessageGameObject : MonoBehaviour
 {
     public abstract void DisplayMessage(StreamChatMessage message);
+
+    public abstract void DisposeMessage();
 }

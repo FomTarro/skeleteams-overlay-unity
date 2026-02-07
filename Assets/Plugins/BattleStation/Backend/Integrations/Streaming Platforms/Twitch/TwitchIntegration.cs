@@ -46,7 +46,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private readonly Dictionary<string, Action<string>> EVENTSUB_HANDLERS = new();
 
         // Rolling cache for preventing duplicate messages from being processed
-        private readonly LRUDictionary<string, EventSub.EventMessage<EventSub.EventPayload<string>>> RECENT_EVENTS = new(1000, (del) => {});
+        private readonly LRUDictionary<string, EventSub.EventMessage<EventSub.EventPayload<string>>> RECENT_EVENTS = new(1000, (del) => { });
 
 
         private HttpUtils.HttpHeaders Headers
@@ -63,8 +63,10 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             }
         }
 
-        private List<Endpoint> WebServerEndpoints { 
-            get { 
+        private List<Endpoint> WebServerEndpoints
+        {
+            get
+            {
                 return new()
                 {
                     new Endpoint("/twitch/oauth2", (req) =>
@@ -84,7 +86,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         return new EndpointResponse(200, "Reload Requested");
                     })
                 };
-         }
+            }
         }
 
         #region Lifecycle
@@ -92,7 +94,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public override void Enable()
         {
             // Set up token ingest endpoints 
-            foreach(Endpoint endpoint in WebServerEndpoints)
+            foreach (Endpoint endpoint in WebServerEndpoints)
             {
                 _webServer.RegisterEndpoint(endpoint);
             }
@@ -101,7 +103,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         public override void Disable()
         {
-            foreach(Endpoint endpoint in WebServerEndpoints)
+            foreach (Endpoint endpoint in WebServerEndpoints)
             {
                 _webServer.UnregisterEndpoint(endpoint);
             }
@@ -136,7 +138,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             try
             {
                 EventSub.EventMessage<EventSub.EventPayload<string>> message = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<string>>>(msg);
-                if(!RECENT_EVENTS.ContainsKey(message.metadata.message_id))
+                if (!RECENT_EVENTS.ContainsKey(message.metadata.message_id))
                 {
                     RECENT_EVENTS.Add(message.metadata.message_id, message);
                     if ("session_welcome".Equals(message.metadata.message_type))
@@ -180,7 +182,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         // Kick off all HTTP subscriptions
                         Subscribe<EventSub.ChatMessageEvent>(SubscribeToChatMessageEvent, PrepareChatMessage);
                         Subscribe<EventSub.ChatMessageDeletionEvent>(SubscribeToChatMessageDeletionEvent, PrepareChatMessageDeletion);
-                        Subscribe<EventSub.ChannelPointRedeemEvent>(SubscribeToChannelPointRedeemEvent, PrepareChannelRedeem);   
+                        Subscribe<EventSub.ChannelPointRedeemEvent>(SubscribeToChannelPointRedeemEvent, PrepareChannelRedeem);
                         Subscribe<EventSub.ChannelFollowEvent>(SubscribeToChannelFollowEvent, PrepareChannelFollow);
                         Subscribe<EventSub.ChannelSubNewEvent>(SubscribeToChannelSubNewEvent, PrepareChannelSubscription);
                         Subscribe<EventSub.ChannelRaidEvent>(SubscribeToChannelRaidEvent, PrepareChannelRaid);
@@ -313,7 +315,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         public void GetSelfChannelInfo(Action<API.ChannelData> onSuccess, Action<StreamError> onError)
         {
-            GetChannelInfo(new string[]{BROADCASTER_ID}, (list) =>
+            GetChannelInfo(new string[] { BROADCASTER_ID }, (list) =>
             {
                 onSuccess(list[0]);
             }, onError);
@@ -382,17 +384,17 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         (str) =>
                         {
                             var page = JsonUtility.FromJson<API.PaginatedDataResponse<API.ChatterData>>(str);
-                            foreach(API.ChatterData chatter in page.data)
+                            foreach (API.ChatterData chatter in page.data)
                             {
                                 chatters.Add(new StreamUser(chatter.user_name, chatter.user_id));
                             }
-                            if(page.pagination != null && !string.IsNullOrEmpty(page.pagination.cursor))
+                            if (page.pagination != null && !string.IsNullOrEmpty(page.pagination.cursor))
                             {
                                 GetPage(page.pagination.cursor);
                             }
                             else
                             {
-                                onSuccess(chatters);   
+                                onSuccess(chatters);
                             }
                         },
                         (err) =>
@@ -441,25 +443,26 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         // EMOTES_INDIVIDUAL_ENDPOINT = response.template;
                         var chunks = CollectionUtils.Chunk(response.data, 50);
                         int count = chunks.Count;
-                        if(count > 0)
+                        if (count > 0)
                         {
                             void Batch(int index)
                             {
-                                if(index < count){
+                                if (index < count)
+                                {
                                     Debug.Log($"Handling emote chunk {index} of {count}...");
                                     DependencyManager chunkManager = new(
                                         () =>
                                         {
                                             Debug.Log($"{emotes.Count} total emotes resolved!");
                                             onSuccess(emotes);
-                                            Batch(index+1);
+                                            Batch(index + 1);
                                         },
                                         (key, pending) =>
                                         {
                                             Debug.Log($"Waiting on {pending} more emotes to resolve...");
                                         }
                                     );
-                                    foreach(var data in chunks[index])
+                                    foreach (var data in chunks[index])
                                     {
                                         string taskId = Guid.NewGuid().ToString();
                                         chunkManager.AddDependency(taskId);
@@ -533,61 +536,62 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                HttpUtils.GetRequest(url, Headers,
                (str) =>
                {
-                    API.DataResponse<API.BadgeSetData> response = JsonUtility.FromJson<API.DataResponse<API.BadgeSetData>>(str);
-                    List<StreamImage> badges = new List<StreamImage>();
-                    var chunks = CollectionUtils.Chunk(response.data, 50);
-                    int count = chunks.Count;
-                    if(count > 0)
-                    {
-                        void GetBatch(int index)
-                        {
-                            if(index < count){
-                                Debug.Log($"Handling badge chunk {index} of {count}...");
-                                DependencyManager chunkManager = new(
-                                    () =>
-                                    {
-                                        Debug.Log($"{badges.Count} total badges resolved!");
-                                        onSuccess(badges);
-                                        GetBatch(index+1);
-                                    },
-                                    (key, pending) =>
-                                    {
-                                        Debug.Log($"Waiting on {pending} more badges to resolve...");
-                                    }
-                                );
-                                foreach (API.BadgeSetData data in chunks[index])
-                                {
-                                    foreach (API.BadgeVersionData version in data.versions)
-                                    {
-                                        string taskId = Guid.NewGuid().ToString();
-                                        chunkManager.AddDependency(taskId);
-                                        ImageHandler.GetFromRemote(version.image_url_1x, Headers,
-                                        $"badge_{data.set_id}_{version.id}",
-                                        (success) =>
-                                        {
-                                            badges.Add(success);
-                                            chunkManager.ResolveDependency(taskId);
-                                        },
-                                        (err) =>
-                                        {
-                                            Debug.LogError(err);
-                                            chunkManager.ResolveDependency(taskId);
-                                        });
-                                    }
-                                }
-                                chunkManager.Enable(true);
-                            }
-                            else
-                            {
-                                onSuccess(badges);
-                            }
-                        }
-                        GetBatch(0);
-                    }
-                    else
-                    {
-                        onSuccess(badges);
-                    }
+                   API.DataResponse<API.BadgeSetData> response = JsonUtility.FromJson<API.DataResponse<API.BadgeSetData>>(str);
+                   List<StreamImage> badges = new List<StreamImage>();
+                   var chunks = CollectionUtils.Chunk(response.data, 50);
+                   int count = chunks.Count;
+                   if (count > 0)
+                   {
+                       void GetBatch(int index)
+                       {
+                           if (index < count)
+                           {
+                               Debug.Log($"Handling badge chunk {index} of {count}...");
+                               DependencyManager chunkManager = new(
+                                   () =>
+                                   {
+                                       Debug.Log($"{badges.Count} total badges resolved!");
+                                       onSuccess(badges);
+                                       GetBatch(index + 1);
+                                   },
+                                   (key, pending) =>
+                                   {
+                                       Debug.Log($"Waiting on {pending} more badges to resolve...");
+                                   }
+                               );
+                               foreach (API.BadgeSetData data in chunks[index])
+                               {
+                                   foreach (API.BadgeVersionData version in data.versions)
+                                   {
+                                       string taskId = Guid.NewGuid().ToString();
+                                       chunkManager.AddDependency(taskId);
+                                       ImageHandler.GetFromRemote(version.image_url_1x, Headers,
+                                       $"badge_{data.set_id}_{version.id}",
+                                       (success) =>
+                                       {
+                                           badges.Add(success);
+                                           chunkManager.ResolveDependency(taskId);
+                                       },
+                                       (err) =>
+                                       {
+                                           Debug.LogError(err);
+                                           chunkManager.ResolveDependency(taskId);
+                                       });
+                                   }
+                               }
+                               chunkManager.Enable(true);
+                           }
+                           else
+                           {
+                               onSuccess(badges);
+                           }
+                       }
+                       GetBatch(0);
+                   }
+                   else
+                   {
+                       onSuccess(badges);
+                   }
                },
                (err) =>
                {
@@ -663,11 +667,13 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             StreamUser chatter = new(chatEvent.chatter_user_name, chatEvent.chatter_user_id);
             List<StreamChatMessage.Fragment> fragments = new();
             List<StreamBadge> badges = new();
+            DateTime timestamp = DateTime.Now;
             // create a callback for all HTTP dependencies
             DependencyManager manager = new(
-                () => { 
-                    StreamChatMessage message = new(chatEvent.message_id, chatter, chatEvent.color, badges, fragments);
-                    onChatMessage.Invoke(message); 
+                () =>
+                {
+                    StreamChatMessage message = new(chatEvent.message_id, timestamp, chatter, chatEvent.color, badges, fragments);
+                    onChatMessage.Invoke(message);
                 }
             );
             // TODO: get user avatar? Seems like too much for every chat message.
@@ -917,7 +923,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private void GenericMessageToStreamMessage(EventSub.GenericMessage source, Action<StreamChatMessage> onComplete)
         {
-            
+
         }
 
         #endregion

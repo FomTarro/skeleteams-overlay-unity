@@ -61,14 +61,14 @@ MonoBehaviour:
     m_FaceIndex: 0
     m_FamilyName: 
     m_StyleName: 
-    m_PointSize: 28
+    m_PointSize: 32
     m_Scale: 1
     m_UnitsPerEM: 0
     m_LineHeight: 0
     m_AscentLine: 32
     m_CapLine: 0
     m_MeanLine: 0
-    m_Baseline: 0
+    m_Baseline: -16
     m_DescentLine: 0
     m_SuperscriptOffset: 0
     m_SuperscriptSize: 0

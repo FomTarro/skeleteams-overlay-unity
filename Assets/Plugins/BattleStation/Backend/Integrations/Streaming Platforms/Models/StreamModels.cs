@@ -115,13 +115,15 @@ namespace Skeletom.BattleStation.Integrations
         }
 
         public string id;
+        public DateTime timestamp;
         public StreamUser chatter;
         public Color nameColor = Color.white;
         public List<StreamBadge> badges = new();
         public List<Fragment> message = new();
-        public StreamChatMessage(string id, StreamUser chatter, string nameColorHexCode, ICollection<StreamBadge> badges, ICollection<Fragment> message)
+        public StreamChatMessage(string id, DateTime timestamp, StreamUser chatter, string nameColorHexCode, ICollection<StreamBadge> badges, ICollection<Fragment> message)
         {
             this.id = id;
+            this.timestamp = timestamp;
             this.chatter = chatter;
             this.message = new List<Fragment>(message);
             this.badges = new List<StreamBadge>(badges);
@@ -177,7 +179,7 @@ namespace Skeletom.BattleStation.Integrations
             {
                 DateTime.TryParse(timestamp, out this.timestamp);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Debug.LogWarning(e);
             }
