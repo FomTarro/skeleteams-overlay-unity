@@ -6,7 +6,7 @@ using Skeletom.Essentials.Utils;
 using TMPro;
 using UnityEngine;
 
-public class ChatMessageDisplay : MonoBehaviour
+public class ChatMessageDisplay : MonoBehaviour, IChatMessage
 {
     [SerializeField]
     private AnimatedTextureDisplay _badge;
