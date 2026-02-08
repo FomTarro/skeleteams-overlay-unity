@@ -34,7 +34,7 @@ namespace Skeletom.BattleStation.Integrations
                 }
                 else
                 {
-                    return new ContextResolution(new StreamImage(key, tex), new StreamError(
+                    return new ContextResolution(null, new StreamError(
                     StreamError.ErrorCode.ApplicationError,
                     $"Unable to convert image to Texture2D for {key}"));
                 }

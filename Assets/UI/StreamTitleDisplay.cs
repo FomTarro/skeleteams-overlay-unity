@@ -1,12 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using Skeletom.BattleStation.Integrations;
 using Skeletom.BattleStation.Integrations.Twitch;
 using UnityEngine;
 
-public class StreamInfoDisplay : MonoBehaviour
+public class StreamTitleDisplay : MonoBehaviour
 {
-
     [SerializeField]
     private TMPro.TMP_Text _title;
 
@@ -14,12 +11,6 @@ public class StreamInfoDisplay : MonoBehaviour
     void Start()
     {
         TwitchIntegration.Instance.onStreamInfoUpdate.AddListener(OnInfoUpdate);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     private void OnInfoUpdate(StreamInfo info)

@@ -21,7 +21,7 @@ namespace Skeletom.BattleStation.Graphics.Animations
                 public Frame(Texture image, float delay)
                 {
                     this.image = image;
-                    image.filterMode = FilterMode.Point;
+                    image.filterMode = FilterMode.Bilinear;
                     image.wrapMode = TextureWrapMode.Clamp;
                     this.delay = delay;
                 }
