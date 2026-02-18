@@ -93,6 +93,21 @@ namespace Skeletom.BattleStation.Integrations.Twitch.API
 
     #endregion
 
+    #region Ad Schedule API 
+
+    [Serializable]
+    public class AdScheduleData
+    {
+        public long next_ad_at;
+        public long last_ad_at;
+        public int duration;
+        public int preroll_free_time;
+        public int snooze_count;
+        public string snooze_refresh_at;
+    }
+
+    #endregion
+
     #region Emotes API 
 
     [Serializable]

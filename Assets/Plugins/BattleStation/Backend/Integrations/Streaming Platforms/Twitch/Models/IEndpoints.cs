@@ -1,10 +1,11 @@
-namespace Skeletom.BattleStation.Integrations.Twitch {
+namespace Skeletom.BattleStation.Integrations.Twitch
+{
     public interface IEndpoints
     {
         public string USER_TOKEN_ENDPOINT { get; }
         public string USER_TOKEN_REDIRECT { get; }
         public string USER_INFO_ENDPOINT { get; }
-        
+
         public string EVENTSUB_SOCKET_ENDPOINT { get; }
         public string EVENTSUB_SUBSCRIPTION_ENDPOINT { get; }
 
@@ -14,12 +15,14 @@ namespace Skeletom.BattleStation.Integrations.Twitch {
         public string EMOTES_INDIVIDUAL_ENDPOINT { get; }
 
         public string BADGES_GLOBAL_ENDPOINT { get; }
-        public string BADGES_CHANNEL_ENDPOINT { get;}
+        public string BADGES_CHANNEL_ENDPOINT { get; }
         public string BADGES_INDIVIDUAL_ENDPOINT { get; }
 
         public string CHANNEL_INFO_ENDPOINT { get; }
 
         public string CHATTERS_ENDPOINT { get; }
+
+        public string AD_SCHEDULE_ENDPOINT { get; }
 
         public string TOKEN_VALIDATION_ENDPOINT { get; }
     }
@@ -47,6 +50,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch {
 
         public string CHATTERS_ENDPOINT => "https://api.twitch.tv/helix/chat/chatters";
 
+        public string AD_SCHEDULE_ENDPOINT => "https://api.twitch.tv/helix/channels/ads";
+
         public string TOKEN_VALIDATION_ENDPOINT => "https://id.twitch.tv/oauth2/validate";
     }
 
@@ -71,6 +76,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch {
         public string CHANNEL_INFO_ENDPOINT => "https://api.twitch.tv/helix/channels";
 
         public string CHATTERS_ENDPOINT => "https://api.twitch.tv/helix/chat/chatters";
+
+        public string AD_SCHEDULE_ENDPOINT => "https://api.twitch.tv/helix/channels/ads";
 
         public string TOKEN_VALIDATION_ENDPOINT => "https://id.twitch.tv/oauth2/validate";
     }

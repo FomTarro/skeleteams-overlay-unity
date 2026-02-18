@@ -23,6 +23,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             "user:read:chat",
             "channel:read:redemptions",
             "channel:read:subscriptions",
+            "channel:read:ads",
             "moderator:read:followers",
             "moderator:read:chatters"
         };
@@ -405,6 +406,28 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 );
             }
             GetPage();
+        }
+
+        #endregion
+
+        #region Ad Schedule
+
+        public void GetAdSchedule(Action<API.AdScheduleData> onSuccess, Action<StreamError> onError)
+        {
+            string url = $"{TWITCH_API.AD_SCHEDULE_ENDPOINT}?broadcaster_id={BROADCASTER_ID}";
+            StartCoroutine(
+                HttpUtils.GetRequest(url, Headers,
+                    (str) =>
+                    {
+                        var schedule = JsonUtility.FromJson<API.DataResponse<API.AdScheduleData>>(str).data;
+                        onSuccess(schedule[0]);
+                    },
+                    (err) =>
+                    {
+                        onError(new StreamError(err));
+                    }
+                )
+            );
         }
 
         #endregion
