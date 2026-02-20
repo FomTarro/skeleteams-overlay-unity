@@ -28,7 +28,7 @@ public class AdTimer : MonoBehaviour
             }, (err) =>
             {
                 Debug.LogError(err.message);
-                _text.text = $"Next ad break: ???";
+                _nextAd = DateTime.Now;
             });
             delta = 0f;
         }

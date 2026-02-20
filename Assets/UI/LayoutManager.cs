@@ -18,25 +18,38 @@ public class LayoutManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // _webServer.RegisterEndpoint(new Endpoint("/camera/toggle", (req) =>
-        // {
-        //     if (_mainWindow.sourceName.Equals(_facecamSpoutName))
-        //     {
-        //         _collabBar.SetActive(true);
-        //         _mainWindow.sourceName = _captureSpoutName;
-        //     }
-        //     else
-        //     {
-        //         _collabBar.SetActive(false);
-        //         _mainWindow.sourceName = _facecamSpoutName;
-        //     }
-        //     return new EndpointResponse(200, "");
-        // }));
+        _webServer.RegisterEndpoint(new Endpoint("/camera/toggle/collab", (req) =>
+        {
+            ToggleCollabCameraBar(true);
+            TogglePopOutCamera(false);
+            ToggleMainScreenCamera(false);
+            return new EndpointResponse(200, "");
+        }));
     }
 
     // Update is called once per frame
     void Update()
     {
 
+    }
+
+    public void ToggleCollabCameraBar(bool toggle)
+    {
+        
+    }
+
+    public void ToggleMainScreenCamera(bool toggle)
+    {
+        
+    }
+
+    public void TogglePopOutCamera(bool toggle)
+    {
+        
+    }
+
+    public void SetMainScreenSpoutSource(string source)
+    {
+        _mainWindow.sourceName = source;
     }
 }
