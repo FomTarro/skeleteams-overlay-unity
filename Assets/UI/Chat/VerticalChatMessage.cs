@@ -83,7 +83,7 @@ public class VerticalChatMessage : ChatMessageGameObject
         }
         else
         {
-            _text.fontSize = 24;
+            _text.fontSize = 20;
         }
         _text.text += " ";
     }
