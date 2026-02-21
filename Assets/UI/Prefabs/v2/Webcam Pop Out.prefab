@@ -734,7 +734,6 @@ GameObject:
   - component: {fileID: 3709224482640847147}
   - component: {fileID: 8604539493151277618}
   - component: {fileID: 8403192277106618715}
-  - component: {fileID: 2041225329325996469}
   - component: {fileID: 4651104872180981342}
   - component: {fileID: 1487252444170799047}
   - component: {fileID: 8850956855277651511}
@@ -803,19 +802,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 2
---- !u!114 &2041225329325996469
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7598756873146732205}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_ShowMaskGraphic: 1
 --- !u!114 &4651104872180981342
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -848,7 +834,7 @@ MonoBehaviour:
   m_UseGraphicAlpha: 1
   iterations: 10
   shadowSpread: {x: 24, y: 24}
-  aspectRatio: 1.5625
+  aspectRatio: 1.3333334
 --- !u!114 &8850956855277651511
 MonoBehaviour:
   m_ObjectHideFlags: 0

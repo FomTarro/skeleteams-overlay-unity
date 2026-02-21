@@ -10,19 +10,112 @@ public class LayoutManager : MonoBehaviour
     [SerializeField]
     private WebServer _webServer;
 
+    [Header("Webcam Views")]
     [SerializeField]
     private GameObject _collabBar;
     [SerializeField]
+    private CanvasGroup _popOut;
+    [SerializeField]
     private SpoutReceiver _mainWindow;
+    [SerializeField]
+    private string _facecamSpoutName;
+    [SerializeField]
+    private string _captureSpoutName;
+    [SerializeField]
+    private MicVolumeBorder _mainWindowMicBorder;
+    [SerializeField]
+    private CameraSwitchAnimation _cameraAnimation;
+
+    [Header("Main Scenes")]
+    [SerializeField]
+    private CanvasGroup _waiting;
+    [SerializeField]
+    private CanvasGroup _chatting;
 
     // Start is called before the first frame update
     void Start()
     {
-        _webServer.RegisterEndpoint(new Endpoint("/camera/toggle/collab", (req) =>
+        _popOut.alpha = 0;
+        _webServer.RegisterEndpoint(new Endpoint("/camera/bar/toggle", (req) =>
         {
-            ToggleCollabCameraBar(true);
-            TogglePopOutCamera(false);
-            ToggleMainScreenCamera(false);
+            if (_collabBar.activeSelf)
+            {
+                _cameraAnimation.StartAnimation(() =>
+                {
+                    _collabBar.SetActive(false);
+                    _mainWindowMicBorder.enabled = true;
+                });
+                _mainWindow.sourceName = _facecamSpoutName;
+            }
+            else if (_popOut.alpha > 0.5f)
+            {
+                _collabBar.SetActive(true);
+                _popOut.alpha = 0f;
+            }
+            else
+            {
+                _popOut.alpha = 0f;
+                _cameraAnimation.StartAnimation(() =>
+                {
+                    _collabBar.SetActive(true);
+                    _mainWindowMicBorder.enabled = false;
+                });
+                _mainWindow.sourceName = _captureSpoutName;
+            }
+            return new EndpointResponse(200, "");
+        }));
+
+        _webServer.RegisterEndpoint(new Endpoint("/camera/pop/toggle", (req) =>
+        {
+            if (_popOut.alpha > 0.5f)
+            {
+                _popOut.alpha = 0f;
+                _cameraAnimation.StartAnimation(() =>
+                {
+                    _mainWindowMicBorder.enabled = true;
+                });
+                _mainWindow.sourceName = _facecamSpoutName;
+            }
+            else if (_collabBar.activeSelf)
+            {
+                _collabBar.SetActive(false);
+                _popOut.alpha = 1f;
+            }
+            else
+            {
+                _cameraAnimation.StartAnimation(() =>
+                {
+                    _collabBar.SetActive(false);
+                    _popOut.alpha = 1f;
+                    _mainWindowMicBorder.enabled = false;
+                });
+                _mainWindow.sourceName = _captureSpoutName;
+            }
+            return new EndpointResponse(200, "");
+        }));
+
+        _webServer.RegisterEndpoint(new Endpoint("/camera/face", (req) =>
+        {
+            _collabBar.SetActive(false);
+            _popOut.alpha = 0f;
+            _cameraAnimation.StartAnimation(() =>
+            {
+                _mainWindowMicBorder.enabled = true;
+            });
+            _mainWindow.sourceName = _facecamSpoutName;
+            return new EndpointResponse(200, "");
+        }));
+
+        _webServer.RegisterEndpoint(new Endpoint("/scene/waiting", (req) =>
+        {
+            _waiting.alpha = 1;
+            _chatting.alpha = 0;
+            return new EndpointResponse(200, "");
+        }));
+        _webServer.RegisterEndpoint(new Endpoint("/scene/chatting", (req) =>
+        {
+            _waiting.alpha = 0;
+            _chatting.alpha = 1;
             return new EndpointResponse(200, "");
         }));
     }
@@ -35,17 +128,17 @@ public class LayoutManager : MonoBehaviour
 
     public void ToggleCollabCameraBar(bool toggle)
     {
-        
+
     }
 
     public void ToggleMainScreenCamera(bool toggle)
     {
-        
+
     }
 
     public void TogglePopOutCamera(bool toggle)
     {
-        
+
     }
 
     public void SetMainScreenSpoutSource(string source)
