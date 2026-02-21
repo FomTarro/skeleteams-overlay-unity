@@ -15,6 +15,8 @@ public class CameraSwitcher : MonoBehaviour
     private SpoutReceiver _main;
     [SerializeField]
     private GameObject _collabBar;
+    [SerializeField]
+    private MicVolumeBorder _micBorder;
 
     [SerializeField]
     private string _facecamSpoutName;
@@ -31,8 +33,11 @@ public class CameraSwitcher : MonoBehaviour
         {
             if (_main.sourceName.Equals(_facecamSpoutName))
             {
-                _animation.StartAnimation(() => { });
-                _collabBar.SetActive(true);
+                _animation.StartAnimation(() =>
+                {
+                    _collabBar.SetActive(true);
+                    _micBorder.enabled = false;
+                });
                 _main.sourceName = _captureSpoutName;
             }
             else
@@ -40,8 +45,9 @@ public class CameraSwitcher : MonoBehaviour
                 _animation.StartAnimation(() =>
                 {
                     _collabBar.SetActive(false);
-                    _main.sourceName = _facecamSpoutName;
+                    _micBorder.enabled = true;
                 });
+                _main.sourceName = _facecamSpoutName;
             }
             return new EndpointResponse(200, "");
         }));

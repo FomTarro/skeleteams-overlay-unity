@@ -1,32 +1,67 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using Skeletom.BattleStation.Integrations.OBS.Models;
 using Skeletom.Essentials.IO;
 using UnityEngine;
+using UnityEngine.Events;
 
-namespace Skeletom.BattleStation.Integrations.OBS {
+namespace Skeletom.BattleStation.Integrations.OBS
+{
     public class OBSIntegration : Integration<OBSIntegration, OBSIntegration.IntegrationData>
     {
         public override string FileName => "obs.json";
+
+        #region Events
+
+        [Serializable]
+        public class MicVolumeEvent : UnityEvent<float> { }
+        public MicVolumeEvent onMicVolume = new();
+
+        #endregion
 
         private readonly WebSocket _socket = new();
 
         private readonly Dictionary<string, Action<string>> EVENT_HANDLERS = new();
 
+        private readonly Dictionary<string, Action<string>> REQUEST_HANDLERS = new();
+
         #region Lifecycle
 
         public override void Disable()
         {
-            
+
         }
 
         public override void Enable()
         {
-            
+
         }
 
         public override void Initialize()
         {
+            // TODO: have these update an object reference that gets polled, because muting and volume are handled by separate events
+            EVENT_HANDLERS.Add("InputVolumeMeters", (msg) =>
+            {
+                var eventMessage = JsonConvert.DeserializeObject<OBSMessage<OBSEvent<InputVolumeMetersEventData>>>(msg);
+                var micInput = eventMessage.d.eventData.inputs.Find(input => "Mic/Aux".Equals(input.inputName));
+                if (micInput != null)
+                {
+                    onMicVolume.Invoke((micInput.inputLevelsMul[0][2] + micInput.inputLevelsMul[1][2]) / 2f);
+                    // Debug.Log("Mic Volume: " + micInput.inputLevelsMul[0, 2]);
+                }
+
+            });
+            EVENT_HANDLERS.Add("InputMuteStateChanged", (msg) =>
+            {
+                var eventMessage = JsonConvert.DeserializeObject<OBSMessage<OBSEvent<InputMuteStateChangedEventData>>>(msg);
+                if ("Mic/Aux".Equals(eventMessage.d.eventData.inputName))
+                {
+                    Debug.Log(eventMessage.d.eventData.inputMuted);
+                    // Debug.Log("Mic Volume: " + micInput.inputLevelsMul[0, 2]);
+                }
+
+            });
             FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
         }
 
@@ -51,7 +86,6 @@ namespace Skeletom.BattleStation.Integrations.OBS {
         {
             try
             {
-                Debug.Log(msg);
                 OBSMessage<string> message = JsonUtility.FromJson<OBSMessage<string>>(msg);
                 if (OpCode.HELLO == message.op)
                 {
@@ -65,6 +99,16 @@ namespace Skeletom.BattleStation.Integrations.OBS {
                         EVENT_HANDLERS[eventMessage.d.eventType](msg);
                     }
                 }
+                else if (OpCode.REQUEST_RESPONSE == message.op)
+                {
+                    OBSResponseMessage<string> responseMessage = JsonUtility.FromJson<OBSResponseMessage<string>>(msg);
+                    if (REQUEST_HANDLERS.ContainsKey(responseMessage.d.requestId))
+                    {
+                        var handler = REQUEST_HANDLERS[responseMessage.d.requestId];
+                        REQUEST_HANDLERS.Remove(responseMessage.d.requestId);
+                        handler(msg);
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -76,9 +120,28 @@ namespace Skeletom.BattleStation.Integrations.OBS {
 
         #region Subscriptions
 
-        private void SubscribeToEvent<T>()
+        #endregion
+
+        #region Requests
+
+        public void GetInputVolume(string source, Action<GetInputVolumeResponseData> onSuccess, Action<string> onError)
         {
-            
+            var data = new GetInputVolumeRequestData();
+            data.inputName = source;
+            var request = new GetInputVolumeRequest(data);
+            REQUEST_HANDLERS.Add(request.d.requestId, (msg) =>
+            {
+                var response = JsonUtility.FromJson<OBSResponseMessage<GetInputVolumeResponseData>>(msg);
+                if (response.d.requestStatus.result == true)
+                {
+                    onSuccess(response.d.responseData);
+                }
+                else
+                {
+                    onError(response.d.requestStatus.comment);
+                }
+            });
+            _socket.Send(JsonUtility.ToJson(request));
         }
 
         #endregion
@@ -87,7 +150,7 @@ namespace Skeletom.BattleStation.Integrations.OBS {
 
         public override void FromSaveData(IntegrationData data)
         {
-            _socket.Start($"{data.url}:{data.port}", 
+            _socket.Start($"{data.url}:{data.port}",
                 () =>
                 {
                     Debug.Log("OBS Socket connected!");
@@ -107,7 +170,7 @@ namespace Skeletom.BattleStation.Integrations.OBS {
         {
             return new IntegrationData()
             {
-                
+
             };
         }
 

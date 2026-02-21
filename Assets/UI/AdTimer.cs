@@ -23,7 +23,6 @@ public class AdTimer : MonoBehaviour
         {
             TwitchIntegration.Instance.GetAdSchedule((schedule) =>
             {
-                Debug.Log(JsonUtility.ToJson(schedule));
                 _nextAd = DateTimeOffset.FromUnixTimeMilliseconds(schedule.next_ad_at).DateTime;
             }, (err) =>
             {

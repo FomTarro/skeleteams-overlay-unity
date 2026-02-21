@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Skeletom.BattleStation.Integrations.OBS.Models
 {
@@ -66,6 +67,76 @@ namespace Skeletom.BattleStation.Integrations.OBS.Models
 
     #endregion
 
+    #region Generic Request
+
+    [Serializable]
+    public class OBSRequest<T>
+    {
+        public string requestType;
+        public string requestId;
+        public T requestData;
+
+        public OBSRequest(string requestType, T data)
+        {
+            requestId = Guid.NewGuid().ToString();
+            this.requestType = requestType;
+            this.requestData = data;
+        }
+    }
+
+    [Serializable]
+    public class OBSRequestMessage<T> : OBSMessage<OBSRequest<T>>
+    {
+        public OBSRequestMessage(string requestType, T data)
+        {
+            op = OpCode.REQUEST;
+            this.d = new OBSRequest<T>(requestType, data);
+
+        }
+    }
+
+    #endregion
+
+    #region Generic Response
+
+    [Serializable]
+    public struct OBSResponseStatus
+    {
+        public bool result;
+        public int code;
+        public string comment;
+    }
+
+    [Serializable]
+    public class OBSResponse<T>
+    {
+        public string requestType;
+        public string requestId;
+        public OBSResponseStatus requestStatus;
+        public T responseData;
+
+        public OBSResponse(string requestType, T data)
+        {
+            requestId = Guid.NewGuid().ToString();
+            this.requestType = requestType;
+            this.responseData = data;
+        }
+    }
+
+    [Serializable]
+    public class OBSResponseMessage<T> : OBSMessage<OBSResponse<T>>
+    {
+        public OBSResponseMessage(string requestType, T data)
+        {
+            op = OpCode.REQUEST;
+            this.d = new OBSResponse<T>(requestType, data);
+
+        }
+    }
+
+
+    #endregion
+
     #region Hello Message
 
     public class HelloData
@@ -85,6 +156,7 @@ namespace Skeletom.BattleStation.Integrations.OBS.Models
         public IdentifyMessage()
         {
             op = OpCode.IDENTIFY;
+            d = new IdentifyData();
         }
     }
 
@@ -92,8 +164,79 @@ namespace Skeletom.BattleStation.Integrations.OBS.Models
     public class IdentifyData
     {
         public int rpcVersion = 1;
-        public EventSubscriptionFlag eventSubscriptions = EventSubscriptionFlag.ALL_BASIC;
+        public EventSubscriptionFlag eventSubscriptions = EventSubscriptionFlag.INPUT_VOLUME_METERS | EventSubscriptionFlag.ALL_BASIC;
     }
+
+    #endregion
+
+    #region Input Volume Change Event 
+
+    [Serializable]
+    public class InputVolumeChangedEventData
+    {
+        public string inputName;
+        public string inputUuid;
+        public string inputVolumeMul;
+        public string inputVolumeDb;
+    }
+
+    #endregion
+
+    #region InputVolumeMeters Event
+
+    [Serializable]
+    public class InputVolumeMeterEntry
+    {
+        public string inputName;
+        public float[][] inputLevelsMul;
+    }
+
+    [Serializable]
+    public class InputVolumeMetersEventData
+    {
+        public List<InputVolumeMeterEntry> inputs;
+    }
+
+    #endregion
+
+    #region InputMuteStateChanged Event 
+
+    [Serializable]
+    public class InputMuteStateChangedEventData
+    {
+        public string inputName;
+        public string inputUuid;
+        public bool inputMuted;
+    }
+
+    #endregion
+
+    #region Input Volume Request/Response
+
+    [Serializable]
+    public struct GetInputVolumeRequestData
+    {
+        public string inputName;
+        public string inputUuid;
+    }
+
+    [Serializable]
+    public class GetInputVolumeRequest : OBSRequestMessage<GetInputVolumeRequestData>
+    {
+        public GetInputVolumeRequest(GetInputVolumeRequestData data) : base("GetInputVolume", data)
+        { }
+    }
+
+    [Serializable]
+    public struct GetInputVolumeResponseData
+    {
+        public float inputVolumeMul;
+        public float inputVolumeDb;
+    }
+
+    #endregion
+
+    #region Wrapper Models
 
     #endregion
 }
