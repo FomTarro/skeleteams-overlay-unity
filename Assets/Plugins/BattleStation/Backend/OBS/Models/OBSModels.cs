@@ -236,6 +236,44 @@ namespace Skeletom.BattleStation.Integrations.OBS.Models
 
     #endregion
 
+    #region Stream Status Request/Response
+
+    [Serializable]
+    public class GetStreamStatusRequest : OBSRequestMessage<string>
+    {
+        public GetStreamStatusRequest() : base("GetStreamStatus", null)
+        { }
+    }
+
+    [Serializable]
+    public struct GetStreamStatusData
+    {
+        // milliseconds
+        public int outputDuration;
+    }
+
+    #endregion
+
+
+    #region Recording Request/Response
+
+    [Serializable]
+    public class GetRecordingStatusRequest : OBSRequestMessage<string>
+    {
+        public GetRecordingStatusRequest() : base("GetRecordStatus", null)
+        { }
+    }
+
+    [Serializable]
+    public struct GetRecordingStatusData
+    {
+        // milliseconds
+        public int outputDuration;
+    }
+
+    #endregion
+
+
     #region Wrapper Models
 
     #endregion

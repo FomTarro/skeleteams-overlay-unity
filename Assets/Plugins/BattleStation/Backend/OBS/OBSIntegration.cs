@@ -144,6 +144,24 @@ namespace Skeletom.BattleStation.Integrations.OBS
             _socket.Send(JsonUtility.ToJson(request));
         }
 
+        public void GetRecordingStatus(Action<GetRecordingStatusData> onSuccess, Action<string> onError)
+        {
+            var request = new GetRecordingStatusRequest();
+            REQUEST_HANDLERS.Add(request.d.requestId, (msg) =>
+            {
+                var response = JsonUtility.FromJson<OBSResponseMessage<GetRecordingStatusData>>(msg);
+                if (response.d.requestStatus.result == true)
+                {
+                    onSuccess(response.d.responseData);
+                }
+                else
+                {
+                    onError(response.d.requestStatus.comment);
+                }
+            });
+            _socket.Send(JsonUtility.ToJson(request));
+        }
+
         #endregion
 
         #region  File I/O

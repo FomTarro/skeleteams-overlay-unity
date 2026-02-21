@@ -1,10 +1,15 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Klak.Spout;
+using Skeletom.BattleStation.Integrations.OBS;
+using Skeletom.BattleStation.Integrations.Twitch;
 using Skeletom.BattleStation.Server;
+using Skeletom.Essentials.Lifecycle;
 using UnityEngine;
+using UnityEngine.Events;
 
-public class LayoutManager : MonoBehaviour
+public class LayoutManager : Singleton<LayoutManager>
 {
 
     [SerializeField]
@@ -31,6 +36,20 @@ public class LayoutManager : MonoBehaviour
     private CanvasGroup _waiting;
     [SerializeField]
     private CanvasGroup _chatting;
+
+    [Serializable]
+    public class ChatUserCountEvent : UnityEvent<int> { }
+    public ChatUserCountEvent onChatUserCounted = new();
+
+    [Serializable]
+    public class AdTimeEvent : UnityEvent<DateTime> { }
+    public AdTimeEvent onNextAdTimeChecked = new();
+
+    [Serializable]
+    public class StreamTimeEvent : UnityEvent<DateTime> { }
+    public StreamTimeEvent onStreamTimeChecked = new();
+
+    private float _pollingInterval = 5f;
 
     // Start is called before the first frame update
     void Start()
@@ -121,28 +140,47 @@ public class LayoutManager : MonoBehaviour
     }
 
     // Update is called once per frame
+    private float _pollingDelta = 0f;
     void Update()
     {
-
-    }
-
-    public void ToggleCollabCameraBar(bool toggle)
-    {
-
-    }
-
-    public void ToggleMainScreenCamera(bool toggle)
-    {
-
-    }
-
-    public void TogglePopOutCamera(bool toggle)
-    {
-
+        _pollingDelta += Time.deltaTime;
+        if (_pollingDelta > _pollingInterval)
+        {
+            TwitchIntegration.Instance.GetCurrentChatUsers((list) =>
+            {
+                onChatUserCounted.Invoke(list.Count);
+            }, (err) =>
+            {
+                Debug.LogError(err.message);
+            });
+            TwitchIntegration.Instance.GetAdSchedule((schedule) =>
+            {
+                onNextAdTimeChecked.Invoke(DateTimeOffset.FromUnixTimeMilliseconds(schedule.next_ad_at).DateTime);
+            }, (err) =>
+            {
+                Debug.LogError(err.message);
+                onNextAdTimeChecked.Invoke(DateTime.Now);
+            });
+            OBSIntegration.Instance.GetRecordingStatus((status) =>
+            {
+                onStreamTimeChecked.Invoke(DateTime.Now.AddMilliseconds(-1 * status.outputDuration));
+            },
+            (err) =>
+            {
+                Debug.LogError(err);
+                onStreamTimeChecked.Invoke(DateTime.Now);
+            });
+            _pollingDelta = 0f;
+        }
     }
 
     public void SetMainScreenSpoutSource(string source)
     {
         _mainWindow.sourceName = source;
+    }
+
+    public override void Initialize()
+    {
+
     }
 }

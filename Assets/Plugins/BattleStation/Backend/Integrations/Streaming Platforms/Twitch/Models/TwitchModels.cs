@@ -93,6 +93,22 @@ namespace Skeletom.BattleStation.Integrations.Twitch.API
 
     #endregion
 
+    #region Streams Search API
+
+    [Serializable]
+    public class StreamData
+    {
+        public string user_id;
+        public string user_login;
+        public string game_id;
+        public string game_name;
+        public int voewer_count;
+        public string started_at;
+        public string thumbnail_url;
+    }
+
+    #endregion
+
     #region Ad Schedule API 
 
     [Serializable]

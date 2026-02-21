@@ -915,6 +915,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f35dd6d2a748faa48b2bf3c79dc33ac8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _initializationOrder: 0
   _webServer: {fileID: 835040116}
   _collabBar: {fileID: 2132868352}
   _popOut: {fileID: 838677841}
@@ -925,6 +926,15 @@ MonoBehaviour:
   _cameraAnimation: {fileID: 109531030}
   _waiting: {fileID: 2081932026}
   _chatting: {fileID: 428761767}
+  onChatUserCounted:
+    m_PersistentCalls:
+      m_Calls: []
+  onNextAdTimeChecked:
+    m_PersistentCalls:
+      m_Calls: []
+  onStreamTimeChecked:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &172749719
 GameObject:
   m_ObjectHideFlags: 0
@@ -7678,6 +7688,7 @@ GameObject:
   - component: {fileID: 1190133161}
   - component: {fileID: 1190133160}
   - component: {fileID: 1190133159}
+  - component: {fileID: 1190133162}
   m_Layer: 5
   m_Name: Viewer Count
   m_TagString: Untagged
@@ -7821,6 +7832,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1190133157}
   m_CullTransparentMesh: 1
+--- !u!114 &1190133162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1190133157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 423dff174be77d74f8ce289de35f0fe0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _text: {fileID: 1190133160}
 --- !u!1 &1215989196
 GameObject:
   m_ObjectHideFlags: 0
@@ -8420,6 +8444,7 @@ GameObject:
   - component: {fileID: 1266743753}
   - component: {fileID: 1266743752}
   - component: {fileID: 1266743751}
+  - component: {fileID: 1266743754}
   m_Layer: 5
   m_Name: Text (TMP) (1)
   m_TagString: Untagged
@@ -8563,6 +8588,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1266743749}
   m_CullTransparentMesh: 1
+--- !u!114 &1266743754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1266743749}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f9ba397c9b1bbb4987945334aec565b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _text: {fileID: 1266743752}
 --- !u!1 &1267140206
 GameObject:
   m_ObjectHideFlags: 0
@@ -12200,7 +12238,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6ec193d4d1eec84d90014bfb5219cac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _pollingInterval: 5
   _text: {fileID: 1957170358}
 --- !u!1001 &1964745323
 PrefabInstance:

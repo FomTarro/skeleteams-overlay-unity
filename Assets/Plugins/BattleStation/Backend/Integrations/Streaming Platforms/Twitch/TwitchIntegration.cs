@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Skeletom.BattleStation.Integrations.Twitch.API;
 using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.Collections;
 using Skeletom.Essentials.IO;
@@ -396,6 +397,45 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                             else
                             {
                                 onSuccess(chatters);
+                            }
+                        },
+                        (err) =>
+                        {
+                            onError(new StreamError(err));
+                        }
+                    )
+                );
+            }
+            GetPage();
+        }
+
+        #endregion
+
+        #region Streams
+
+        public void GetStreams(Action<List<StreamData>> onSuccess, Action<StreamError> onError)
+        {
+            string url = $"{TWITCH_API.CHATTERS_ENDPOINT}?user_id={BROADCASTER_ID}";
+            List<StreamData> streams = new();
+            void GetPage(string after = null)
+            {
+                string paginatedUrl = $"{url}{(after != null ? $"&after={after}" : "")}";
+                StartCoroutine(
+                    HttpUtils.GetRequest(paginatedUrl, Headers,
+                        (str) =>
+                        {
+                            var page = JsonUtility.FromJson<API.PaginatedDataResponse<API.StreamData>>(str);
+                            foreach (API.StreamData stream in page.data)
+                            {
+                                streams.Add(stream);
+                            }
+                            if (page.pagination != null && !string.IsNullOrEmpty(page.pagination.cursor))
+                            {
+                                GetPage(page.pagination.cursor);
+                            }
+                            else
+                            {
+                                onSuccess(streams);
                             }
                         },
                         (err) =>

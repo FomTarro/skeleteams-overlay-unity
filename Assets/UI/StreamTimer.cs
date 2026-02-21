@@ -1,10 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Skeletom.BattleStation.Integrations.Twitch;
 using UnityEngine;
 
-public class AdTimer : MonoBehaviour
+public class StreamTimer : MonoBehaviour
 {
     [SerializeField]
     private TMPro.TMP_Text _text;
@@ -14,7 +13,7 @@ public class AdTimer : MonoBehaviour
 
     private void Start()
     {
-        LayoutManager.Instance.onNextAdTimeChecked.AddListener((time) =>
+        LayoutManager.Instance.onStreamTimeChecked.AddListener((time) =>
         {
             _lastCheck = time;
         });
@@ -23,12 +22,13 @@ public class AdTimer : MonoBehaviour
     private void Update()
     {
         DateTime now = DateTime.Now;
-        TimeSpan diff = _lastCheck - now;
-        if (now > _lastCheck)
+        TimeSpan diff = now - _lastCheck;
+        if (now < _lastCheck)
         {
             diff = TimeSpan.Zero;
         }
         string str = diff.ToString(@"hh\:mm\:ss");
-        _text.text = $"Next ad break: {str}";
+        _text.text = $"{str}";
     }
+
 }

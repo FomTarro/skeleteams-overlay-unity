@@ -19,7 +19,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string BADGES_INDIVIDUAL_ENDPOINT { get; }
 
         public string CHANNEL_INFO_ENDPOINT { get; }
-
+        public string STREAMS_ENDPOINT { get; }
         public string CHATTERS_ENDPOINT { get; }
 
         public string AD_SCHEDULE_ENDPOINT { get; }
@@ -49,6 +49,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string CHANNEL_INFO_ENDPOINT => "https://api.twitch.tv/helix/channels";
 
         public string CHATTERS_ENDPOINT => "https://api.twitch.tv/helix/chat/chatters";
+        public string STREAMS_ENDPOINT => "https://api.twitch.tv/helix/stream";
 
         public string AD_SCHEDULE_ENDPOINT => "https://api.twitch.tv/helix/channels/ads";
 
@@ -76,6 +77,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string CHANNEL_INFO_ENDPOINT => "https://api.twitch.tv/helix/channels";
 
         public string CHATTERS_ENDPOINT => "https://api.twitch.tv/helix/chat/chatters";
+        public string STREAMS_ENDPOINT => "https://api.twitch.tv/helix/stream";
 
         public string AD_SCHEDULE_ENDPOINT => "https://api.twitch.tv/helix/channels/ads";
 
