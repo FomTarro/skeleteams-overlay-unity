@@ -6,11 +6,14 @@ using Skeletom.BattleStation.Integrations;
 using Skeletom.Essentials.Utils;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class VerticalChatMessage : ChatMessageGameObject
 {
     [SerializeField]
     private GameObject _avatarMask;
+    [SerializeField]
+    private AnimatedTextureDisplay _avatarDisplay;
     [SerializeField]
     private GameObject _userInfoBox;
     [SerializeField]
@@ -36,6 +39,10 @@ public class VerticalChatMessage : ChatMessageGameObject
     public override void DisplayMessage(StreamChatMessage message)
     {
         this.message = message;
+        if(message.chatter.avatar != null)
+        {
+            _avatarDisplay.DisplayTexture(message.chatter.avatar);
+        }
         if (message.badges.Count > 0)
         {
             _badge.gameObject.SetActive(true);

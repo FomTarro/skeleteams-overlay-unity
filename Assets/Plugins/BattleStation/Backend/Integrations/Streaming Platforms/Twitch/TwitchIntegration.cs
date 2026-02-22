@@ -336,22 +336,29 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     (str) =>
                     {
                         var users = JsonUtility.FromJson<API.DataResponse<API.UserData>>(str).data;
+                        DependencyManager manager = new DependencyManager(() =>
+                        {
+                            onSuccess(users);
+                        });
                         foreach (API.UserData user in users)
                         {
+                            string taskId = Guid.NewGuid().ToString();
+                            manager.AddDependency(taskId);
                             ImageHandler.GetFromRemote(
                                 user.profile_image_url, Headers,
-                                $"avatar_{user.login}", (success) =>
+                                $"avatar_{user.id}", (success) =>
                                 {
                                     // TODO: how to get user avatars intelligently when we often only have the login id
                                     // Can we cache user data, then fetch from the stored URL as needed?
+                                    manager.ResolveDependency(taskId);
                                 },
                                 (err) =>
                                 {
-
+                                    manager.ResolveDependency(taskId);
                                 }
                             );
                         }
-                        onSuccess(users);
+                        manager.Enable(true);
                     },
                     (err) =>
                     {
@@ -367,6 +374,29 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             {
                 onSuccess(list[0]);
             }, onError);
+        }
+
+        public void GetUserAvatar(string userId, Action<StreamImage> onSuccess, Action<StreamError> onError)
+        {
+            ImageHandler.GetFromCache($"avatar_{userId}", (success) =>
+            {
+                onSuccess(success);
+            }, (err) =>
+            {
+                GetUserInfo(new List<string>() { userId }, (success2) =>
+                {
+                    ImageHandler.GetFromCache($"avatar_{userId}", (success2) =>
+                    {
+                        onSuccess(success2);
+                    }, (err3) =>
+                    {
+                        onError(new StreamError(err3));
+                    });
+                }, (err2) =>
+                {
+                    onError(err2);
+                });
+            });
         }
 
         #endregion
@@ -785,6 +815,17 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     }
                 );
             }
+            string avatarTaskId = Guid.NewGuid().ToString();
+            manager.AddDependency(avatarTaskId);
+            GetUserAvatar(chatEvent.chatter_user_id, (avatar) =>
+            {
+                chatter.avatar = avatar;
+                manager.ResolveDependency(avatarTaskId);
+            }, (err) =>
+            {
+                Debug.LogError(err.message);
+                manager.ResolveDependency(avatarTaskId);
+            });
             manager.Enable(true);
         }
         private void PrepareChatMessageDeletion(EventSub.ChatMessageDeletionEvent chatEvent)

@@ -9612,9 +9612,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1219522041494843048, guid: 30507f01f5e8cae41b6e43d75bed090f, type: 3}
       propertyPath: m_text
-      value: 'Chatter C
-
-'
+      value: Shareholder C
       objectReference: {fileID: 0}
     - target: {fileID: 1487252444170799047, guid: 30507f01f5e8cae41b6e43d75bed090f, type: 3}
       propertyPath: aspectRatio
@@ -11952,7 +11950,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1219522041494843048, guid: 30507f01f5e8cae41b6e43d75bed090f, type: 3}
       propertyPath: m_text
-      value: Chatter B
+      value: Shareholder B
       objectReference: {fileID: 0}
     - target: {fileID: 1487252444170799047, guid: 30507f01f5e8cae41b6e43d75bed090f, type: 3}
       propertyPath: aspectRatio
@@ -16294,7 +16292,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1219522041494843048, guid: 30507f01f5e8cae41b6e43d75bed090f, type: 3}
       propertyPath: m_text
-      value: Chatter A
+      value: Shareholder A
       objectReference: {fileID: 0}
     - target: {fileID: 1487252444170799047, guid: 30507f01f5e8cae41b6e43d75bed090f, type: 3}
       propertyPath: aspectRatio

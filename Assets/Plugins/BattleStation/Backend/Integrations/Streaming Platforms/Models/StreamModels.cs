@@ -66,6 +66,7 @@ namespace Skeletom.BattleStation.Integrations
     {
         public string displayName;
         public string id;
+        public StreamImage avatar;
 
         public StreamUser(string displayName, string id)
         {
