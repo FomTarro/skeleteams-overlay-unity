@@ -168,7 +168,6 @@ public class LayoutManager : Singleton<LayoutManager>
             (err) =>
             {
                 Debug.LogError(err);
-                onStreamTimeChecked.Invoke(DateTime.Now);
             });
             _pollingDelta = 0f;
         }
