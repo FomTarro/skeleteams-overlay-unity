@@ -14,7 +14,7 @@ public class DateTimeRounder : MonoBehaviour
         {
             var rounded = RoundToNearestMinutes(time, 15);
             string format = "dddd, MMMM dd - hh:mm tt";
-            _text.text = rounded.ToString(format) + "EST";
+            _text.text = rounded.ToString(format) + " EST";
         });
     }
 
