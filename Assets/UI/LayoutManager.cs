@@ -37,6 +37,9 @@ public class LayoutManager : Singleton<LayoutManager>
     [SerializeField]
     private CanvasGroup _chatting;
 
+    [SerializeField]
+    private PauseScreen _pause;
+
     [Serializable]
     public class ChatUserCountEvent : UnityEvent<int> { }
     public ChatUserCountEvent onChatUserCounted = new();
@@ -135,6 +138,12 @@ public class LayoutManager : Singleton<LayoutManager>
         {
             _waiting.alpha = 0;
             _chatting.alpha = 1;
+            return new EndpointResponse(200, "");
+        }));
+
+        _webServer.RegisterEndpoint(new Endpoint("/pause/toggle", (req) =>
+        {
+            _pause.Toggle();
             return new EndpointResponse(200, "");
         }));
     }
