@@ -132,18 +132,28 @@ public class LayoutManager : Singleton<LayoutManager>
         {
             _waiting.alpha = 1;
             _chatting.alpha = 0;
+            Jukebox.Instance.ChangeMusic("Hold");
             return new EndpointResponse(200, "");
         }));
         _webServer.RegisterEndpoint(new Endpoint("/scene/chatting", (req) =>
         {
             _waiting.alpha = 0;
             _chatting.alpha = 1;
+            Jukebox.Instance.ChangeMusic("Cafe");
             return new EndpointResponse(200, "");
         }));
 
         _webServer.RegisterEndpoint(new Endpoint("/pause/toggle", (req) =>
         {
-            _pause.Toggle();
+            var state = _pause.Toggle();
+            if (state)
+            {
+                Jukebox.Instance.ChangeMusic("Hold");
+            }
+            else
+            {
+                Jukebox.Instance.ChangeMusic("Cafe");
+            }
             return new EndpointResponse(200, "");
         }));
     }

@@ -12,15 +12,17 @@ public class PauseScreen : MonoBehaviour
     [SerializeField]
     private CanvasGroup _canvas;
 
-    public void Toggle()
+    public bool Toggle()
     {
         if (_canvas.alpha > 0.5)
         {
             Unpause();
+            return false;
         }
         else
         {
             Pause();
+            return true;
         }
     }
 
