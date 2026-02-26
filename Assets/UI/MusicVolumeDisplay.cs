@@ -11,11 +11,16 @@ public class MusicVolumeDisplay : MonoBehaviour
 
     void Start()
     {
-        
-    }
-
-    void Update()
-    {
-        
+        Jukebox.Instance.onVolumeChanged.AddListener((g, v) =>
+        {
+            if(g == Jukebox.VolumeGroup.MUSIC_MASTER)
+            {
+                _volume.text = $"{v}%";
+            }
+        });
+        Jukebox.Instance.onSongChanged.AddListener((song) =>
+        {
+            _title.text = $"\"{song.title}\"";
+        });
     }
 }
