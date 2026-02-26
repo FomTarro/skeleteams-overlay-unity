@@ -132,14 +132,15 @@ public class LayoutManager : Singleton<LayoutManager>
         {
             _waiting.alpha = 1;
             _chatting.alpha = 0;
-            Jukebox.Instance.ChangeMusic("Hold");
+            // TODO: track these target volumes independently
+            Jukebox.Instance.ChangeSong("Hold", 1f);
             return new EndpointResponse(200, "");
         }));
         _webServer.RegisterEndpoint(new Endpoint("/scene/chatting", (req) =>
         {
             _waiting.alpha = 0;
             _chatting.alpha = 1;
-            Jukebox.Instance.ChangeMusic("Cafe");
+            Jukebox.Instance.ChangeSong("Cafe", 0.35f);
             return new EndpointResponse(200, "");
         }));
 
@@ -148,11 +149,11 @@ public class LayoutManager : Singleton<LayoutManager>
             var state = _pause.Toggle();
             if (state)
             {
-                Jukebox.Instance.ChangeMusic("Hold");
+                Jukebox.Instance.ChangeSong("Hold", 1f);
             }
             else
             {
-                Jukebox.Instance.ChangeMusic("Cafe");
+                Jukebox.Instance.ChangeSong("Cafe", 0.35f);
             }
             return new EndpointResponse(200, "");
         }));

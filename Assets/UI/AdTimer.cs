@@ -1,14 +1,10 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using Skeletom.BattleStation.Integrations.Twitch;
 using UnityEngine;
 
 public class AdTimer : MonoBehaviour
 {
     [SerializeField]
     private TMPro.TMP_Text _text;
-    // Start is called before the first frame update
 
     private DateTime _lastCheck = DateTime.Now;
 

@@ -18,9 +18,9 @@ public class AnimatedStrobe : BaseAnimatedElement
         while (true)
         {
             image.enabled = true;
-            yield return new WaitForSeconds(2f / Jukebox.Instance.SyncInfo.beatsPerMeasure);
+            yield return new WaitForSeconds(2f / Jukebox.Instance.Sync.beatsPerMeasure);
             image.enabled = false;
-            yield return new WaitForSeconds(2f / Jukebox.Instance.SyncInfo.beatsPerMeasure);
+            yield return new WaitForSeconds(2f / Jukebox.Instance.Sync.beatsPerMeasure);
         }
     }
 

@@ -20,7 +20,7 @@ public class AnimatedSpinner : BaseAnimatedElement
     {
         while (true)
         {
-            Vector3 rotateOffset = new Vector3(0, 0, (360f * Jukebox.Instance.SyncInfo.currentBeat));
+            Vector3 rotateOffset = new Vector3(0, 0, (360f * Jukebox.Instance.Sync.currentBeat));
             image.transform.eulerAngles = rotateOffset;
             yield return null;
         }

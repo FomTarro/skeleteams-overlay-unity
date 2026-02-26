@@ -318,6 +318,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4414284786239218525, guid: fc49341c1dbac54e581833924b6428a9, type: 3}
+      propertyPath: m_PreferredWidth
+      value: 42
+      objectReference: {fileID: 0}
     - target: {fileID: 4529352069021106708, guid: fc49341c1dbac54e581833924b6428a9, type: 3}
       propertyPath: m_Name
       value: Icon Wth Text Variant
