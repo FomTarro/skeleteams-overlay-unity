@@ -54,6 +54,10 @@ public class LayoutManager : Singleton<LayoutManager>
 
     private float _pollingInterval = 5f;
 
+    private float _sceneRelativeVolume = 1f;
+    private string _chattingSong = "Cafe";
+    private string _waitingSong = "Pokemon";
+
     // Start is called before the first frame update
     void Start()
     {
@@ -133,14 +137,16 @@ public class LayoutManager : Singleton<LayoutManager>
             _waiting.alpha = 1;
             _chatting.alpha = 0;
             // TODO: track these target volumes independently
-            Jukebox.Instance.ChangeSong("Pokemon", 1f);
+            _sceneRelativeVolume = 1f;
+            Jukebox.Instance.ChangeSong(_waitingSong, _sceneRelativeVolume);
             return new EndpointResponse(200, "");
         }));
         _webServer.RegisterEndpoint(new Endpoint("/scene/chatting", (req) =>
         {
             _waiting.alpha = 0;
             _chatting.alpha = 1;
-            Jukebox.Instance.ChangeSong("Cafe", 0.35f);
+            _sceneRelativeVolume = 0.25f;
+            Jukebox.Instance.ChangeSong(_chattingSong, _sceneRelativeVolume);
             return new EndpointResponse(200, "");
         }));
 
@@ -149,22 +155,32 @@ public class LayoutManager : Singleton<LayoutManager>
             var state = _pause.Toggle();
             if (state)
             {
-                Jukebox.Instance.ChangeSong("Pokemon", 1f);
+                Jukebox.Instance.ChangeSong(_waitingSong, 1f);
             }
             else
             {
-                Jukebox.Instance.ChangeSong("Cafe", 0.35f);
+                Jukebox.Instance.ChangeSong(_chattingSong, _sceneRelativeVolume);
             }
             return new EndpointResponse(200, "");
         }));
 
         _webServer.RegisterEndpoint(new Endpoint("/music/volume", (req) =>
         {
-            var queryParam  = new List<QueryParameter>(req.queryParameters).Find(param => param.key.Equals("increment"));
-            if(queryParam != null)
+            var queryParam = new List<QueryParameter>(req.queryParameters).Find(param => param.key.Equals("increment"));
+            if (queryParam != null)
             {
                 float.TryParse(queryParam.value, out float increment);
                 Jukebox.Instance.SetVolume(Jukebox.VolumeGroup.MUSIC_MASTER, Jukebox.Instance.GetVolume(Jukebox.VolumeGroup.MUSIC_MASTER) + increment);
+            }
+            return new EndpointResponse(200, "");
+        }));
+
+        _webServer.RegisterEndpoint(new Endpoint("/music/song", (req) =>
+        {
+            var queryParam = new List<QueryParameter>(req.queryParameters).Find(param => param.key.Equals("title"));
+            if (queryParam != null)
+            {
+                Jukebox.Instance.ChangeSong(queryParam.value, _sceneRelativeVolume);
             }
             return new EndpointResponse(200, "");
         }));
@@ -186,7 +202,7 @@ public class LayoutManager : Singleton<LayoutManager>
             });
             TwitchIntegration.Instance.GetAdSchedule((schedule) =>
             {
-                onNextAdTimeChecked.Invoke(DateTimeOffset.FromUnixTimeMilliseconds(schedule.next_ad_at).DateTime);
+                onNextAdTimeChecked.Invoke(DateTimeOffset.FromUnixTimeMilliseconds(schedule.next_ad_at * 1000).DateTime);
             }, (err) =>
             {
                 Debug.LogError(err.message);

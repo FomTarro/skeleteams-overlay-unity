@@ -14,9 +14,10 @@ public struct TrackListing
 {
     public string title;
     public string displayName;
+    public string artist;
+    public int year;
     public AudioClip track;
     public int BPM;
-    public float vol;
 }
 
 /// <summary>
@@ -101,15 +102,15 @@ public class Jukebox : Singleton<Jukebox>
     }
 
     // This is necessary because apparently you can't set mixer properties from frame 1? Why?
-	private readonly Queue<Action> DEFERRED_VOLUME_SET = new();
-	private void LateUpdate()
-	{
-		do
-		{
-			DEFERRED_VOLUME_SET.TryDequeue(out Action result);
-			result?.Invoke();
-		} while (DEFERRED_VOLUME_SET.Count > 0);
-	}
+    private readonly Queue<Action> DEFERRED_VOLUME_SET = new();
+    private void LateUpdate()
+    {
+        do
+        {
+            DEFERRED_VOLUME_SET.TryDequeue(out Action result);
+            result?.Invoke();
+        } while (DEFERRED_VOLUME_SET.Count > 0);
+    }
 
     /// <summary>
 	/// Sets the volume level of a given group, accounting for the nonlinear nature of decibels
@@ -117,21 +118,21 @@ public class Jukebox : Singleton<Jukebox>
 	/// <param name="group">The group to adjust</param>
 	/// <param name="newVolume">The desired volume level, from 0.0 to 1.0</param>
 	public void SetVolume(VolumeGroup group, float newVolume)
-	{
-		if (newVolume >= 0)
-		{
-			DEFERRED_VOLUME_SET.Enqueue(() =>
-			{
-				string mixerGroup = VolumeGroupToFloatName(group);
-				if (!mixerGroup.Equals(string.Empty))
-				{
-					float newVolumeDb = Mathf.Max(Mathf.Log10(newVolume) * 40, -80);
-					_mixer.SetFloat(mixerGroup, newVolumeDb);
-                    onVolumeChanged.Invoke(group, newVolume);
-				}
-			});
-		}
-	}
+    {
+        if (newVolume >= 0)
+        {
+            DEFERRED_VOLUME_SET.Enqueue(() =>
+            {
+                string mixerGroup = VolumeGroupToFloatName(group);
+                if (!mixerGroup.Equals(string.Empty))
+                {
+                    float newVolumeDb = Mathf.Max(Mathf.Log10(newVolume) * 40, -80);
+                    _mixer.SetFloat(mixerGroup, newVolumeDb);
+                    onVolumeChanged.Invoke(group, GetVolume(group));
+                }
+            });
+        }
+    }
 
     /// <summary>
 	/// Gets the volume level of a given group as a value from 0.0 to 1.0, after mapping from decibels
@@ -139,41 +140,41 @@ public class Jukebox : Singleton<Jukebox>
 	/// <param name="group">The group to check</param>
 	/// <returns></returns>
 	public float GetVolume(VolumeGroup group)
-	{
-		string mixerGroup = VolumeGroupToFloatName(group);
-		if (!mixerGroup.Equals(string.Empty))
-		{
-			_mixer.GetFloat(mixerGroup, out float currentVol);
-			currentVol = Mathf.Pow(10, currentVol / 40f);
-			if (currentVol < 0.11)
-			{
-				return 0;
-			}
-			return currentVol;
-		}
-		return 0.0f;
-	}
+    {
+        string mixerGroup = VolumeGroupToFloatName(group);
+        if (!mixerGroup.Equals(string.Empty))
+        {
+            _mixer.GetFloat(mixerGroup, out float currentVol);
+            currentVol = Mathf.Pow(10, currentVol / 40f);
+            if (currentVol < 0.11)
+            {
+                return 0;
+            }
+            return currentVol;
+        }
+        return 0.0f;
+    }
 
-	private static string VolumeGroupToFloatName(VolumeGroup group)
-	{
-		string floatName = string.Empty;
-		switch (group)
-		{
-			case VolumeGroup.MUSIC_MASTER:
-				floatName = "VOL_MASTER";
-				break;
-			case VolumeGroup.MUSIC_RELATIVE:
-				floatName = "VOL_RELATIVE";
-				break;
-		}
-		return floatName;
-	}
+    private static string VolumeGroupToFloatName(VolumeGroup group)
+    {
+        string floatName = string.Empty;
+        switch (group)
+        {
+            case VolumeGroup.MUSIC_MASTER:
+                floatName = "VOL_MASTER";
+                break;
+            case VolumeGroup.MUSIC_RELATIVE:
+                floatName = "VOL_RELATIVE";
+                break;
+        }
+        return floatName;
+    }
 
-	public enum VolumeGroup : int
-	{
-		MUSIC_MASTER = 10,
-		MUSIC_RELATIVE = 101,
-	}
+    public enum VolumeGroup : int
+    {
+        MUSIC_MASTER = 10,
+        MUSIC_RELATIVE = 101,
+    }
 
     #region Metronome
 
@@ -205,7 +206,8 @@ public class Jukebox : Singleton<Jukebox>
 
     public void StartMetronome()
     {
-        if (_ticking != null){
+        if (_ticking != null)
+        {
             StopCoroutine(_ticking);
         }
         _ticking = StartCoroutine(Tick());

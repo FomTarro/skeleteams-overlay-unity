@@ -114,6 +114,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.API
     [Serializable]
     public class AdScheduleData
     {
+        // this is in unix seconds, NOT milliseconds
         public long next_ad_at;
         public long last_ad_at;
         public int duration;
