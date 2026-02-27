@@ -133,7 +133,7 @@ public class LayoutManager : Singleton<LayoutManager>
             _waiting.alpha = 1;
             _chatting.alpha = 0;
             // TODO: track these target volumes independently
-            Jukebox.Instance.ChangeSong("Hold", 1f);
+            Jukebox.Instance.ChangeSong("Pokemon", 1f);
             return new EndpointResponse(200, "");
         }));
         _webServer.RegisterEndpoint(new Endpoint("/scene/chatting", (req) =>
@@ -149,11 +149,22 @@ public class LayoutManager : Singleton<LayoutManager>
             var state = _pause.Toggle();
             if (state)
             {
-                Jukebox.Instance.ChangeSong("Hold", 1f);
+                Jukebox.Instance.ChangeSong("Pokemon", 1f);
             }
             else
             {
                 Jukebox.Instance.ChangeSong("Cafe", 0.35f);
+            }
+            return new EndpointResponse(200, "");
+        }));
+
+        _webServer.RegisterEndpoint(new Endpoint("/music/volume", (req) =>
+        {
+            var queryParam  = new List<QueryParameter>(req.queryParameters).Find(param => param.key.Equals("increment"));
+            if(queryParam != null)
+            {
+                float.TryParse(queryParam.value, out float increment);
+                Jukebox.Instance.SetVolume(Jukebox.VolumeGroup.MUSIC_MASTER, Jukebox.Instance.GetVolume(Jukebox.VolumeGroup.MUSIC_MASTER) + increment);
             }
             return new EndpointResponse(200, "");
         }));

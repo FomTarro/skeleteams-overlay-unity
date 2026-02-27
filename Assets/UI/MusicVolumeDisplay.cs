@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class MusicVolumeDisplay : MonoBehaviour
@@ -15,12 +13,12 @@ public class MusicVolumeDisplay : MonoBehaviour
         {
             if(g == Jukebox.VolumeGroup.MUSIC_MASTER)
             {
-                _volume.text = $"{v}%";
+                _volume.text = $"{v*100f:F0}%";
             }
         });
         Jukebox.Instance.onSongChanged.AddListener((song) =>
         {
-            _title.text = $"\"{song.title}\"";
+            _title.text = $"\"{song.displayName}\"";
         });
     }
 }

@@ -9,6 +9,8 @@ public class AnimatedStrobe : BaseAnimatedElement
     [SerializeField]
     private Graphic image;
 
+    public float sin;
+
     protected override void ResetImplementation()
     {
     }
@@ -17,10 +19,13 @@ public class AnimatedStrobe : BaseAnimatedElement
     {
         while (true)
         {
-            image.enabled = true;
-            yield return new WaitForSeconds(2f / Jukebox.Instance.Sync.beatsPerMeasure);
-            image.enabled = false;
-            yield return new WaitForSeconds(2f / Jukebox.Instance.Sync.beatsPerMeasure);
+            float currentBeat = Jukebox.Instance.Sync.currentBeat % 2;
+            sin = Mathf.Sin(360 * Mathf.Deg2Rad * currentBeat / 2f);  
+            image.enabled = sin > 0;
+            yield return null;
+            // yield return new WaitForSeconds(2f / Jukebox.Instance.Sync.beatsPerMeasure);
+            // image.enabled = false;
+            // yield return new WaitForSeconds(2f / Jukebox.Instance.Sync.beatsPerMeasure);
         }
     }
 

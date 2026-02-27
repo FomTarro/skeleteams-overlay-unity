@@ -20,8 +20,7 @@ public class ScrollingUV : MonoBehaviour
 
     void LateUpdate()
     {
-        uvOffset += (uvAnimationRate * Time.deltaTime);
         //uvOffset = new Vector2(0.25f/2 * Jukebox.Progression, 0);
-        _matClone.SetTextureOffset(textureName, uvOffset);
+        _matClone.SetTextureOffset(textureName, new Vector2(Jukebox.Instance.Sync.currentBeat, Jukebox.Instance.Sync.currentBeat) / Jukebox.Instance.Sync.beatsPerMeasure);
     }
 }

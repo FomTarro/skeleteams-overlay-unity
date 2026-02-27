@@ -13,6 +13,7 @@ using UnityEngine.Events;
 public struct TrackListing
 {
     public string title;
+    public string displayName;
     public AudioClip track;
     public int BPM;
     public float vol;
@@ -124,8 +125,8 @@ public class Jukebox : Singleton<Jukebox>
 				string mixerGroup = VolumeGroupToFloatName(group);
 				if (!mixerGroup.Equals(string.Empty))
 				{
-					newVolume = Mathf.Max(Mathf.Log10(newVolume) * 40, -80);
-					_mixer.SetFloat(mixerGroup, newVolume);
+					float newVolumeDb = Mathf.Max(Mathf.Log10(newVolume) * 40, -80);
+					_mixer.SetFloat(mixerGroup, newVolumeDb);
                     onVolumeChanged.Invoke(group, newVolume);
 				}
 			});
