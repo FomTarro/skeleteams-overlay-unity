@@ -11,7 +11,6 @@ using UnityEngine.Events;
 
 public class LayoutManager : Singleton<LayoutManager>
 {
-
     [SerializeField]
     private WebServer _webServer;
 
@@ -23,13 +22,12 @@ public class LayoutManager : Singleton<LayoutManager>
     [SerializeField]
     private SpoutReceiver _mainWindow;
     [SerializeField]
-    private string _facecamSpoutName;
-    [SerializeField]
-    private string _captureSpoutName;
-    [SerializeField]
     private MicVolumeBorder _mainWindowMicBorder;
     [SerializeField]
     private CameraSwitchAnimation _cameraAnimation;
+
+    [SerializeField]
+    private StreamParticipantDisplay _mainDisplay;
 
     [Header("Main Scenes")]
     [SerializeField]
@@ -42,6 +40,7 @@ public class LayoutManager : Singleton<LayoutManager>
 
     [Serializable]
     public class ChatUserCountEvent : UnityEvent<int> { }
+    [Header("Events")]
     public ChatUserCountEvent onChatUserCounted = new();
 
     [Serializable]
@@ -52,85 +51,134 @@ public class LayoutManager : Singleton<LayoutManager>
     public class StreamTimeEvent : UnityEvent<DateTime> { }
     public StreamTimeEvent onStreamTimeChecked = new();
 
-    private float _pollingInterval = 5f;
+    private readonly float _pollingInterval = 5f;
 
     private float _sceneRelativeVolume = 1f;
-    private string _chattingSong = "Cafe";
-    private string _waitingSong = "Pokemon";
+    private readonly string _chattingSong = "Cafe";
+    private readonly string _waitingSong = "Pokemon";
+
+    [Serializable]
+    public class StreamParticipant
+    {
+        public bool enabled;
+        public string key;
+        public string name;
+        public Color borderColor;
+        public string faceSourceName;
+        public string screenSourceName;
+        public string micSourceName;
+        public Sprite icon;
+    }
+    [SerializeField]
+    private StreamParticipantDisplay _participantPrefab;
+    private List<StreamParticipantDisplay> _participantDisplays = new List<StreamParticipantDisplay>();
+    [SerializeField]
+    private List<StreamParticipant> _participants;
+    private StreamParticipant _currentPresenter;
+
+    [Serializable]
+    private enum PresentationMode
+    {
+        None,
+        Face,
+        Screen,
+        PopOut
+    };
+
+    private PresentationMode _currentMode = PresentationMode.None;
 
     // Start is called before the first frame update
     void Start()
     {
-        _popOut.alpha = 0;
-        _webServer.RegisterEndpoint(new Endpoint("/camera/bar/toggle", (req) =>
+        foreach (StreamParticipant participant in _participants)
         {
-            if (_collabBar.activeSelf)
+            if (participant.enabled)
             {
-                _cameraAnimation.StartAnimation(() =>
+                StreamParticipantDisplay display = Instantiate(_participantPrefab, _collabBar.transform);
+                display.Configure(participant);
+                _participantDisplays.Add(display);
+                _webServer.RegisterEndpoint(new Endpoint("/camera/presenter/" + participant.key, (req) =>
                 {
-                    _collabBar.SetActive(false);
-                    _mainWindowMicBorder.enabled = true;
-                });
-                _mainWindow.sourceName = _facecamSpoutName;
+                    // set their face cam to the main display, hide pop-out, hide from collab bar
+                    SetCurrentPresenter(participant);
+                    return new EndpointResponse(200, "");
+                }));
             }
-            else if (_popOut.alpha > 0.5f)
-            {
-                _collabBar.SetActive(true);
-                _popOut.alpha = 0f;
-            }
-            else
-            {
-                _popOut.alpha = 0f;
-                _cameraAnimation.StartAnimation(() =>
-                {
-                    _collabBar.SetActive(true);
-                    _mainWindowMicBorder.enabled = false;
-                });
-                _mainWindow.sourceName = _captureSpoutName;
-            }
-            return new EndpointResponse(200, "");
-        }));
-
-        _webServer.RegisterEndpoint(new Endpoint("/camera/pop/toggle", (req) =>
-        {
-            if (_popOut.alpha > 0.5f)
-            {
-                _popOut.alpha = 0f;
-                _cameraAnimation.StartAnimation(() =>
-                {
-                    _mainWindowMicBorder.enabled = true;
-                });
-                _mainWindow.sourceName = _facecamSpoutName;
-            }
-            else if (_collabBar.activeSelf)
-            {
-                _collabBar.SetActive(false);
-                _popOut.alpha = 1f;
-            }
-            else
-            {
-                _cameraAnimation.StartAnimation(() =>
-                {
-                    _collabBar.SetActive(false);
-                    _popOut.alpha = 1f;
-                    _mainWindowMicBorder.enabled = false;
-                });
-                _mainWindow.sourceName = _captureSpoutName;
-            }
-            return new EndpointResponse(200, "");
-        }));
-
+        }
         _webServer.RegisterEndpoint(new Endpoint("/camera/face", (req) =>
         {
-            _collabBar.SetActive(false);
-            _popOut.alpha = 0f;
-            _cameraAnimation.StartAnimation(() =>
-            {
-                _mainWindowMicBorder.enabled = true;
-            });
-            _mainWindow.sourceName = _facecamSpoutName;
+            SetMode(PresentationMode.Face);
             return new EndpointResponse(200, "");
         }));
+
+        _webServer.RegisterEndpoint(new Endpoint("/camera/screen", (req) =>
+        {
+            SetMode(PresentationMode.Screen);
+            return new EndpointResponse(200, "");
+        }));
+
+        _webServer.RegisterEndpoint(new Endpoint("/camera/pop", (req) =>
+        {
+            SetMode(PresentationMode.PopOut);
+            return new EndpointResponse(200, "");
+        }));
+        // _webServer.RegisterEndpoint(new Endpoint("/camera/bar/toggle", (req) =>
+        // {
+        //     if (_collabBar.activeSelf)
+        //     {
+        //         _cameraAnimation.StartAnimation(() =>
+        //         {
+        //             _collabBar.SetActive(false);
+        //             _mainWindowMicBorder.enabled = true;
+        //         });
+        //         _mainWindow.sourceName = _facecamSpoutName;
+        //     }
+        //     else if (_popOut.alpha > 0.5f)
+        //     {
+        //         _collabBar.SetActive(true);
+        //         _popOut.alpha = 0f;
+        //     }
+        //     else
+        //     {
+        //         _popOut.alpha = 0f;
+        //         _cameraAnimation.StartAnimation(() =>
+        //         {
+        //             _collabBar.SetActive(true);
+        //             _mainWindowMicBorder.enabled = false;
+        //         });
+        //         _mainWindow.sourceName = _captureSpoutName;
+        //     }
+        //     return new EndpointResponse(200, "");
+        // }));
+
+        // _webServer.RegisterEndpoint(new Endpoint("/camera/pop/toggle", (req) =>
+        // {
+        //     if (_popOut.alpha > 0.5f)
+        //     {
+        //         _popOut.alpha = 0f;
+        //         _cameraAnimation.StartAnimation(() =>
+        //         {
+        //             _mainWindowMicBorder.enabled = true;
+        //         });
+        //         _mainWindow.sourceName = _facecamSpoutName;
+        //     }
+        //     else if (_collabBar.activeSelf)
+        //     {
+        //         _collabBar.SetActive(false);
+        //         _popOut.alpha = 1f;
+        //     }
+        //     else
+        //     {
+        //         _cameraAnimation.StartAnimation(() =>
+        //         {
+        //             _collabBar.SetActive(false);
+        //             _popOut.alpha = 1f;
+        //             _mainWindowMicBorder.enabled = false;
+        //         });
+        //         _mainWindow.sourceName = _captureSpoutName;
+        //     }
+        //     return new EndpointResponse(200, "");
+        // }));
 
         _webServer.RegisterEndpoint(new Endpoint("/scene/waiting", (req) =>
         {
@@ -184,6 +232,9 @@ public class LayoutManager : Singleton<LayoutManager>
             }
             return new EndpointResponse(200, "");
         }));
+
+        _popOut.alpha = 0;
+        SetCurrentPresenter(_participants[0]);
     }
 
     // Update is called once per frame
@@ -217,6 +268,53 @@ public class LayoutManager : Singleton<LayoutManager>
                 Debug.LogError(err);
             });
             _pollingDelta = 0f;
+        }
+    }
+
+    private void SetCurrentPresenter(StreamParticipant participant)
+    {
+        _currentPresenter = participant;
+        _mainDisplay.Configure(participant);
+        SetMode(PresentationMode.Face);
+    }
+
+    private void SetMode(PresentationMode mode)
+    {
+        _currentMode = mode;
+        if (mode == PresentationMode.Face)
+        {
+            _currentMode = PresentationMode.Face;
+            _mainWindowMicBorder.enabled = false;
+            if (_participantDisplays.Count <= 1)
+            {
+                _collabBar.SetActive(false);
+            }
+            _cameraAnimation.StartAnimation(() =>
+            {
+                foreach (StreamParticipantDisplay display in _participantDisplays)
+                {
+                    display.gameObject.SetActive(!_currentPresenter.key.Equals(display.Key));
+                }
+                _mainWindowMicBorder.enabled = true;
+            });
+            _mainWindow.sourceName = _currentPresenter.faceSourceName;
+        }
+        else if (mode == PresentationMode.Screen)
+        {
+            _mainWindowMicBorder.enabled = false;
+            _cameraAnimation.StartAnimation(() =>
+            {
+                foreach (StreamParticipantDisplay display in _participantDisplays)
+                {
+                    display.gameObject.SetActive(true);
+                }
+                _collabBar.SetActive(true);
+            });
+            _mainWindow.sourceName = _currentPresenter.screenSourceName;
+        }
+        else if (mode == PresentationMode.PopOut)
+        {
+
         }
     }
 

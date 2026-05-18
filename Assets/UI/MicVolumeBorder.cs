@@ -9,27 +9,38 @@ public class MicVolumeBorder : MonoBehaviour
 {
 
     [SerializeField]
+    private string _micSource;
+    [SerializeField]
     private Outline _outline;
 
     [SerializeField]
     private float _threshold = 0.05f;
 
-    private ShiftingAverage _avg = new ShiftingAverage(10);
+    private readonly ShiftingAverage _avg = new(10);
 
     // Start is called before the first frame update
     void Start()
     {
-        OBSIntegration.Instance.onMicVolume.AddListener((vol) =>
+        OBSIntegration.Instance.onVolume.AddListener((source, vol) =>
         {
             if (this.enabled)
             {
-                _avg.AddValue(vol);
-                _outline.enabled = _avg.Average > _threshold;
+                if (_micSource.Equals(source))
+                {
+                    _avg.AddValue(vol);
+                    _outline.enabled = _avg.Average > _threshold;
+                }
             }
             else
             {
                 _outline.enabled = false;
             }
         });
+    }
+
+    public void Configure(string sourceName, Color color)
+    {
+        _micSource = sourceName;
+        _outline.effectColor = color;
     }
 }

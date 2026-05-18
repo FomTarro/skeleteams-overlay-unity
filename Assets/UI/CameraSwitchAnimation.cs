@@ -1,10 +1,7 @@
 using System.Collections;
-using System.Collections.Generic;
-using Klak.Spout;
 using Skeletom.Essentials.Animations;
 using Skeletom.Essentials.Utils;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class CameraSwitchAnimation : BaseAnimatedElement
 {

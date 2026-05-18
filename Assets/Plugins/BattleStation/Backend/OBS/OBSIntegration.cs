@@ -15,8 +15,8 @@ namespace Skeletom.BattleStation.Integrations.OBS
         #region Events
 
         [Serializable]
-        public class MicVolumeEvent : UnityEvent<float> { }
-        public MicVolumeEvent onMicVolume = new();
+        public class VolumeEvent : UnityEvent<string, float> { }
+        public VolumeEvent onVolume = new();
 
         #endregion
 
@@ -44,13 +44,13 @@ namespace Skeletom.BattleStation.Integrations.OBS
             EVENT_HANDLERS.Add("InputVolumeMeters", (msg) =>
             {
                 var eventMessage = JsonConvert.DeserializeObject<OBSMessage<OBSEvent<InputVolumeMetersEventData>>>(msg);
-                var micInput = eventMessage.d.eventData.inputs.Find(input => "Mic/Aux".Equals(input.inputName));
-                if (micInput != null)
+                foreach (InputVolumeMeterEntry input in eventMessage.d.eventData.inputs)
                 {
-                    onMicVolume.Invoke((micInput.inputLevelsMul[0][2] + micInput.inputLevelsMul[1][2]) / 2f);
-                    // Debug.Log("Mic Volume: " + micInput.inputLevelsMul[0, 2]);
+                    if (input.inputLevelsMul.Length > 1 && input.inputLevelsMul[0].Length > 2 && input.inputLevelsMul[1].Length > 2)
+                    {
+                        onVolume.Invoke(input.inputName, (input.inputLevelsMul[0][2] + input.inputLevelsMul[1][2]) / 2f);
+                    }
                 }
-
             });
             EVENT_HANDLERS.Add("InputMuteStateChanged", (msg) =>
             {
