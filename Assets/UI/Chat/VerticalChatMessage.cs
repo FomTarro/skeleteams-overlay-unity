@@ -39,7 +39,7 @@ public class VerticalChatMessage : ChatMessageGameObject
     public override void DisplayMessage(StreamChatMessage message)
     {
         this.message = message;
-        if(message.chatter.avatar != null)
+        if (message.chatter.avatar != null)
         {
             _avatarDisplay.DisplayTexture(message.chatter.avatar);
         }
@@ -123,5 +123,6 @@ public class VerticalChatMessage : ChatMessageGameObject
     {
         _userInfoBox.SetActive(toggle);
         _avatarMask.SetActive(toggle);
+        _badge.gameObject.SetActive(toggle);
     }
 }

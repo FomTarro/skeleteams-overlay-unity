@@ -20,6 +20,8 @@ public class LayoutManager : Singleton<LayoutManager>
     [SerializeField]
     private CanvasGroup _popOut;
     [SerializeField]
+    private StreamParticipantDisplay _popOutDisplay;
+    [SerializeField]
     private SpoutReceiver _mainWindow;
     [SerializeField]
     private MicVolumeBorder _mainWindowMicBorder;
@@ -55,7 +57,7 @@ public class LayoutManager : Singleton<LayoutManager>
 
     private float _sceneRelativeVolume = 1f;
     private readonly string _chattingSong = "Cafe";
-    private readonly string _waitingSong = "Pokemon";
+    private readonly string _waitingSong = "Main";
 
     [Serializable]
     public class StreamParticipant
@@ -275,6 +277,7 @@ public class LayoutManager : Singleton<LayoutManager>
     {
         _currentPresenter = participant;
         _mainDisplay.Configure(participant);
+        _popOutDisplay.Configure(participant);
         SetMode(PresentationMode.Face);
     }
 
@@ -283,20 +286,20 @@ public class LayoutManager : Singleton<LayoutManager>
         _currentMode = mode;
         if (mode == PresentationMode.Face)
         {
-            _currentMode = PresentationMode.Face;
             _mainWindowMicBorder.enabled = false;
-            if (_participantDisplays.Count <= 1)
-            {
-                _collabBar.SetActive(false);
-            }
             _cameraAnimation.StartAnimation(() =>
             {
                 foreach (StreamParticipantDisplay display in _participantDisplays)
                 {
                     display.gameObject.SetActive(!_currentPresenter.key.Equals(display.Key));
                 }
+                if (_participantDisplays.Count <= 1)
+                {
+                    _collabBar.SetActive(false);
+                }
                 _mainWindowMicBorder.enabled = true;
             });
+            _popOut.alpha = 0;
             _mainWindow.sourceName = _currentPresenter.faceSourceName;
         }
         else if (mode == PresentationMode.Screen)
@@ -310,11 +313,25 @@ public class LayoutManager : Singleton<LayoutManager>
                 }
                 _collabBar.SetActive(true);
             });
+            _popOut.alpha = 0;
             _mainWindow.sourceName = _currentPresenter.screenSourceName;
         }
         else if (mode == PresentationMode.PopOut)
         {
-
+            _mainWindowMicBorder.enabled = false;
+            _cameraAnimation.StartAnimation(() =>
+            {
+                foreach (StreamParticipantDisplay display in _participantDisplays)
+                {
+                    display.gameObject.SetActive(!_currentPresenter.key.Equals(display.Key));
+                }
+                if (_participantDisplays.Count <= 1)
+                {
+                    _collabBar.SetActive(false);
+                }
+                _popOut.alpha = 1;
+            });
+            _mainWindow.sourceName = _currentPresenter.screenSourceName;
         }
     }
 

@@ -18,7 +18,7 @@ public class AdTimer : MonoBehaviour
 
     private void Update()
     {
-        DateTime now = DateTime.Now;
+        DateTime now = DateTime.Now.ToUniversalTime();
         TimeSpan diff = _lastCheck - now;
         if (now > _lastCheck)
         {

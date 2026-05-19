@@ -1490,6 +1490,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Badge
       objectReference: {fileID: 0}
+    - target: {fileID: 4764408809382680001, guid: 87e56bc837d49fa4d9b23b4cdb0dcf85, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8371516679770188938, guid: 87e56bc837d49fa4d9b23b4cdb0dcf85, type: 3}
       propertyPath: m_Texture
       value: 
