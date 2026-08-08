@@ -533,7 +533,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
         public string to_broadcaster_user_id;
     }
 
-    [SerializeField]
+    [Serializable]
     public class ChannelRaidEvent : IEventSubEvent
     {
         public string from_broadcaster_user_id;
@@ -550,7 +550,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch.EventSub
     #region Channel Cheer Event
 
     [Serializable]
-     public class ChannelCheerSubscriptionRequest : EventSubscriptionRequest<ChannelCheerEventCondition>
+    public class ChannelCheerSubscriptionRequest : EventSubscriptionRequest<ChannelCheerEventCondition>
     {
         public ChannelCheerSubscriptionRequest(string sessionId) : base(sessionId)
         {

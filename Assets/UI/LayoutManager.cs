@@ -57,7 +57,10 @@ public class LayoutManager : Singleton<LayoutManager>
 
     private float _sceneRelativeVolume = 1f;
     private readonly string _chattingSong = "Cafe";
-    private readonly string _waitingSong = "Main";
+    private readonly string _waitingSong = "Hold";
+
+    [SerializeField]
+    private AudioSource _sceneTransitionJingle;
 
     [Serializable]
     public class StreamParticipant
@@ -102,6 +105,7 @@ public class LayoutManager : Singleton<LayoutManager>
                 _webServer.RegisterEndpoint(new Endpoint("/camera/presenter/" + participant.key, (req) =>
                 {
                     // set their face cam to the main display, hide pop-out, hide from collab bar
+                    Debug.Log("Setting Presenter to: " + participant.key);
                     SetCurrentPresenter(participant);
                     return new EndpointResponse(200, "");
                 }));
@@ -186,8 +190,7 @@ public class LayoutManager : Singleton<LayoutManager>
         {
             _waiting.alpha = 1;
             _chatting.alpha = 0;
-            // TODO: track these target volumes independently
-            _sceneRelativeVolume = 1f;
+            _sceneRelativeVolume = 0.80f;
             Jukebox.Instance.ChangeSong(_waitingSong, _sceneRelativeVolume);
             return new EndpointResponse(200, "");
         }));
@@ -195,7 +198,8 @@ public class LayoutManager : Singleton<LayoutManager>
         {
             _waiting.alpha = 0;
             _chatting.alpha = 1;
-            _sceneRelativeVolume = 0.25f;
+            _sceneRelativeVolume = 0.35f;
+            _sceneTransitionJingle.Play();
             Jukebox.Instance.ChangeSong(_chattingSong, _sceneRelativeVolume);
             return new EndpointResponse(200, "");
         }));
@@ -237,6 +241,17 @@ public class LayoutManager : Singleton<LayoutManager>
 
         _popOut.alpha = 0;
         SetCurrentPresenter(_participants[0]);
+
+
+        _webServer.RegisterEndpoint(new Endpoint("/test/raid", (req) =>
+        {
+            TwitchIntegration.Instance.onChannelRaid.Invoke(
+                new Skeletom.BattleStation.Integrations.StreamRaid(
+                    new Skeletom.BattleStation.Integrations.StreamUser("Skeletom", "12345"),
+                    500
+                ));
+            return new EndpointResponse(200, "");
+        }));
     }
 
     // Update is called once per frame
@@ -333,11 +348,6 @@ public class LayoutManager : Singleton<LayoutManager>
             });
             _mainWindow.sourceName = _currentPresenter.screenSourceName;
         }
-    }
-
-    public void SetMainScreenSpoutSource(string source)
-    {
-        _mainWindow.sourceName = source;
     }
 
     public override void Initialize()

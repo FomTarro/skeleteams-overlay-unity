@@ -195,6 +195,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     {
                         if (EVENTSUB_HANDLERS.ContainsKey(message.payload.subscription.type))
                         {
+                            // Debug.Log(msg);
                             EVENTSUB_HANDLERS[message.payload.subscription.type](msg);
                         }
                     }
@@ -769,7 +770,6 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     onChatMessage.Invoke(message);
                 }
             );
-            // TODO: get user avatar? Seems like too much for every chat message.
             foreach (EventSub.ChatMessageFragment fragment in chatEvent.message.fragments)
             {
                 string taskId = Guid.NewGuid().ToString();
@@ -971,14 +971,21 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         }
         private void PrepareChannelRaid(EventSub.ChannelRaidEvent raidEvent)
         {
-            StreamUser raider = new StreamUser(raidEvent.from_broadcaster_user_name, raidEvent.from_broadcaster_user_id);
+            StreamUser raider = new(raidEvent.from_broadcaster_user_name, raidEvent.from_broadcaster_user_id);
             DependencyManager manager = new(
                 () => { onChannelRaid.Invoke(new StreamRaid(raider, raidEvent.viewers)); }
             );
-            // TODO: we're going to need to collect info at some point, just setting this up for later
-            string taskId = Guid.NewGuid().ToString();
-            manager.AddDependency(taskId);
-            manager.ResolveDependency(taskId);
+            string avatarTaskId = Guid.NewGuid().ToString();
+            manager.AddDependency(avatarTaskId);
+            GetUserAvatar(raider.id, (avatar) =>
+            {
+                raider.avatar = avatar;
+                manager.ResolveDependency(avatarTaskId);
+            }, (err) =>
+            {
+                Debug.LogError(err.message);
+                manager.ResolveDependency(avatarTaskId);
+            });
             manager.Enable(true);
         }
 

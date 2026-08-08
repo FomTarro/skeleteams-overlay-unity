@@ -123,6 +123,6 @@ public class VerticalChatMessage : ChatMessageGameObject
     {
         _userInfoBox.SetActive(toggle);
         _avatarMask.SetActive(toggle);
-        _badge.gameObject.SetActive(toggle);
+        _badge.gameObject.SetActive(this.message != null && this.message.badges.Count > 0 && toggle);
     }
 }

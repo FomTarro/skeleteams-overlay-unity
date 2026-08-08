@@ -12,6 +12,7 @@ public class CameraSwitchAnimation : BaseAnimatedElement
 
     protected override IEnumerator Animate()
     {
+        Debug.LogError("CAMERA CHANGE");
         _canvas.alpha = 0;
         yield return EnumUtils.GenericWaitForSeconds(_delay, (frame) => { });
         _canvas.alpha = 1;
