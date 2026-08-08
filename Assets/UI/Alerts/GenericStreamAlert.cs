@@ -1,24 +1,16 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using Skeletom.BattleStation.Graphics.Animations;
 using Skeletom.BattleStation.Integrations;
+using Skeletom.BattleStation.Integrations.Twitch;
 using UnityEngine;
+using UnityEngine.UI;
 
-public struct GenericStreamAlertContent
-{
-    public StreamUser user;
-    public string description;
-    public string details;
-    public GenericStreamAlertContent(StreamUser user, string description, string details)
-    {
-        this.user = user;
-        this.description = description;
-        this.details = details;
-    }
-}
 
-public class GenericStreamAlert : StreamAlertGameObject<GenericStreamAlertContent>
+public class GenericStreamAlert : StreamEventGameObject
 {
+    private GenericStreamAlertLog _log;
+    private string _id;
+    private string _userId;
     [SerializeField]
     private TMPro.TMP_Text _userName;
     [SerializeField]
@@ -34,22 +26,37 @@ public class GenericStreamAlert : StreamAlertGameObject<GenericStreamAlertConten
     [SerializeField]
     private AnimatedFade _animator;
 
-    public override void DisplayAlert(GenericStreamAlertContent message)
+    [SerializeField]
+    private Button _shoutoutButton;
+
+
+    public void SetLog(GenericStreamAlertLog log)
     {
-        _userName.text = message.user.displayName;
-        _title.text = message.description;
-        _details.text = message.details;
-        if (message.user.avatar != null)
+        _log = log;
+    }
+    public override void Display(StreamEvent data)
+    {
+        _id = data.ID;
+        _userId = data.user.id;
+        _userName.text = data.user.displayName;
+        _title.text = data.description;
+        _details.text = data.details;
+        if (data.user.avatar != null)
         {
-            Debug.Log(message.user.avatar.name);
-            _avatarDisplay.DisplayTexture(message.user.avatar);
+            Debug.Log(data.user.avatar.name);
+            _avatarDisplay.DisplayTexture(data.user.avatar);
         }
         _jingle.Play();
         _animator.FadeTo(1, 1f);
     }
 
-    public override void DisposeAlert()
+    public override void Dispose()
     {
-        _animator.FadeTo(0, 0.5f);
+        _animator.FadeTo(0, 0.5f, () => { _log.Dispose(_id); });
+    }
+
+    public void ShoutOutUser()
+    {
+        TwitchIntegration.Instance.SendShoutout(_userId, () => { }, (err) => { Debug.LogError(err); });
     }
 }

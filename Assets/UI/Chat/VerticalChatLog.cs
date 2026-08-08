@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Skeletom.BattleStation.Integrations.Twitch;
 using UnityEngine;
@@ -17,14 +16,14 @@ public class VerticalChatLog : ChatLogGameObject<VerticalChatMessage>
     {
         TwitchIntegration.Instance.onChatMessage.AddListener((msg) =>
         {
-            var obj = DisplayMessage(msg);
+            var obj = Display(msg);
             obj.transform.SetParent(_logParent);
             CheckPriorMessages();
             LayoutRebuilder.ForceRebuildLayoutImmediate(_logParent);
         });
         TwitchIntegration.Instance.onChatMessageDelete.AddListener((msg) =>
         {
-            DisposeMessage(msg);
+            Dispose(msg.id);
             CheckPriorMessages();
             LayoutRebuilder.ForceRebuildLayoutImmediate(_logParent);
         });
@@ -51,12 +50,6 @@ public class VerticalChatLog : ChatLogGameObject<VerticalChatMessage>
                 }
             }
         }
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 
     void LateUpdate()

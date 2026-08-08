@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Skeletom.Essentials.Animations;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class AnimatedFade : BaseAnimatedElement
 {
@@ -11,12 +12,12 @@ public class AnimatedFade : BaseAnimatedElement
     private float _target;
     private float _duration;
 
-    public void FadeTo(float target, float duration)
+    public void FadeTo(float target, float duration, UnityAction onFinishCallback = null)
     {
-        StopAnimation();
+        StopAnimation(false);
         _target = target;
         _duration = duration;
-        StartAnimation();
+        StartAnimation(onFinishCallback);
     }
 
     protected override IEnumerator Animate()

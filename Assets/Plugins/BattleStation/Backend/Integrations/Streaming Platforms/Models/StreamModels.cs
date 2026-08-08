@@ -91,7 +91,7 @@ namespace Skeletom.BattleStation.Integrations
     }
 
     [Serializable]
-    public class StreamChatMessage
+    public class StreamChatMessage : IDisplayableData
     {
         [Serializable]
         public class Fragment
@@ -116,6 +116,7 @@ namespace Skeletom.BattleStation.Integrations
         }
 
         public string id;
+        public string ID { get { return id; } }
         public DateTime timestamp;
         public StreamUser chatter;
         public Color nameColor = Color.white;
@@ -139,6 +140,22 @@ namespace Skeletom.BattleStation.Integrations
         public StreamChatMessageDeletion(string id)
         {
             this.id = id;
+        }
+    }
+
+    [Serializable]
+    public struct StreamEvent : IDisplayableData
+    {
+        public string ID { get; private set; }
+        public StreamUser user;
+        public string description;
+        public string details;
+        public StreamEvent(StreamUser user, string description, string details)
+        {
+            this.ID = Guid.NewGuid().ToString(); ;
+            this.user = user;
+            this.description = description;
+            this.details = details;
         }
     }
 

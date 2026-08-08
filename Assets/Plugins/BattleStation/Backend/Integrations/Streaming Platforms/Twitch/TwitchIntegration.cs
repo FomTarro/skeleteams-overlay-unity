@@ -26,7 +26,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             "channel:read:subscriptions",
             "channel:read:ads",
             "moderator:read:followers",
-            "moderator:read:chatters"
+            "moderator:read:chatters",
+            "moderator:manage:shoutouts"
         };
 
         [Header("Networking")]
@@ -492,6 +493,27 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     {
                         var schedule = JsonUtility.FromJson<API.DataResponse<API.AdScheduleData>>(str).data;
                         onSuccess(schedule[0]);
+                    },
+                    (err) =>
+                    {
+                        onError(new StreamError(err));
+                    }
+                )
+            );
+        }
+
+        #endregion
+
+        #region Shoutouts
+
+        public void SendShoutout(string targetId, Action onSuccess, Action<StreamError> onError)
+        {
+            string url = $"{TWITCH_API.SEND_SHOUTOUT_ENDPOINT}?from_broadcaster_id={BROADCASTER_ID}&to_broadcaster_id={targetId}&moderator_id={BROADCASTER_ID}";
+            StartCoroutine(
+                HttpUtils.PostRequest(url, "", Headers,
+                    (str) =>
+                    {
+                        onSuccess();
                     },
                     (err) =>
                     {

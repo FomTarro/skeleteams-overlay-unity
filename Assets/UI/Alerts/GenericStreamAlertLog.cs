@@ -1,27 +1,21 @@
-using System.Collections;
-using System.Collections.Generic;
+using Skeletom.BattleStation.Integrations;
 using Skeletom.BattleStation.Integrations.Twitch;
 using UnityEngine;
 
-public class GenericStreamAlertLog : MonoBehaviour
+public class GenericStreamAlertLog : StreamEventLogGameObject<GenericStreamAlert>
 {
-
     [SerializeField]
-    private GenericStreamAlert _alertInstance;
+    private RectTransform _logParent;
 
     // Start is called before the first frame update
     void Start()
     {
         TwitchIntegration.Instance.onChannelRaid.AddListener((raid) =>
         {
-            GenericStreamAlertContent content = new(raid.raider, "Incoming Channel Raid", $"With {raid.viewers} raiders");
-            _alertInstance.DisplayAlert(content);
+            StreamEvent content = new(raid.raider, "Incoming Channel Raid", $"With {raid.viewers} raiders");
+            var obj = Display(content);
+            obj.SetLog(this);
+            obj.transform.SetParent(_logParent);
         });
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 }

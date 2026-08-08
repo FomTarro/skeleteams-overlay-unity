@@ -790,7 +790,7 @@ MonoBehaviour:
   m_UseGraphicAlpha: 1
   iterations: 10
   shadowSpread: {x: 24, y: 24}
-  aspectRatio: 1.7598039
+  aspectRatio: 1.759804
 --- !u!114 &1325599604358382967
 MonoBehaviour:
   m_ObjectHideFlags: 0

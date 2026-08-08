@@ -87,7 +87,10 @@ namespace Skeletom.Essentials.Utils
         {
             UnityWebRequest webRequest = new UnityWebRequest(url, "POST");
             byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(body);
-            webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            if (body.Length > 0)
+            {
+                webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            }
             webRequest.downloadHandler = new DownloadHandlerBuffer();
             yield return MakeWebRequest(webRequest, headers, (req) =>
             {

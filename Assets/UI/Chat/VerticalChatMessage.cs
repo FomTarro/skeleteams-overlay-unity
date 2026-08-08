@@ -1,12 +1,10 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Skeletom.BattleStation.Graphics.Animations;
 using Skeletom.BattleStation.Integrations;
 using Skeletom.Essentials.Utils;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class VerticalChatMessage : ChatMessageGameObject
 {
@@ -36,7 +34,7 @@ public class VerticalChatMessage : ChatMessageGameObject
     public string ChatterId { get { return message.chatter.id; } }
 
 
-    public override void DisplayMessage(StreamChatMessage message)
+    public override void Display(StreamChatMessage message)
     {
         this.message = message;
         if (message.chatter.avatar != null)
@@ -95,7 +93,7 @@ public class VerticalChatMessage : ChatMessageGameObject
         _text.text += " ";
     }
 
-    public override void DisposeMessage()
+    public override void Dispose()
     {
         // no additional cleanup needed
     }
