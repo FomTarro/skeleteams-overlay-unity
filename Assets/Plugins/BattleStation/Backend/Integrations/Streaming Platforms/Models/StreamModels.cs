@@ -148,11 +148,15 @@ namespace Skeletom.BattleStation.Integrations
     {
         public string ID { get; private set; }
         public StreamUser user;
+        public string type;
+        public string title;
         public string description;
         public string details;
-        public StreamEvent(StreamUser user, string description, string details)
+        public StreamEvent(StreamUser user, string title, string type, string description, string details)
         {
-            this.ID = Guid.NewGuid().ToString(); ;
+            this.ID = Guid.NewGuid().ToString();
+            this.title = title;
+            this.type = type;
             this.user = user;
             this.description = description;
             this.details = details;
@@ -163,16 +167,20 @@ namespace Skeletom.BattleStation.Integrations
     public class StreamChatRedeem
     {
         public string name;
-        public string id;
+        public string rewardId;
+        public string eventId;
         public int cost;
         public StreamUser redeemer;
+        public string message;
 
-        public StreamChatRedeem(StreamUser redeemer, string name, string id, int cost)
+        public StreamChatRedeem(StreamUser redeemer, string name, string rewardId, string eventId, int cost, string message)
         {
             this.redeemer = redeemer;
             this.name = name;
-            this.id = id;
+            this.eventId = eventId;
+            this.rewardId = rewardId;
             this.cost = cost;
+            this.message = message;
         }
     }
 

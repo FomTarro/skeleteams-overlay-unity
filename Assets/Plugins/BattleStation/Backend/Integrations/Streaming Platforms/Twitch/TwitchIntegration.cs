@@ -872,14 +872,32 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         }
         private void PrepareChannelRedeem(EventSub.ChannelPointRedeemEvent redeemEvent)
         {
+            Debug.Log(redeemEvent.reward.title);
             StreamUser chatter = new(redeemEvent.user_name, redeemEvent.user_id);
             DependencyManager manager = new(
-                () => { onChatRedeem.Invoke(new StreamChatRedeem(chatter, redeemEvent.reward.title, redeemEvent.reward.id, redeemEvent.reward.cost)); }
+                () =>
+                {
+                    onChatRedeem.Invoke(new StreamChatRedeem(
+                        chatter,
+                        redeemEvent.reward.title,
+                        redeemEvent.reward.id,
+                        redeemEvent.id,
+                        redeemEvent.reward.cost,
+                        redeemEvent.user_input
+                    ));
+                }
             );
-            // TODO: we're going to need to collect info at some point, just setting this up for later
-            string taskId = Guid.NewGuid().ToString();
-            manager.AddDependency(taskId);
-            manager.ResolveDependency(taskId);
+            string avatarTaskId = Guid.NewGuid().ToString();
+            manager.AddDependency(avatarTaskId);
+            GetUserAvatar(chatter.id, (avatar) =>
+            {
+                chatter.avatar = avatar;
+                manager.ResolveDependency(avatarTaskId);
+            }, (err) =>
+            {
+                Debug.LogError(err.message);
+                manager.ResolveDependency(avatarTaskId);
+            });
             manager.Enable(true);
         }
 
@@ -937,10 +955,17 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             DependencyManager manager = new(
                 () => { onChannelPaidSubscription.Invoke(sub); }
             );
-            // TODO: we're going to need to collect info at some point, just setting this up for later
-            string taskId = Guid.NewGuid().ToString();
-            manager.AddDependency(taskId);
-            manager.ResolveDependency(taskId);
+            string avatarTaskId = Guid.NewGuid().ToString();
+            manager.AddDependency(avatarTaskId);
+            GetUserAvatar(chatter.id, (avatar) =>
+            {
+                chatter.avatar = avatar;
+                manager.ResolveDependency(avatarTaskId);
+            }, (err) =>
+            {
+                Debug.LogError(err.message);
+                manager.ResolveDependency(avatarTaskId);
+            });
             manager.Enable(true);
         }
 

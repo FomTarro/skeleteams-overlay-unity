@@ -12,9 +12,11 @@ public class GenericStreamAlert : StreamEventGameObject
     private string _id;
     private string _userId;
     [SerializeField]
-    private TMPro.TMP_Text _userName;
-    [SerializeField]
     private TMPro.TMP_Text _title;
+    [SerializeField]
+    private TMPro.TMP_Text _type;
+    [SerializeField]
+    private TMPro.TMP_Text _description;
     [SerializeField]
     private TMPro.TMP_Text _details;
     [SerializeField]
@@ -38,8 +40,9 @@ public class GenericStreamAlert : StreamEventGameObject
     {
         _id = data.ID;
         _userId = data.user.id;
-        _userName.text = data.user.displayName;
-        _title.text = data.description;
+        _title.text = data.title;
+        _type.text = data.type;
+        _description.text = data.description;
         _details.text = data.details;
         if (data.user.avatar != null)
         {
