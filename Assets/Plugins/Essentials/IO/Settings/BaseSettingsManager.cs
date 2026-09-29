@@ -5,9 +5,9 @@ namespace Skeletom.Essentials.IO
 {
     public abstract class BaseSettingsManager<T> : Singleton<BaseSettingsManager<T>>, ISaveable<T> where T : BaseSettingsData, new()
     {
-        public string FileFolder => "Settings";
+        public virtual string FileFolder => "Settings";
 
-        public string FileName => "settings.json";
+        public virtual string FileName => "settings.json";
 
         public bool IsLoading { get; private set; }
 
@@ -41,7 +41,7 @@ namespace Skeletom.Essentials.IO
 
         public T ToSaveData()
         {
-            T data = new T();
+            T data = new();
             var settingsModules = FindObjectsByType<BaseSettingsModule<T>>(FindObjectsSortMode.None);
             foreach (BaseSettingsModule<T> module in settingsModules)
             {
@@ -50,12 +50,12 @@ namespace Skeletom.Essentials.IO
             return data;
         }
 
-        public string TransformAfterRead(string content)
+        public virtual string TransformAfterRead(string content)
         {
             return content;
         }
 
-        public string TransformBeforeWrite(string content)
+        public virtual string TransformBeforeWrite(string content)
         {
             return content;
         }

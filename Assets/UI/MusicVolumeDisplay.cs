@@ -11,18 +11,18 @@ public class MusicVolumeDisplay : MonoBehaviour
 
     void Start()
     {
-        Jukebox.Instance.onVolumeChanged.AddListener((g, v) =>
+        MusicManager.Instance.onVolumeChanged.AddListener((g, v) =>
         {
-            if (_volume != null && g == Jukebox.VolumeGroup.MUSIC_MASTER)
+            if (_volume != null && g == MusicManager.VolumeGroup.MUSIC_MASTER)
             {
                 _volume.text = $"{v * 100f:F0}%";
             }
         });
-        Jukebox.Instance.onSongChanged.AddListener((song) =>
+        MusicManager.Instance.onMusicTrackChanged.AddListener((song) =>
         {
             if (_title != null)
             {
-                _title.text = $"\"{song.displayName}\"";
+                _title.text = $"\"{song.name}\"";
             }
             if (_artist != null)
             {

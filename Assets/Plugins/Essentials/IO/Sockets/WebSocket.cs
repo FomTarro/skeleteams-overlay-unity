@@ -49,12 +49,14 @@ namespace Skeletom.Essentials.IO
 
         public void Send(string message)
         {
-            var buffer = Encoder.GetBytes(message);
-            var arraySegment = new ArraySegment<byte>(buffer);
-            _socket?.SendAsync(arraySegment, WebSocketMessageType.Text, true, default)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult();
+            if(message != null && message.Length > 0 && _socket != null && _socket.State == WebSocketState.Open){
+                var buffer = Encoder.GetBytes(message);
+                var arraySegment = new ArraySegment<byte>(buffer);
+                _socket?.SendAsync(arraySegment, WebSocketMessageType.Text, true, default)
+                    .ConfigureAwait(false)
+                    .GetAwaiter()
+                    .GetResult();
+            }
         }
 
         public void Start(string url, Action onConnect, Action onDisconnect, Action<Exception> onError)

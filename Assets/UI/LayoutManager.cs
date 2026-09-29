@@ -128,70 +128,13 @@ public class LayoutManager : Singleton<LayoutManager>
             SetMode(PresentationMode.PopOut);
             return new EndpointResponse(200, "");
         }));
-        // _webServer.RegisterEndpoint(new Endpoint("/camera/bar/toggle", (req) =>
-        // {
-        //     if (_collabBar.activeSelf)
-        //     {
-        //         _cameraAnimation.StartAnimation(() =>
-        //         {
-        //             _collabBar.SetActive(false);
-        //             _mainWindowMicBorder.enabled = true;
-        //         });
-        //         _mainWindow.sourceName = _facecamSpoutName;
-        //     }
-        //     else if (_popOut.alpha > 0.5f)
-        //     {
-        //         _collabBar.SetActive(true);
-        //         _popOut.alpha = 0f;
-        //     }
-        //     else
-        //     {
-        //         _popOut.alpha = 0f;
-        //         _cameraAnimation.StartAnimation(() =>
-        //         {
-        //             _collabBar.SetActive(true);
-        //             _mainWindowMicBorder.enabled = false;
-        //         });
-        //         _mainWindow.sourceName = _captureSpoutName;
-        //     }
-        //     return new EndpointResponse(200, "");
-        // }));
-
-        // _webServer.RegisterEndpoint(new Endpoint("/camera/pop/toggle", (req) =>
-        // {
-        //     if (_popOut.alpha > 0.5f)
-        //     {
-        //         _popOut.alpha = 0f;
-        //         _cameraAnimation.StartAnimation(() =>
-        //         {
-        //             _mainWindowMicBorder.enabled = true;
-        //         });
-        //         _mainWindow.sourceName = _facecamSpoutName;
-        //     }
-        //     else if (_collabBar.activeSelf)
-        //     {
-        //         _collabBar.SetActive(false);
-        //         _popOut.alpha = 1f;
-        //     }
-        //     else
-        //     {
-        //         _cameraAnimation.StartAnimation(() =>
-        //         {
-        //             _collabBar.SetActive(false);
-        //             _popOut.alpha = 1f;
-        //             _mainWindowMicBorder.enabled = false;
-        //         });
-        //         _mainWindow.sourceName = _captureSpoutName;
-        //     }
-        //     return new EndpointResponse(200, "");
-        // }));
-
+    
         _webServer.RegisterEndpoint(new Endpoint("/scene/waiting", (req) =>
         {
             _waiting.alpha = 1;
             _chatting.alpha = 0;
             _sceneRelativeVolume = 0.80f;
-            Jukebox.Instance.ChangeSong(_waitingSong, _sceneRelativeVolume);
+            MusicManager.Instance.PlayTrack(_waitingSong, _sceneRelativeVolume);
             return new EndpointResponse(200, "");
         }));
         _webServer.RegisterEndpoint(new Endpoint("/scene/chatting", (req) =>
@@ -200,7 +143,7 @@ public class LayoutManager : Singleton<LayoutManager>
             _chatting.alpha = 1;
             _sceneRelativeVolume = 0.35f;
             _sceneTransitionJingle.Play();
-            Jukebox.Instance.ChangeSong(_chattingSong, _sceneRelativeVolume);
+            MusicManager.Instance.PlayTrack(_chattingSong, _sceneRelativeVolume);
             return new EndpointResponse(200, "");
         }));
 
@@ -209,32 +152,11 @@ public class LayoutManager : Singleton<LayoutManager>
             var state = _pause.Toggle();
             if (state)
             {
-                Jukebox.Instance.ChangeSong(_waitingSong, 1f);
+                MusicManager.Instance.PlayTrack(_waitingSong, 1f);
             }
             else
             {
-                Jukebox.Instance.ChangeSong(_chattingSong, _sceneRelativeVolume);
-            }
-            return new EndpointResponse(200, "");
-        }));
-
-        _webServer.RegisterEndpoint(new Endpoint("/music/volume", (req) =>
-        {
-            var queryParam = new List<QueryParameter>(req.queryParameters).Find(param => param.key.Equals("increment"));
-            if (queryParam != null)
-            {
-                float.TryParse(queryParam.value, out float increment);
-                Jukebox.Instance.SetVolume(Jukebox.VolumeGroup.MUSIC_MASTER, Jukebox.Instance.GetVolume(Jukebox.VolumeGroup.MUSIC_MASTER) + increment);
-            }
-            return new EndpointResponse(200, "");
-        }));
-
-        _webServer.RegisterEndpoint(new Endpoint("/music/song", (req) =>
-        {
-            var queryParam = new List<QueryParameter>(req.queryParameters).Find(param => param.key.Equals("title"));
-            if (queryParam != null)
-            {
-                Jukebox.Instance.ChangeSong(queryParam.value, _sceneRelativeVolume);
+                MusicManager.Instance.PlayTrack(_chattingSong, _sceneRelativeVolume);
             }
             return new EndpointResponse(200, "");
         }));

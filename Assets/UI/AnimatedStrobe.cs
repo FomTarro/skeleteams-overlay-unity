@@ -19,13 +19,10 @@ public class AnimatedStrobe : BaseAnimatedElement
     {
         while (true)
         {
-            float currentBeat = Jukebox.Instance.Sync.currentBeat % 2;
+            float currentBeat = MusicManager.Instance.Beat.currentBeat % 2;
             sin = Mathf.Sin(360 * Mathf.Deg2Rad * currentBeat / 2f);  
             image.enabled = sin > 0;
             yield return null;
-            // yield return new WaitForSeconds(2f / Jukebox.Instance.Sync.beatsPerMeasure);
-            // image.enabled = false;
-            // yield return new WaitForSeconds(2f / Jukebox.Instance.Sync.beatsPerMeasure);
         }
     }
 

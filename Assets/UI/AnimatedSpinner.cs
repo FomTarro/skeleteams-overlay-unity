@@ -24,7 +24,13 @@ public class AnimatedSpinner : BaseAnimatedElement
     {
         while (true)
         {
-            float deg = MathUtils.Normalize(Jukebox.Instance.Sync.currentBeat, 0, Jukebox.Instance.Sync.beatsPerMeasure, 0, 360);
+            float deg = MathUtils.Normalize(
+                MusicManager.Instance.Beat.currentBeat, 
+                0, 
+                MusicManager.Instance.Beat.beatsPerMeasure, 
+                0, 
+                360
+            );
             image.transform.eulerAngles = new Vector3(0, 0, deg);
             yield return null;
         }

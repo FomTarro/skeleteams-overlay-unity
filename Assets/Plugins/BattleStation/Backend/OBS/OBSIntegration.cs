@@ -126,8 +126,10 @@ namespace Skeletom.BattleStation.Integrations.OBS
 
         public void GetInputVolume(string source, Action<GetInputVolumeResponseData> onSuccess, Action<string> onError)
         {
-            var data = new GetInputVolumeRequestData();
-            data.inputName = source;
+            var data = new GetInputVolumeRequestData
+            {
+                inputName = source
+            };
             var request = new GetInputVolumeRequest(data);
             REQUEST_HANDLERS.Add(request.d.requestId, (msg) =>
             {

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,7 +18,10 @@ public class ScrollingUV : MonoBehaviour
 
     void LateUpdate()
     {
-        //uvOffset = new Vector2(0.25f/2 * Jukebox.Progression, 0);
-        _matClone.SetTextureOffset(textureName, new Vector2(Jukebox.Instance.Sync.currentBeat, Jukebox.Instance.Sync.currentBeat) / Jukebox.Instance.Sync.beatsPerMeasure);
+        _matClone.SetTextureOffset(textureName, 
+        new Vector2(
+            MusicManager.Instance.Beat.currentBeat, 
+            MusicManager.Instance.Beat.currentBeat) 
+        / MusicManager.Instance.Beat.beatsPerMeasure);
     }
 }

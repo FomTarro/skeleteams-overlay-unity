@@ -27,6 +27,19 @@ namespace Skeletom.Essentials.IO
 		}
 
 		/// <summary>
+		/// Gets the directory that this Saveable instance references.
+		/// </summary>
+		/// <typeparam name="T">The type of save data.</typeparam>
+		/// <param name="source">The Saveable instance.</param>
+		/// <returns>The full directory</returns>
+		public string GetDirectory<T>(ISaveable<T> source) where T : BaseSaveData
+		{
+			string folder = string.Empty;
+			bool directoryExists = CreateFolder(source.FileFolder, out folder);
+			return folder;
+		}
+
+		/// <summary>
 		/// Writes data to disk based on the provided Saveable instance.
 		/// </summary>
 		/// <param name="source">The Saveable instance.</param>
@@ -81,7 +94,7 @@ namespace Skeletom.Essentials.IO
 			return new T();
 		}
 
-		public struct FileData
+		public readonly struct FileData
 		{
 			public readonly string path;
 			public readonly string name;
@@ -137,12 +150,12 @@ namespace Skeletom.Essentials.IO
 			{
 				Debug.LogError(string.Format("Error iterating on files in directory: {0} - {1}", directory, e));
 			}
-			List<FileData> dataFiles = new List<FileData>();
+			List<FileData> dataFiles = new();
 			foreach (string filePath in files)
 			{
 				try
 				{
-					FileData data = new FileData(
+					FileData data = new(
 						filePath,
 						Path.GetFileName(filePath),
 						Path.GetExtension(filePath)
@@ -167,7 +180,7 @@ namespace Skeletom.Essentials.IO
 		/// <returns>List of all copied files</returns>
 		public List<FileData> CopyFilesToDirectory(string directory, List<string> filePaths, Func<FileData, bool> filter)
 		{
-			List<FileData> newFiles = new List<FileData>();
+			List<FileData> newFiles = new();
 			if (Directory.Exists(directory))
 			{
 				foreach (string file in filePaths)
@@ -176,7 +189,7 @@ namespace Skeletom.Essentials.IO
 					{
 						string name = Path.GetFileName(file);
 						string newPath = Path.Combine(directory, name);
-						FileData data = new FileData(
+						FileData data = new(
 							newPath,
 							name,
 							Path.GetExtension(newPath)
@@ -203,7 +216,7 @@ namespace Skeletom.Essentials.IO
 		/// <returns></returns>
 		public string MakeFileSystemURI(string filePath)
 		{
-			return Path.Combine("file://", filePath);
+			return new Uri(filePath).AbsoluteUri; 
 		}
 
 		[Serializable]

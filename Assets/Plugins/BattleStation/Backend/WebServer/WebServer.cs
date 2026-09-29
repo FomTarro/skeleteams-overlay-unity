@@ -22,11 +22,11 @@ namespace Skeletom.BattleStation.Server
             }
         }
 
-        private Dictionary<string, IEndpoint> _endpoints = new Dictionary<string, IEndpoint>();
+        private readonly Dictionary<string, IEndpoint> _endpoints = new();
         public List<string> Paths { get { return new List<string>(_endpoints.Keys); } }
 
         private HttpListener HTTP_LISTENER;
-        private readonly LinkedList<HttpListenerContext> WAITING_CONTEXTS = new LinkedList<HttpListenerContext>();
+        private readonly LinkedList<HttpListenerContext> WAITING_CONTEXTS = new();
         private Thread LISTENER_THREAD;
         private bool CLOSE_THREAD_AND_CONTEXTS = false;
 
@@ -141,11 +141,11 @@ namespace Skeletom.BattleStation.Server
                             parameters[i] = new QueryParameter(key, queryParams[key]);
                         }
                         string body = "";
-                        using (StreamReader reader = new StreamReader(nextContext.Request.InputStream, nextContext.Request.ContentEncoding))
+                        using (StreamReader reader = new(nextContext.Request.InputStream, nextContext.Request.ContentEncoding))
                         {
                             body = reader.ReadToEnd();
                         }
-                        EndpointRequest args = new EndpointRequest(endpoint, parameters, body, nextContext.Request.UserHostName);
+                        EndpointRequest args = new(endpoint, parameters, body, nextContext.Request.UserHostName);
                         EndpointResponse response = endpoint.ProcessRequest(args);
                         nextContext.Response.StatusCode = response.status;
                         // TODO: Content Type on Response

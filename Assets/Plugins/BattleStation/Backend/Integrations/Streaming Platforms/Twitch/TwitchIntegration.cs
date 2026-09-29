@@ -85,7 +85,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     // TODO: this probably goes in the integration manager
                     new Endpoint("/twitch/reload", (req) =>
                     {
-                        Enable();
+                        FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
                         return new EndpointResponse(200, "Reload Requested");
                     })
                 };
