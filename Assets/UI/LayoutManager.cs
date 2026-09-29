@@ -56,8 +56,9 @@ public class LayoutManager : Singleton<LayoutManager>
     private readonly float _pollingInterval = 5f;
 
     private float _sceneRelativeVolume = 1f;
-    private readonly string _chattingSong = "Cafe";
-    private readonly string _waitingSong = "Hold";
+    // TODO: this becomes part of the config
+    private readonly string _chattingSong = "cafe";
+    private readonly string _waitingSong = "hold";
 
     [SerializeField]
     private AudioSource _sceneTransitionJingle;
@@ -128,7 +129,7 @@ public class LayoutManager : Singleton<LayoutManager>
             SetMode(PresentationMode.PopOut);
             return new EndpointResponse(200, "");
         }));
-    
+
         _webServer.RegisterEndpoint(new Endpoint("/scene/waiting", (req) =>
         {
             _waiting.alpha = 1;

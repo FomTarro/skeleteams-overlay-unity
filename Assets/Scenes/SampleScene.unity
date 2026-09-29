@@ -3288,6 +3288,7 @@ GameObject:
   - component: {fileID: 338772482}
   - component: {fileID: 338772481}
   - component: {fileID: 338772483}
+  - component: {fileID: 338772484}
   m_Layer: 0
   m_Name: Music Manager
   m_TagString: Untagged
@@ -3308,12 +3309,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _initializationOrder: 0
-  _webServer: {fileID: 0}
+  _webServer: {fileID: 835040116}
   _tracks: []
   _fadeTime: 0.5
   _source: {fileID: 338772483}
-  _mixer: {fileID: 0}
-  _metronome: {fileID: 0}
+  _mixer: {fileID: 24100000, guid: 5c97ae1f28d0464439ad4e244ee8c47f, type: 2}
+  _metronome: {fileID: 338772484}
   onVolumeChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -3431,6 +3432,18 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &338772484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 338772480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccb1eff3f41bcec41b7b1ef16919b78f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &344754259 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7392356192901674641, guid: 91789f31c620146468e02ffa3d17c576, type: 3}

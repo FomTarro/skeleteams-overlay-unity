@@ -136,7 +136,7 @@ public class MusicManager : Singleton<MusicManager>, ISaveable<MusicManager.Play
             StopCoroutine(_changingClip);
         }
         MusicTrack track = _tracks.Find(t => t.id.Equals(id));
-        if(track != null)
+        if (track != null)
         {
             StartCoroutine(GetAudioClipFromFile(track, (t) =>
             {
@@ -250,7 +250,7 @@ public class MusicManager : Singleton<MusicManager>, ISaveable<MusicManager.Play
 
     private IEnumerator GetAudioClipFromFile(MusicTrack track, Action<MusicTrack> onLoad)
     {
-        if(track.clip != null)
+        if (track.clip != null)
         {
             onLoad.Invoke(track);
             yield break;
