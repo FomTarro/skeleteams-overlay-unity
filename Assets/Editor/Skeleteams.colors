@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 12323, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
+  m_Name: Skeleteams
   m_EditorClassIdentifier: 
   m_Presets:
   - m_Name: 
@@ -23,3 +23,5 @@ MonoBehaviour:
     m_Color: {r: 0.23529412, g: 0.23529412, b: 0.23529412, a: 1}
   - m_Name: 
     m_Color: {r: 0.14509805, g: 0.14509805, b: 0.14509805, a: 1}
+  - m_Name: 
+    m_Color: {r: 0.7264151, g: 0.7264151, b: 0.7264151, a: 1}

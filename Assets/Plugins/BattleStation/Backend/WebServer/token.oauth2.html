@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <span id="message">Waiting...</span>
+</html>
+<script>
+    try{
+        console.log(window.location.hash)
+        const hashWithoutParams = window.location.hash?.split('&')[0];
+        const token = hashWithoutParams.split('=')[1];
+        document.getElementById('message').innerHTML = token;
+        fetch(`http://${window.location.host}/twitch/token`, {
+            method: 'POST',
+            body: JSON.stringify({
+                token
+            })
+        }).then(response => {
+            if(response.status < 300){
+                document.getElementById('message').innerHTML = 'Your Twitch OAuth token has been stored; you can now close this browser window.'
+            }else{
+                throw response.status;
+            }
+        }
+        ).catch(e => {
+            document.getElementById('message').innerHTML = e;
+        })
+    }catch(e){
+        document.getElementById('message').innerHTML = e
+    }
+    window.location.hash = '';
+</script>
