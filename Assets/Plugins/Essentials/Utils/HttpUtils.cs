@@ -198,7 +198,7 @@ namespace Skeletom.Essentials.Utils
         {
             public string authorization;
             public string contentType = "application/json";
-            public Dictionary<string, string> customHeaders = new Dictionary<string, string>();
+            public Dictionary<string, string> customHeaders = new();
 
             public bool Equals(HttpHeaders other)
             {

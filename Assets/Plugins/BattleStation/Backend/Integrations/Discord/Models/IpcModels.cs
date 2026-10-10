@@ -3,8 +3,9 @@ using System.Collections.Generic;
 
 namespace Skeletom.BattleStation.Integrations.Discord.IPC
 {
+
     [Serializable]
-    public class HandshakePayload
+    public class HandshakeRequest
     {
         public int v;
         public string client_id;
@@ -61,6 +62,20 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
     {
         public string cmd;
         public string evt;
+        public string nonce;
+    }
+
+    [Serializable]
+    public class HandshakeResponseData
+    {
+        public int v;
+        public DiscordUser user;
+    }
+
+    [Serializable]
+    public class HandshakeResponse
+    {
+        public HandshakeResponseData data;
     }
 
     [Serializable]
