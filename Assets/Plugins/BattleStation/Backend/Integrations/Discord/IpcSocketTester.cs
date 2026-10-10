@@ -83,19 +83,15 @@ public class IpcSocketTester : MonoBehaviour
             return;
         }
         Debug.Log(data);
-        // TODO: error handling
+        // Subscribed Events
         if ("DISPATCH".Equals(header.cmd) && !string.IsNullOrEmpty(header.evt))
         {
-            if (REQUEST_RESPONSE_HANDLERS.ContainsKey(header.evt))
+            if (EVENT_SUBSCRIPTION_HANDLERS.ContainsKey(header.evt))
             {
-                REQUEST_RESPONSE_HANDLERS[header.evt](data);
-                REQUEST_RESPONSE_HANDLERS.Remove(header.evt);
-            }else if(REQUEST_RESPONSE_HANDLERS.ContainsKey(header.nonce))
-            {
-                REQUEST_RESPONSE_HANDLERS[header.nonce](data);
-                REQUEST_RESPONSE_HANDLERS.Remove(header.nonce);
+                EVENT_SUBSCRIPTION_HANDLERS[header.evt](data);
             }
-        }else if ("AUTHORIZE".Equals(header.cmd) || "AUTHENTICATE".Equals(header.cmd))
+        }else
+        // Commands
         {
             if(REQUEST_RESPONSE_HANDLERS.ContainsKey(header.nonce))
             {
@@ -107,7 +103,7 @@ public class IpcSocketTester : MonoBehaviour
 
     public void Handshake(Action<HandshakeResponseData> onSuccess)
     {
-        REQUEST_RESPONSE_HANDLERS.Add("READY", (str) =>
+        EVENT_SUBSCRIPTION_HANDLERS.Add("READY", (str) =>
         {
            onSuccess(JsonUtility.FromJson<HandshakeResponse>(str).data); 
         });
