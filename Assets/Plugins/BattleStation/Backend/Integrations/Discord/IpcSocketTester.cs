@@ -15,7 +15,7 @@ public class IpcSocketTester : MonoBehaviour
 
     private IpcSocket _sock;
     private readonly Dictionary<string, Action<string>> REQUEST_RESPONSE_HANDLERS = new();
-    private readonly Dictionary<string, Action<string>> REQUEST_RESPONSE_ERROR_HANDLERS = new();
+    private readonly Dictionary<string, Action<ErrorResponse>> REQUEST_RESPONSE_ERROR_HANDLERS = new();
     private readonly Dictionary<string, Action<string>> EVENT_SUBSCRIPTION_HANDLERS = new();
 
     private void Start()
@@ -59,11 +59,17 @@ public class IpcSocketTester : MonoBehaviour
             Handshake((s) =>
             {
                 Debug.Log($"Handshake complete for user {s.user.global_name}");
-                Authenticate((s) =>
-                {
-                    Debug.Log($"Authentication successful.");
-                    _authToken = s.access_token;
-                });
+                Authenticate(
+                    (s) =>
+                    {
+                        Debug.Log($"Authentication successful.");
+                        _authToken = s.data.access_token;
+                    },
+                    (err) =>
+                    {
+                        Debug.LogError($"Unable to authenticate token: {err.data.message}");
+                    }
+                );
             });
         },
         () =>
@@ -93,20 +99,29 @@ public class IpcSocketTester : MonoBehaviour
         }else
         // Commands
         {
-            if(REQUEST_RESPONSE_HANDLERS.ContainsKey(header.nonce))
+            if(!string.IsNullOrEmpty(header.nonce) && REQUEST_RESPONSE_HANDLERS.ContainsKey(header.nonce))
             {
-                REQUEST_RESPONSE_HANDLERS[header.nonce](data);
-                REQUEST_RESPONSE_HANDLERS.Remove(header.nonce);
+                if (!string.IsNullOrEmpty(header.evt) && "ERROR".Equals(header.evt))
+                {
+                    ErrorResponse error = JsonUtility.FromJson<ErrorResponse>(data);
+                    REQUEST_RESPONSE_ERROR_HANDLERS[header.nonce](error); 
+                }
+                else
+                {
+                    REQUEST_RESPONSE_HANDLERS[header.nonce](data); 
+                }
+                REQUEST_RESPONSE_ERROR_HANDLERS.Remove(header.nonce); 
+                REQUEST_RESPONSE_HANDLERS.Remove(header.nonce);  
             }
         }
     }
 
     public void Handshake(Action<HandshakeResponseData> onSuccess)
     {
-        EVENT_SUBSCRIPTION_HANDLERS.Add("READY", (str) =>
+        EVENT_SUBSCRIPTION_HANDLERS["READY"] = (str) =>
         {
            onSuccess(JsonUtility.FromJson<HandshakeResponse>(str).data); 
-        });
+        };
         Send(0, JsonUtility.ToJson(
             new HandshakeRequest
             {
@@ -126,34 +141,49 @@ public class IpcSocketTester : MonoBehaviour
         _sock.Send(header);
     }
 
+    private void SendRequest<I, O>(I request, Action<O> onSuccess, Action<ErrorResponse> onError) where I : DiscordRequest
+    {
+        string nonce = Guid.NewGuid().ToString();
+        request.nonce = nonce;
+        REQUEST_RESPONSE_HANDLERS[nonce] = (str) =>
+        {
+            O response = JsonUtility.FromJson<O>(str);
+            onSuccess(response);
+        };
+        REQUEST_RESPONSE_ERROR_HANDLERS[nonce] = (err) =>
+        {
+            onError(err);
+        };
+        Send(1, JsonUtility.ToJson(request));
+    }
+
     #region Authentication
 
-    public void Authenticate(Action<TokenResponse> onSuccess)
+    public void Authenticate(Action<AuthenticateResponse> onSuccess, Action<ErrorResponse> onError)
     {
         string codeVerifier = GenerateCodeVerifier();
         string codeChallenge = GenerateCodeChallenge(codeVerifier);
-
-        string nonce = Guid.NewGuid().ToString();
-        REQUEST_RESPONSE_HANDLERS.Add(nonce, (str) =>
+        AuthorizeRequest request = new()
         {
-            AuthorizeResponseData response = JsonUtility.FromJson<AuthorizeResponse>(str).data;
-            ExchangeCodeForToken(response.code, codeVerifier, onSuccess);
-        });
-        Send(1, JsonUtility.ToJson(new AuthorizeRequest
-        {
-            cmd = "AUTHORIZE",
-            nonce = nonce,
-            args = new AuthorizeArgs
+            args = new AuthorizeRequestArgs
             {
                 client_id = applicationID,
                 scopes = new[] { "rpc", "rpc.voice.read", "identify" },
                 code_challenge = codeChallenge,
                 code_challenge_method = "S256"
             }
-        }));
+        };
+        SendRequest<AuthorizeRequest, AuthorizeResponse>(request, 
+        (res) =>
+        {
+            ExchangeCodeForToken(res.data.code, codeVerifier, (res) =>
+            {
+                ValidateToken(res.access_token, onSuccess, onError);
+            }, onError);
+        }, onError);
     }
 
-    private void ExchangeCodeForToken(string code, string codeVerifier, Action<TokenResponse> onSuccess)
+    private void ExchangeCodeForToken(string code, string codeVerifier, Action<TokenHttpResponse> onSuccess, Action<ErrorResponse> onError)
     {
         string body = $"client_id={Uri.EscapeDataString(applicationID)}" +
             $"&grant_type=authorization_code" +
@@ -172,36 +202,33 @@ public class IpcSocketTester : MonoBehaviour
                 headers,
                 (str) =>
                 {
-
-                    TokenResponse response = JsonUtility.FromJson<TokenResponse>(str);
-                    Authenticate(response.access_token, () =>
-                    {
-                        Debug.Log("Authenticated successfully");
-                    });
-                    
+                    TokenHttpResponse res = JsonUtility.FromJson<TokenHttpResponse>(str);
+                    onSuccess(res);
                 },
                 (err) =>
                 {
                     Debug.LogError(err);
+                    ErrorResponse res = new()
+                    {
+                        data = new()
+                        {
+                            code=(int)err.statusCode,
+                            message=err.message
+                        }
+                    };
+                    onError(res);
                 }
             )
         );
     }
 
-    private void Authenticate(string token, Action onSuccess)
+    private void ValidateToken(string token, Action<AuthenticateResponse> onSuccess, Action<ErrorResponse> onError)
     {
-        string nonce = Guid.NewGuid().ToString();
-        REQUEST_RESPONSE_HANDLERS.Add(nonce, (str) =>
+        AuthenticateRequest request = new()
         {
-            Debug.Log(str);
-            onSuccess();
-        });
-        Send(1, JsonUtility.ToJson(new AuthenticateRequest
-        {
-            cmd = "AUTHENTICATE",
-            nonce = nonce,
-            args = new AuthenticateArgs { access_token = token }
-        }));
+            args = new AuthenticateRequestArgs { access_token = token }
+        };
+        SendRequest(request, onSuccess, onError);
     }
 
 

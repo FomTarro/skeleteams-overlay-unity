@@ -3,6 +3,30 @@ using System.Collections.Generic;
 
 namespace Skeletom.BattleStation.Integrations.Discord.IPC
 {
+    [Serializable]
+    public class DiscordRequest
+    {
+        public string cmd;
+        public string nonce;
+    }
+
+    [Serializable]
+    public class DiscordResponse<T>
+    {
+        public string cmd;
+        public string nonce;
+        public T data;
+    }
+
+    [Serializable]
+    public class ErrorResponseData
+    {
+        public int code;
+        public string message;
+    }
+
+    [Serializable]
+    public class ErrorResponse : DiscordResponse<ErrorResponseData> { }
 
     [Serializable]
     public class HandshakeRequest
@@ -22,12 +46,11 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
     {
         public string cmd;
         public string evt;
-        public string nonce;
         public ChannelArgs args;
     }
 
     [Serializable]
-    public class AuthorizeArgs
+    public class AuthorizeRequestArgs
     {
         public string client_id;
         public string[] scopes;
@@ -36,33 +59,39 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
     }
 
     [Serializable]
-    public class AuthorizeRequest
+    public class AuthorizeRequest : DiscordRequest
     {
-        public string cmd;
-        public string nonce;
-        public AuthorizeArgs args;
+        new public string cmd = "AUTHORIZE";
+        public AuthorizeRequestArgs args;
     }
 
     [Serializable]
-    public class AuthenticateArgs
+    public class AuthenticateRequestArgs
     {
         public string access_token;
     }
 
     [Serializable]
-    public class AuthenticateRequest
+    public class AuthenticateRequest : DiscordRequest
     {
-        public string cmd;
-        public string nonce;
-        public AuthenticateArgs args;
+        new public string cmd = "AUTHENTICATE";
+        public AuthenticateRequestArgs args;
     }
 
     [Serializable]
-    public class FrameHeader
+    public class AuthenticateResponseData
     {
-        public string cmd;
+        public string access_token;
+        public DiscordUser user;
+    }
+
+    [Serializable]
+    public class AuthenticateResponse : DiscordResponse<AuthenticateResponseData> { }
+
+    [Serializable]
+    public class FrameHeader : DiscordRequest
+    {
         public string evt;
-        public string nonce;
     }
 
     [Serializable]
@@ -73,10 +102,7 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
     }
 
     [Serializable]
-    public class HandshakeResponse
-    {
-        public HandshakeResponseData data;
-    }
+    public class HandshakeResponse : DiscordResponse<HandshakeResponseData> { }
 
     [Serializable]
     public class AuthorizeResponseData
@@ -85,13 +111,10 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
     }
 
     [Serializable]
-    public class AuthorizeResponse
-    {
-        public AuthorizeResponseData data;
-    }
+    public class AuthorizeResponse : DiscordResponse<AuthorizeResponseData> { }
 
     [Serializable]
-    public class TokenResponse
+    public class TokenHttpResponse
     {
         public string access_token;
     }
