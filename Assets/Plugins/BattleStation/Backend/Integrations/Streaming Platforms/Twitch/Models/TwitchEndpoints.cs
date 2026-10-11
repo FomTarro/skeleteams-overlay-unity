@@ -1,6 +1,6 @@
 namespace Skeletom.BattleStation.Integrations.Twitch
 {
-    public interface IEndpoints
+    public interface ITwitchEndpoints
     {
         public string USER_TOKEN_ENDPOINT { get; }
         public string USER_TOKEN_REDIRECT { get; }
@@ -29,7 +29,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string TOKEN_VALIDATION_ENDPOINT { get; }
     }
 
-    public class TwitchAPI : IEndpoints
+    public class TwitchAPI : ITwitchEndpoints
     {
         public string USER_TOKEN_ENDPOINT => "https://id.twitch.tv/oauth2/authorize";
         public string USER_TOKEN_REDIRECT => "http://localhost:61616/twitch/oauth2";
@@ -60,7 +60,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string TOKEN_VALIDATION_ENDPOINT => "https://id.twitch.tv/oauth2/validate";
     }
 
-    public class LocalAPI : IEndpoints
+    public class LocalAPI : ITwitchEndpoints
     {
         public string USER_TOKEN_ENDPOINT => "https://id.twitch.tv/oauth2/authorize";
         public string USER_TOKEN_REDIRECT => "http://localhost:61616/twitch/oauth2";

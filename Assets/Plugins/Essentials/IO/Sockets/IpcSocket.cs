@@ -24,7 +24,7 @@ namespace Skeletom.Essentials.IO
         private CancellationTokenSource _cts;
 
         private readonly ConcurrentQueue<string> _intakeQueue;
-        private readonly ConcurrentQueue<Action> _responseQueue;
+        private readonly ConcurrentQueue<Action> _actionQueue;
         private Action _onConnect = () => { };
         private Action _onDisconnect = () => { };
         private Action<Exception> _onError = (e) => { };
@@ -43,7 +43,7 @@ namespace Skeletom.Essentials.IO
         public IpcSocket(string[] nameRange, int reconnectInterval = 5000)
         {
             _intakeQueue = new ConcurrentQueue<string>();
-            _responseQueue = new ConcurrentQueue<Action>();
+            _actionQueue = new ConcurrentQueue<Action>();
             _nameRange = nameRange;
             _reconnectInterval = Math.Max(100, reconnectInterval);
         }
@@ -77,7 +77,7 @@ namespace Skeletom.Essentials.IO
             try { 
                 _stream?.Dispose(); 
             } catch { 
-                /* ignored */ 
+                // swallow exceptions, it's fine 
             }
             _stream = null;
         }
@@ -106,7 +106,7 @@ namespace Skeletom.Essentials.IO
                     return true;
                 }
                 catch { 
-                    /* try next index */
+                    // try next index...
                 } 
             }
             return false;
@@ -179,19 +179,18 @@ namespace Skeletom.Essentials.IO
         {
             do
             {
-                if (_responseQueue.IsEmpty || !_responseQueue.TryDequeue(out var action))
+                if (!_actionQueue.IsEmpty && _actionQueue.TryDequeue(out var action))
                 {
-                    continue;
+                    try
+                    {
+                        action();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"[{_selectedName}] - IPC callback error: {e.StackTrace}");
+                    }
                 }
-                try
-                {
-                    action();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"[{_selectedName}] - IPC error: {e.StackTrace}");
-                }
-            } while (!_responseQueue.IsEmpty);
+            } while (!_actionQueue.IsEmpty);
         }
 
         private void StartProcessingTask(CancellationToken token)
@@ -205,7 +204,7 @@ namespace Skeletom.Essentials.IO
                     return;
                 }
                 Debug.Log($"[{_selectedName}] - Connected to IPC!");
-                _responseQueue.Enqueue(_onConnect);
+                _actionQueue.Enqueue(_onConnect);
                 while (_stream != null && !token.IsCancellationRequested) {
                     try
                     {
@@ -215,7 +214,7 @@ namespace Skeletom.Essentials.IO
                     }catch
                     {
                         Debug.LogError($"[{_selectedName}] - IPC disconnected...");
-                        _responseQueue.Enqueue(async () =>
+                        _actionQueue.Enqueue(async () =>
                         {
                             _onDisconnect();
                             await Reconnect(token);
@@ -223,23 +222,22 @@ namespace Skeletom.Essentials.IO
                         return;
                     }
                     try{
-                        string frame = await ReadFrameAsync();
-                        if (frame != null){
-                            _intakeQueue.Enqueue(frame);
+                        string message = await ReadMessageAsync();
+                        if (message != null){
+                            _intakeQueue.Enqueue(message);
                         }
                     }catch(Exception e)
                     {
-                        _responseQueue.Enqueue(async () =>
+                        _actionQueue.Enqueue(async () =>
                         {
-                            Debug.LogError($"[{_selectedName}] - IPC error...");
-                            Debug.LogError($"'{e.Message}', {e}");
+                            Debug.LogError($"[{_selectedName}] - IPC read error: '{e.Message}', {e}");
                             _onError(e);
                             await Reconnect(token);
                         });
                     }
                 }
                 // Exiting task gracefully.
-                _responseQueue.Enqueue(() => _onDisconnect());
+                _actionQueue.Enqueue(() => _onDisconnect());
             });
         }
 
@@ -247,7 +245,7 @@ namespace Skeletom.Essentials.IO
 
         #region I/O
 
-        private async Task<string> ReadFrameAsync()
+        private async Task<string> ReadMessageAsync()
         {
             var header = new byte[8];
             if (await ReadSegmentAsync(header, 8) < 8) return null;

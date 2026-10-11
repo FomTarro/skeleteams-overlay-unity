@@ -41,7 +41,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         }
 
         // This allows us to swap out endpoints for mock ones against a testing engine
-        private readonly IEndpoints TWITCH_API = new TwitchAPI();
+        private readonly ITwitchEndpoints TWITCH_API = new TwitchAPI();
 
         private readonly WebSocket _socket = new();
 
@@ -274,7 +274,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private void ValidateToken(string token, Action<bool> onValidation)
         {
-            HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
+            HttpUtils.HttpHeaders headers = new()
             {
                 authorization = token
             };
