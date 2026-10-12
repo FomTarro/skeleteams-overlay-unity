@@ -19,10 +19,14 @@ namespace Skeletom.BattleStation.Integrations.Discord
         private string USER_TOKEN = "NO_TOKEN_SET";
 
         private IpcSocket _sock;
+        private const int REQUEST_TIMEOUT_MS = 4000;
         private readonly Dictionary<string, Action<string>> REQUEST_RESPONSE_HANDLERS = new();
         private readonly Dictionary<string, Action<ErrorResponse>> REQUEST_RESPONSE_ERROR_HANDLERS = new();
+        private readonly Dictionary<string, float> REQUEST_RESPONSE_TIMEOUTS = new();
         private readonly Dictionary<string, Action<string>> EVENT_SUBSCRIPTION_HANDLERS = new();
         private string LAST_MESSAGE_RECEIVED;
+
+        private string CURRENT_VOICE_CHANNEL;
 
         #region Lifecycle
 
@@ -39,7 +43,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
                 {
                     names[i] = $"discord-ipc-{i}";
                 }
-                _sock = new IpcSocket(names);
+                _sock = new IpcSocket(names, REQUEST_TIMEOUT_MS + 1000);
             }
             FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
         }
@@ -63,6 +67,28 @@ namespace Skeletom.BattleStation.Integrations.Discord
                         ProcessSocketMessage(data);
                     }
                 } while (data != null);
+                // Process Timeouts
+                List<string> nonces = new(REQUEST_RESPONSE_TIMEOUTS.Keys);
+                foreach(string nonce in nonces)
+                {
+                    REQUEST_RESPONSE_TIMEOUTS[nonce] -= (1000f*Time.deltaTime);
+                    if(REQUEST_RESPONSE_TIMEOUTS[nonce] < 0f)
+                    {
+                        ErrorResponse err = new()
+                        {
+                            data = new()
+                            {
+                                code = 0,
+                                message = "Request timeout."
+                            }
+                        };
+                        REQUEST_RESPONSE_ERROR_HANDLERS[nonce](err);
+
+                        REQUEST_RESPONSE_TIMEOUTS.Remove(nonce);
+                        REQUEST_RESPONSE_ERROR_HANDLERS.Remove(nonce); 
+                        REQUEST_RESPONSE_HANDLERS.Remove(nonce);
+                    }
+                }
             }
         }
 
@@ -81,20 +107,21 @@ namespace Skeletom.BattleStation.Integrations.Discord
                 {
                     EVENT_SUBSCRIPTION_HANDLERS[header.evt](data);
                 }
-            }else
+            } else
             // Commands
             {
                 if(!string.IsNullOrEmpty(header.nonce) && REQUEST_RESPONSE_HANDLERS.ContainsKey(header.nonce))
                 {
                     if (!string.IsNullOrEmpty(header.evt) && "ERROR".Equals(header.evt))
                     {
-                        ErrorResponse error = JsonUtility.FromJson<ErrorResponse>(data);
-                        REQUEST_RESPONSE_ERROR_HANDLERS[header.nonce](error); 
+                        ErrorResponse err = JsonUtility.FromJson<ErrorResponse>(data);
+                        REQUEST_RESPONSE_ERROR_HANDLERS[header.nonce](err); 
                     }
                     else
                     {
                         REQUEST_RESPONSE_HANDLERS[header.nonce](data); 
                     }
+                    REQUEST_RESPONSE_TIMEOUTS.Remove(header.nonce);
                     REQUEST_RESPONSE_ERROR_HANDLERS.Remove(header.nonce); 
                     REQUEST_RESPONSE_HANDLERS.Remove(header.nonce);  
                 }
@@ -115,11 +142,10 @@ namespace Skeletom.BattleStation.Integrations.Discord
                     },
                     (err) =>
                     {
-                        Authenticate(
+                        RequestToken(
                         (s) =>
                         {
-                            Debug.Log($"Discord Authentication successful with new token!");
-                            SetToken(s.data.access_token);
+                            Debug.Log($"Discord IPC Authentication successful with new token!");
                         },
                         (err) =>
                         {
@@ -129,12 +155,12 @@ namespace Skeletom.BattleStation.Integrations.Discord
                 },
                 (err) =>
                 {
-                    Debug.LogError($"IPC Handshake failed with error: {err.data.message}");
+                    Debug.LogError($"Discord IPC Handshake failed with error: {err.data.message}");
                 });
             },
             () =>
             {
-                // Debug.LogWarning("Disconnected!");
+                Debug.LogWarning("Discord IPC disconnected!");
             },
             (e) =>
             {
@@ -158,6 +184,23 @@ namespace Skeletom.BattleStation.Integrations.Discord
 
         private void SendRequest<I, O>(I request, Action<O> onSuccess, Action<ErrorResponse> onError) where I : IpcMessage, IArgRequest
         {
+            // TODO: Build in a request timeout
+            // CancellationTokenSource cts = new();
+            // Task.Run(async () =>
+            // {
+            //     await Task.Delay(REQUEST_TIMEOUT_MS, cts.Token);
+            //     ErrorResponse err = new()
+            //     {
+            //         data = new()
+            //         {
+            //             code = 0,
+            //             message = "Request timeout."
+            //         }
+            //     };
+            //     onError(err);
+            //     cts.Dispose();
+            // }, cts.Token);
+
             string nonce = Guid.NewGuid().ToString();
             request.nonce = nonce;
             REQUEST_RESPONSE_HANDLERS[nonce] = (str) =>
@@ -169,7 +212,39 @@ namespace Skeletom.BattleStation.Integrations.Discord
             {
                 onError(err);
             };
+            REQUEST_RESPONSE_TIMEOUTS[nonce] = REQUEST_TIMEOUT_MS;
             Send(1, JsonUtility.ToJson(request));
+        }
+
+        private void SendSubscription<O>(string evt, string channelId, Action<O> onEvent) where O : IpcMessage, IDataResponse
+        {
+            string nonce = Guid.NewGuid().ToString();
+            EventSubscriptionRequest request = new()
+            {
+                evt = evt,
+                nonce = nonce,
+                args = new(){ channel_id = channelId }
+            };
+            EVENT_SUBSCRIPTION_HANDLERS[evt] = (str) =>
+            {
+                O response = JsonUtility.FromJson<O>(str);
+                onEvent(response);
+            };
+            SendRequest<EventSubscriptionRequest, IpcMessage>(request, (s) => { }, (err) => { });
+        }
+
+        private void SendUnsubscription(string evt, string channelId)
+        {
+            string nonce = Guid.NewGuid().ToString();
+            EventSubscriptionRequest request = new()
+            {
+                cmd = "UNSUBSCRIBE",
+                evt = evt,
+                nonce = nonce,
+                args = new(){ channel_id = channelId }
+            };
+            EVENT_SUBSCRIPTION_HANDLERS.Remove(evt);
+            SendRequest<EventSubscriptionRequest, IpcMessage>(request, (s) => { }, (err) => { });
         }
 
         #endregion
@@ -178,30 +253,19 @@ namespace Skeletom.BattleStation.Integrations.Discord
 
         public void Handshake(Action<HandshakeResponse> onSuccess, Action<ErrorResponse> onError)
         {
-            // Build in a timeout 
-            // since there's no real easy way 
-            // to detect a message as being the handshake failure.
-            CancellationTokenSource cts = new();
-            Task.Run(async () =>
+            const string eventCode = "READY";
+            EVENT_SUBSCRIPTION_HANDLERS[eventCode] = (str) =>
             {
-                await Task.Delay(1000, cts.Token);
-                ErrorResponseData data = JsonUtility.FromJson<ErrorResponseData>(LAST_MESSAGE_RECEIVED);
-                ErrorResponse err = new()
-                {
-                    data = new()
-                    {
-                        code = data != null ? data.code : 0,
-                        message = data != null ? data.message : "Handshake timeout."
-                    }
-                };
-                onError(err);
-            }, cts.Token);
-            EVENT_SUBSCRIPTION_HANDLERS["READY"] = (str) =>
-            {
-                cts.Cancel();
-                cts.Dispose();
+                REQUEST_RESPONSE_TIMEOUTS.Remove(eventCode);
                 onSuccess(JsonUtility.FromJson<HandshakeResponse>(str)); 
             };
+            REQUEST_RESPONSE_ERROR_HANDLERS[eventCode] = (err) => {
+                ErrorResponseData data = JsonUtility.FromJson<ErrorResponseData>(LAST_MESSAGE_RECEIVED);
+                err.data.code = data.code;
+                err.data.message = data.message;
+                onError(err);
+            };
+            REQUEST_RESPONSE_TIMEOUTS[eventCode] = REQUEST_TIMEOUT_MS;
             Send(0, JsonUtility.ToJson(
                 new HandshakeRequest
                 {
@@ -215,14 +279,32 @@ namespace Skeletom.BattleStation.Integrations.Discord
 
         #region Tokens
 
-        public void SetToken(string token)
+        private void SetToken(string token)
         {
             // Save our updated token
             USER_TOKEN = token;
             SaveDataManager.Instance.WriteSaveData(this);
+            // Begin event subscriptions
+            SendSubscription<ChannelSelectEvent>("VOICE_CHANNEL_SELECT", null, 
+            (res) =>
+            {
+                if(res.data.channel_id != null)
+                {
+                    Debug.Log($"User has joined {res.data.channel_id}");
+                    string newChannel = res.data.channel_id;
+                    string oldChannel = CURRENT_VOICE_CHANNEL;
+                    CURRENT_VOICE_CHANNEL = res.data.channel_id;
+                    // if the channel changed, unsub from old channel and sub to new channel
+                }
+                else
+                {
+                    Debug.Log("User has left the channel");
+                    // unsub from old channel
+                }
+            });
         }
 
-        private void Authenticate(Action<AuthenticateResponse> onSuccess, Action<ErrorResponse> onError)
+        private void RequestToken(Action<AuthenticateResponse> onSuccess, Action<ErrorResponse> onError)
         {
             string codeVerifier = GenerateCodeVerifier();
             string codeChallenge = GenerateCodeChallenge(codeVerifier);
@@ -239,14 +321,14 @@ namespace Skeletom.BattleStation.Integrations.Discord
             SendRequest<AuthorizeRequest, AuthorizeResponse>(request, 
             (res) =>
             {
-                RequestToken(res.data.code, codeVerifier, (res) =>
+                ExchangeCodeForToken(res.data.code, codeVerifier, (res) =>
                 {
                     ValidateToken(res.access_token, onSuccess, onError);
                 }, onError);
             }, onError);
         }
 
-        private void RequestToken(string code, string codeVerifier, Action<TokenHttpResponse> onSuccess, Action<ErrorResponse> onError)
+        private void ExchangeCodeForToken(string code, string codeVerifier, Action<TokenHttpResponse> onSuccess, Action<ErrorResponse> onError)
         {
             string body = $"client_id={Uri.EscapeDataString(CLIENT_ID)}" +
                 $"&grant_type=authorization_code" +
@@ -288,7 +370,10 @@ namespace Skeletom.BattleStation.Integrations.Discord
             {
                 args = new AuthenticateRequestArgs { access_token = token }
             };
-            SendRequest(request, onSuccess, onError);
+            SendRequest<AuthenticateRequest, AuthenticateResponse>(request, (s) => {
+                onSuccess(s);
+                SetToken(s.data.access_token);
+            }, onError);
         }
 
         // PKCE helpers
@@ -313,6 +398,20 @@ namespace Skeletom.BattleStation.Integrations.Discord
                 .TrimEnd('=')
                 .Replace('+', '-')
                 .Replace('/', '_');
+        }
+
+        #endregion
+
+        #region Voice Channel Events
+
+        private void SubscribeToVoiceEvents()
+        {
+            
+        }
+
+        private void UnsubscribeFromVoiceEvents()
+        {
+            
         }
 
         #endregion

@@ -127,19 +127,38 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
 
     #endregion
 
-    // [Serializable]
-    // public class ChannelArgs
-    // {
-    //     public string channel_id;
-    // }
+    #region Event Subscription
 
-    // [Serializable]
-    // public class EventRequest
-    // {
-    //     public string cmd;
-    //     public string evt;
-    //     public ChannelArgs args;
-    // }
+    [Serializable]
+    public class ChannelArgs
+    {
+        public string channel_id;
+    }
+
+    [Serializable]
+    public class EventSubscriptionRequest : ArgRequest<ChannelArgs>
+    {
+        public EventSubscriptionRequest()
+        {
+            cmd = "SUBSCRIBE";
+        }
+    }
+
+    #endregion
+
+    #region Channel Select Event
+
+    [Serializable]
+    public class ChannelSelectEvent : DataResponse<ChannelSelectData> { }
+
+    [Serializable]
+    public class ChannelSelectData
+    {
+        public string channel_id;
+        public string guild_id;
+    }
+
+    #endregion
 
     // [Serializable]
     // public class DiscordUser
