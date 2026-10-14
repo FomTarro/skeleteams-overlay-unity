@@ -99,7 +99,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
             if (header == null){
                 return;
             }
-            Debug.Log(data);
+            // Debug.Log(data);
             // Subscribed Events
             if ("DISPATCH".Equals(header.cmd) && !string.IsNullOrEmpty(header.evt))
             {
@@ -184,23 +184,6 @@ namespace Skeletom.BattleStation.Integrations.Discord
 
         private void SendRequest<I, O>(I request, Action<O> onSuccess, Action<ErrorResponse> onError) where I : IpcMessage, IArgRequest
         {
-            // TODO: Build in a request timeout
-            // CancellationTokenSource cts = new();
-            // Task.Run(async () =>
-            // {
-            //     await Task.Delay(REQUEST_TIMEOUT_MS, cts.Token);
-            //     ErrorResponse err = new()
-            //     {
-            //         data = new()
-            //         {
-            //             code = 0,
-            //             message = "Request timeout."
-            //         }
-            //     };
-            //     onError(err);
-            //     cts.Dispose();
-            // }, cts.Token);
-
             string nonce = Guid.NewGuid().ToString();
             request.nonce = nonce;
             REQUEST_RESPONSE_HANDLERS[nonce] = (str) =>
@@ -216,35 +199,33 @@ namespace Skeletom.BattleStation.Integrations.Discord
             Send(1, JsonUtility.ToJson(request));
         }
 
-        private void SendSubscription<O>(string evt, string channelId, Action<O> onEvent) where O : IpcMessage, IDataResponse
+        private void SendSubscription<I, O>(string channelId, Action<O> onEvent) where I: EventSubscriptionRequest, new() where O : IpcMessage, IDataResponse
         {
             string nonce = Guid.NewGuid().ToString();
-            EventSubscriptionRequest request = new()
+            I request = new()
             {
-                evt = evt,
                 nonce = nonce,
                 args = new(){ channel_id = channelId }
             };
-            EVENT_SUBSCRIPTION_HANDLERS[evt] = (str) =>
+            EVENT_SUBSCRIPTION_HANDLERS[request.evt] = (str) =>
             {
                 O response = JsonUtility.FromJson<O>(str);
                 onEvent(response);
             };
-            SendRequest<EventSubscriptionRequest, IpcMessage>(request, (s) => { }, (err) => { });
+            SendRequest<I, IpcMessage>(request, (s) => { }, (err) => { });
         }
 
-        private void SendUnsubscription(string evt, string channelId)
+        private void SendUnsubscription<I>(string channelId) where I : EventSubscriptionRequest, new()
         {
             string nonce = Guid.NewGuid().ToString();
-            EventSubscriptionRequest request = new()
+            I request = new()
             {
                 cmd = "UNSUBSCRIBE",
-                evt = evt,
                 nonce = nonce,
                 args = new(){ channel_id = channelId }
             };
-            EVENT_SUBSCRIPTION_HANDLERS.Remove(evt);
-            SendRequest<EventSubscriptionRequest, IpcMessage>(request, (s) => { }, (err) => { });
+            EVENT_SUBSCRIPTION_HANDLERS.Remove(request.evt);
+            SendRequest<I, IpcMessage>(request, (s) => { }, (err) => { });
         }
 
         #endregion
@@ -284,23 +265,45 @@ namespace Skeletom.BattleStation.Integrations.Discord
             // Save our updated token
             USER_TOKEN = token;
             SaveDataManager.Instance.WriteSaveData(this);
+            // Check if we're currently in a voice channel
+            GetVoiceChannelState((res) =>
+            {
+                Debug.Log(res.data.name);
+            },
+            (err) =>
+            {
+                
+            });
             // Begin event subscriptions
-            SendSubscription<ChannelSelectEvent>("VOICE_CHANNEL_SELECT", null, 
+            SubscribeToVoiceChannelSelectEvent(
             (res) =>
             {
-                if(res.data.channel_id != null)
+                if(!string.IsNullOrEmpty(res.data.channel_id))
                 {
-                    Debug.Log($"User has joined {res.data.channel_id}");
-                    string newChannel = res.data.channel_id;
-                    string oldChannel = CURRENT_VOICE_CHANNEL;
-                    CURRENT_VOICE_CHANNEL = res.data.channel_id;
                     // if the channel changed, unsub from old channel and sub to new channel
+                    string newChannel = res.data.channel_id;
+                    Debug.Log($"User has joined {newChannel}");
+                    if(newChannel != CURRENT_VOICE_CHANNEL)
+                    {
+                        UnsubscribeFromAllVoiceEvents(CURRENT_VOICE_CHANNEL);
+                    }
+                    GetVoiceChannelState((res) =>
+                    {
+                        Debug.Log(res.data.name);
+                    },
+                    (err) =>
+                    {
+                        
+                    });
+                    SubscribeToAllVoiceEvents(newChannel);
                 }
                 else
                 {
                     Debug.Log("User has left the channel");
                     // unsub from old channel
+                    UnsubscribeFromAllVoiceEvents(CURRENT_VOICE_CHANNEL);
                 }
+                CURRENT_VOICE_CHANNEL = res.data.channel_id;
             });
         }
 
@@ -402,16 +405,52 @@ namespace Skeletom.BattleStation.Integrations.Discord
 
         #endregion
 
-        #region Voice Channel Events
+        #region Voice Channel State
 
-        private void SubscribeToVoiceEvents()
+        private void GetVoiceChannelState(Action<VoiceChannelStateResponse> onSuccess, Action<ErrorResponse> onError)
         {
-            
+            VoiceChannelStateRequest request = new()
+            {
+                args = new(){}
+            };
+            SendRequest(request, onSuccess, onError);
         }
 
-        private void UnsubscribeFromVoiceEvents()
+        #endregion
+
+        #region Voice Channel Events
+
+        private void SubscribeToVoiceChannelSelectEvent(Action<ChannelSelectEvent> onEvent)
         {
-            
+            SendSubscription<ChannelSelectSubscriptionRequest,ChannelSelectEvent>(null, onEvent);
+        }
+
+        private void SubscribeToAllVoiceEvents(string channelId)
+        {
+            SendSubscription<SpeakingStartSubscriptionRequest, SpeakingEvent>(channelId, (res) =>
+            {
+                Debug.Log($"{res.data.user_id} started speaking!");
+            });
+            SendSubscription<SpeakingStopSubscriptionRequest, SpeakingEvent>(channelId, (res) =>
+            {
+                Debug.Log($"{res.data.user_id} stopped speaking.");
+            });
+            SendSubscription<VoiceStateCreateSubscriptionRequest, VoiceStateEvent>(channelId, (res) =>
+            {
+                Debug.Log($"{res.data.user.id} has joined the channel.");
+            });
+            SendSubscription<VoiceStateDeleteSubscriptionRequest, VoiceStateEvent>(channelId, (res) =>
+            {
+                Debug.Log($"{res.data.user.id} has left the channel.");
+            });
+        }
+
+        private void UnsubscribeFromAllVoiceEvents(string channelId)
+        {
+            SendUnsubscription<SpeakingStartSubscriptionRequest>(channelId);
+            SendUnsubscription<SpeakingStopSubscriptionRequest>(channelId);
+            SendUnsubscription<VoiceStateCreateSubscriptionRequest>(channelId);
+            SendUnsubscription<VoiceStateDeleteSubscriptionRequest>(channelId);
         }
 
         #endregion

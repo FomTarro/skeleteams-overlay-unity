@@ -22,7 +22,6 @@ namespace Skeletom.Essentials.IO
     {
         private Stream _stream;
         private CancellationTokenSource _cts;
-
         private readonly ConcurrentQueue<string> _intakeQueue;
         private readonly ConcurrentQueue<Action> _actionQueue;
         private Action _onConnect = () => { };
@@ -60,6 +59,8 @@ namespace Skeletom.Essentials.IO
         {
             Disconnect();
             _cts = new CancellationTokenSource();
+            // TODO: find a way to link this to the MonoBehaviour destroyCancellationToken
+            // CancellationTokenSource.CreateLinkedTokenSource(_cts)
             _onConnect = onConnect;
             _onDisconnect = onDisconnect;
             _onError = onError;

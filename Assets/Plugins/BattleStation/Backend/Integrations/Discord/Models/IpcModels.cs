@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Skeletom.BattleStation.Integrations.Discord.API;
 using UnityEngine;
 
@@ -127,7 +128,31 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
 
     #endregion
 
-    #region Event Subscription
+    #region Voice Channel State
+
+    [Serializable]
+    public class VoiceChannelStateRequest : ArgRequest<ChannelArgs>
+    {
+        public VoiceChannelStateRequest()
+        {
+            cmd = "GET_SELECTED_VOICE_CHANNEL";
+        }
+    }
+
+    [Serializable]
+    public class VoiceChannelStateResponse : DataResponse<VoiceChannelStateResponseData> { }
+
+    [Serializable]
+    public class VoiceChannelStateResponseData
+    {
+        public string id;
+        public string name;
+        public List<VoiceStateData> voice_states;
+    }
+
+    #endregion
+
+    #region Basic Event Subscription
 
     [Serializable]
     public class ChannelArgs
@@ -149,6 +174,15 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
     #region Channel Select Event
 
     [Serializable]
+    public class ChannelSelectSubscriptionRequest : EventSubscriptionRequest
+    {
+        public ChannelSelectSubscriptionRequest() : base()
+        {
+            evt = "VOICE_CHANNEL_SELECT";
+        }
+    }
+
+    [Serializable]
     public class ChannelSelectEvent : DataResponse<ChannelSelectData> { }
 
     [Serializable]
@@ -160,68 +194,65 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
 
     #endregion
 
-    // [Serializable]
-    // public class DiscordUser
-    // {
-    //     public string id;
-    //     public string username;
-    //     public string global_name;
-    // }
+    #region Speaking Events
 
-    // [Serializable]
-    // public class VoiceStateEntry
-    // {
-    //     public DiscordUser user;
-    // }
+    [Serializable]
+    public class SpeakingStartSubscriptionRequest : EventSubscriptionRequest
+    {
+        public SpeakingStartSubscriptionRequest() : base()
+        {
+            evt = "SPEAKING_START";
+        }
+    }
 
-    // [Serializable]
-    // public class SelectedChannelData
-    // {
-    //     public string id;
-    //     public string name;
-    //     public List<VoiceStateEntry> voice_states;
-    // }
+    [Serializable]
+    public class SpeakingStopSubscriptionRequest : EventSubscriptionRequest
+    {
+        public SpeakingStopSubscriptionRequest() : base()
+        {
+            evt = "SPEAKING_STOP";
+        }
+    }
 
-    // [Serializable]
-    // public class SelectedChannelFrame
-    // {
-    //     public SelectedChannelData data;
-    // }
+    [Serializable]
+    public class SpeakingEvent : DataResponse<SpeakingData> { }
 
-    // [Serializable]
-    // public class ChannelSelectData
-    // {
-    //     public string channel_id;
-    //     public string guild_id;
-    // }
+    [Serializable]
+    public class SpeakingData
+    {
+        public string user_id;
+    }
 
-    // [Serializable]
-    // public class ChannelSelectFrame
-    // {
-    //     public ChannelSelectData data;
-    // }
+    #endregion
 
-    // [Serializable]
-    // public class SpeakingData
-    // {
-    //     public string user_id;
-    // }
+    #region Voice State Events
 
-    // [Serializable]
-    // public class SpeakingFrame
-    // {
-    //     public SpeakingData data;
-    // }
+    [Serializable]
+    public class VoiceStateCreateSubscriptionRequest : EventSubscriptionRequest
+    {
+        public VoiceStateCreateSubscriptionRequest() : base()
+        {
+            evt = "VOICE_STATE_CREATE";
+        }
+    }
 
-    // [Serializable]
-    // public class VoiceStateData
-    // {
-    //     public DiscordUser user;
-    // }
+    [Serializable]
+    public class VoiceStateDeleteSubscriptionRequest : EventSubscriptionRequest
+    {
+        public VoiceStateDeleteSubscriptionRequest() : base()
+        {
+            evt = "VOICE_STATE_DELETE";
+        }
+    }
 
-    // [Serializable]
-    // public class VoiceStateFrame
-    // {
-    //     public VoiceStateData data;
-    // }
+    [Serializable]
+    public class VoiceStateEvent : DataResponse<VoiceStateData> { }
+
+    [Serializable]
+    public class VoiceStateData
+    {
+        public UserData user;
+    }
+
+    #endregion
 }

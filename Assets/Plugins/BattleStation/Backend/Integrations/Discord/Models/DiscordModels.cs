@@ -10,4 +10,10 @@ namespace Skeletom.BattleStation.Integrations.Discord.API
         public string username;
         public string global_name;
     }
+
+    [Serializable]
+    public class VoiceStateData
+    {
+        public UserData user;
+    }
 }
