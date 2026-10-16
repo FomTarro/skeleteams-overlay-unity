@@ -13,7 +13,6 @@ namespace Skeletom.BattleStation.Integrations
         {
             this.displayName = displayName;
             this.id = id;
-            // ColorUtility.TryParseHtmlString(displayColorHex, out this.displayColor);
         }
     }
 }

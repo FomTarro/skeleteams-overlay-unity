@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
-using Skeletom.BattleStation.Graphics.Animations;
-using Skeletom.BattleStation.Integrations.Discord.API;
 using Skeletom.BattleStation.Integrations.Discord.IPC;
 using Skeletom.Essentials.Collections;
 using Skeletom.Essentials.IO;

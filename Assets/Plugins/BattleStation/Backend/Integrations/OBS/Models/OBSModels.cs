@@ -134,7 +134,6 @@ namespace Skeletom.BattleStation.Integrations.OBS.Models
         }
     }
 
-
     #endregion
 
     #region Hello Message

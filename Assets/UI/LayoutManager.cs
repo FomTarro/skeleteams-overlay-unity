@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Klak.Spout;
+using Skeletom.BattleStation.Audio;
 using Skeletom.BattleStation.Integrations.OBS;
 using Skeletom.BattleStation.Integrations.Twitch;
 using Skeletom.BattleStation.Server;
@@ -36,24 +37,23 @@ public class LayoutManager : Singleton<LayoutManager>
     private CanvasGroup _waiting;
     [SerializeField]
     private CanvasGroup _chatting;
-
     [SerializeField]
     private PauseScreen _pause;
 
-    [Serializable]
-    public class ChatUserCountEvent : UnityEvent<int> { }
     [Header("Events")]
     public ChatUserCountEvent onChatUserCounted = new();
+    [Serializable]
+    public class ChatUserCountEvent : UnityEvent<int> { }
 
+    public AdTimeEvent onNextAdTimeChecked = new();
     [Serializable]
     public class AdTimeEvent : UnityEvent<DateTime> { }
-    public AdTimeEvent onNextAdTimeChecked = new();
 
+    public StreamTimeEvent onStreamTimeChecked = new();
     [Serializable]
     public class StreamTimeEvent : UnityEvent<DateTime> { }
-    public StreamTimeEvent onStreamTimeChecked = new();
 
-    private readonly float _pollingInterval = 5f;
+    private const float POLLING_INTERVAL = 5f;
 
     private float _sceneRelativeVolume = 1f;
     // TODO: this becomes part of the config
@@ -77,7 +77,7 @@ public class LayoutManager : Singleton<LayoutManager>
     }
     [SerializeField]
     private StreamParticipantDisplay _participantPrefab;
-    private List<StreamParticipantDisplay> _participantDisplays = new List<StreamParticipantDisplay>();
+    private readonly List<StreamParticipantDisplay> _participantDisplays = new();
     [SerializeField]
     private List<StreamParticipant> _participants;
     private StreamParticipant _currentPresenter;
@@ -92,6 +92,13 @@ public class LayoutManager : Singleton<LayoutManager>
     };
 
     private PresentationMode _currentMode = PresentationMode.None;
+
+    #region Lifecycle
+
+    public override void Initialize()
+    {
+
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -150,7 +157,7 @@ public class LayoutManager : Singleton<LayoutManager>
 
         _webServer.RegisterEndpoint(new Endpoint("/pause/toggle", (req) =>
         {
-            var state = _pause.Toggle();
+            bool state = _pause.Toggle();
             if (state)
             {
                 MusicManager.Instance.PlayTrack(_waitingSong, 1f);
@@ -182,7 +189,7 @@ public class LayoutManager : Singleton<LayoutManager>
     void Update()
     {
         _pollingDelta += Time.deltaTime;
-        if (_pollingDelta > _pollingInterval)
+        if (_pollingDelta > POLLING_INTERVAL)
         {
             TwitchIntegration.Instance.GetCurrentChatUsers((list) =>
             {
@@ -210,6 +217,8 @@ public class LayoutManager : Singleton<LayoutManager>
             _pollingDelta = 0f;
         }
     }
+
+    #endregion
 
     private void SetCurrentPresenter(StreamParticipant participant)
     {
@@ -271,10 +280,5 @@ public class LayoutManager : Singleton<LayoutManager>
             });
             _mainWindow.sourceName = _currentPresenter.screenSourceName;
         }
-    }
-
-    public override void Initialize()
-    {
-
     }
 }

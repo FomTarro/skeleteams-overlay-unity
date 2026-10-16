@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Skeletom.BattleStation.Integrations.Discord.API;
 using UnityEngine;
 
 namespace Skeletom.BattleStation.Integrations.Discord.IPC

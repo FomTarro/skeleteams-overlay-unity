@@ -145,7 +145,7 @@ namespace Skeletom.BattleStation.Integrations
             }
         }
 
-        protected struct ContextResolution
+        protected readonly struct ContextResolution
         {
             public readonly T data;
             public readonly StreamError error;

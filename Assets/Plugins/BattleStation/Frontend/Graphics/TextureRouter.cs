@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Skeletom.Essentials.IO;
 using Skeletom.Essentials.Lifecycle;
@@ -8,7 +7,7 @@ using UnityEngine;
 public class TextureRouter : Singleton<TextureRouter>
 {
     [SerializeField]
-    private List<TextureSource> _sources = new List<TextureSource>();
+    private List<TextureSource> _sources = new();
     public override void Initialize()
     {
         foreach (TextureSource source in _sources)
