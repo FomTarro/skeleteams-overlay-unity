@@ -51,7 +51,6 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         // Rolling cache for preventing duplicate messages from being processed
         private readonly LRUDictionary<string, EventSub.EventMessage<EventSub.EventPayload<string>>> RECENT_EVENTS = new(1000, (del) => { });
 
-
         private HttpUtils.HttpHeaders Headers
         {
             get
@@ -338,7 +337,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     (str) =>
                     {
                         var users = JsonUtility.FromJson<API.DataResponse<API.UserData>>(str).data;
-                        DependencyManager manager = new DependencyManager(() =>
+                        DependencyManager manager = new(() =>
                         {
                             onSuccess(users);
                         });
@@ -653,7 +652,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                (str) =>
                {
                    API.DataResponse<API.BadgeSetData> response = JsonUtility.FromJson<API.DataResponse<API.BadgeSetData>>(str);
-                   List<StreamImage> badges = new List<StreamImage>();
+                   List<StreamImage> badges = new();
                    var chunks = CollectionUtils.Chunk(response.data, 50);
                    int count = chunks.Count;
                    if (count > 0)

@@ -12,7 +12,7 @@ namespace Skeletom.BattleStation.Integrations
         private int _maximumCachedItems = -1;
         private LRUDictionary<string, T> _cache;
         public LRUDictionary<string, T> CACHE => _cache ??= new LRUDictionary<string, T>(_maximumCachedItems < 0 ? int.MaxValue : _maximumCachedItems, CleanUncachedData);
-        private readonly Dictionary<string, Queue<ContextCallback>> PENDING_CONTEXTS = new Dictionary<string, Queue<ContextCallback>>();
+        private readonly Dictionary<string, Queue<ContextCallback>> PENDING_CONTEXTS = new();
         private struct ContextCallback
         {
             public Action<T> onSuccess;

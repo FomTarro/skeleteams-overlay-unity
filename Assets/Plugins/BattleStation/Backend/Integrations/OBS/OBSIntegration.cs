@@ -48,7 +48,8 @@ namespace Skeletom.BattleStation.Integrations.OBS
                 {
                     if (input.inputLevelsMul.Length > 1 && input.inputLevelsMul[0].Length > 2 && input.inputLevelsMul[1].Length > 2)
                     {
-                        onVolume.Invoke(input.inputName, (input.inputLevelsMul[0][2] + input.inputLevelsMul[1][2]) / 2f);
+                        float averageVol = (input.inputLevelsMul[0][2] + input.inputLevelsMul[1][2]) / 2f;
+                        onVolume.Invoke(input.inputName, averageVol);
                     }
                 }
             });
@@ -86,14 +87,14 @@ namespace Skeletom.BattleStation.Integrations.OBS
         {
             try
             {
-                OBSMessage<string> message = JsonUtility.FromJson<OBSMessage<string>>(msg);
+                OBSMessage<string> message = JsonConvert.DeserializeObject<OBSMessage<string>>(msg);
                 if (OpCode.HELLO == message.op)
                 {
-                    _socket.Send(JsonUtility.ToJson(new IdentifyMessage()));
+                    _socket.Send(JsonConvert.SerializeObject(new IdentifyMessage()));
                 }
                 else if (OpCode.EVENT == message.op)
                 {
-                    OBSMessage<OBSEvent<string>> eventMessage = JsonUtility.FromJson<OBSMessage<OBSEvent<string>>>(msg);
+                    OBSMessage<OBSEvent<string>> eventMessage = JsonConvert.DeserializeObject<OBSMessage<OBSEvent<string>>>(msg);
                     if (EVENT_HANDLERS.ContainsKey(eventMessage.d.eventType))
                     {
                         EVENT_HANDLERS[eventMessage.d.eventType](msg);
@@ -101,7 +102,7 @@ namespace Skeletom.BattleStation.Integrations.OBS
                 }
                 else if (OpCode.REQUEST_RESPONSE == message.op)
                 {
-                    OBSResponseMessage<string> responseMessage = JsonUtility.FromJson<OBSResponseMessage<string>>(msg);
+                    OBSResponseMessage<string> responseMessage = JsonConvert.DeserializeObject<OBSResponseMessage<string>>(msg);
                     if (REQUEST_HANDLERS.ContainsKey(responseMessage.d.requestId))
                     {
                         var handler = REQUEST_HANDLERS[responseMessage.d.requestId];
@@ -133,7 +134,7 @@ namespace Skeletom.BattleStation.Integrations.OBS
             var request = new GetInputVolumeRequest(data);
             REQUEST_HANDLERS.Add(request.d.requestId, (msg) =>
             {
-                var response = JsonUtility.FromJson<OBSResponseMessage<GetInputVolumeResponseData>>(msg);
+                var response = JsonConvert.DeserializeObject<OBSResponseMessage<GetInputVolumeResponseData>>(msg);
                 if (response.d.requestStatus.result == true)
                 {
                     onSuccess(response.d.responseData);
@@ -143,7 +144,7 @@ namespace Skeletom.BattleStation.Integrations.OBS
                     onError(response.d.requestStatus.comment);
                 }
             });
-            _socket.Send(JsonUtility.ToJson(request));
+            _socket.Send(JsonConvert.SerializeObject(request));
         }
 
         public void GetRecordingStatus(Action<GetRecordingStatusData> onSuccess, Action<string> onError)
@@ -151,7 +152,7 @@ namespace Skeletom.BattleStation.Integrations.OBS
             var request = new GetRecordingStatusRequest();
             REQUEST_HANDLERS.Add(request.d.requestId, (msg) =>
             {
-                var response = JsonUtility.FromJson<OBSResponseMessage<GetRecordingStatusData>>(msg);
+                var response = JsonConvert.DeserializeObject<OBSResponseMessage<GetRecordingStatusData>>(msg);
                 if (response.d.requestStatus.result == true)
                 {
                     onSuccess(response.d.responseData);
@@ -161,7 +162,7 @@ namespace Skeletom.BattleStation.Integrations.OBS
                     onError(response.d.requestStatus.comment);
                 }
             });
-            _socket.Send(JsonUtility.ToJson(request));
+            _socket.Send(JsonConvert.SerializeObject(request));
         }
 
         #endregion

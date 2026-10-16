@@ -128,6 +128,19 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
 
     #endregion
 
+    #region Shared Data
+
+    [Serializable]
+    public class UserData
+    {
+        public string id;
+        public string username;
+        public string global_name;
+        public string avatar;
+    }
+
+    #endregion
+
     #region Voice Channel State
 
     [Serializable]
@@ -255,4 +268,5 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
     }
 
     #endregion
+
 }

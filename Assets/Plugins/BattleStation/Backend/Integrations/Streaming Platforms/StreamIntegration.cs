@@ -38,7 +38,7 @@ namespace Skeletom.BattleStation.Integrations
         public ChatMessageEvent onChatMessage = new();
         [Serializable]
         public class ChatMessageDeletionEvent : UnityEvent<StreamChatMessageDeletion> { }
-        public ChatMessageDeletionEvent onChatMessageDelete = new ChatMessageDeletionEvent();
+        public ChatMessageDeletionEvent onChatMessageDelete = new();
 
         [Serializable]
         public class ChatPaidMessageEvent : UnityEvent<StreamPaidChatMessage> { }

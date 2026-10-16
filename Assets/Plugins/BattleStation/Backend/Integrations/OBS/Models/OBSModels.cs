@@ -260,8 +260,7 @@ namespace Skeletom.BattleStation.Integrations.OBS.Models
     [Serializable]
     public class GetRecordingStatusRequest : OBSRequestMessage<string>
     {
-        public GetRecordingStatusRequest() : base("GetRecordStatus", null)
-        { }
+        public GetRecordingStatusRequest() : base("GetRecordStatus", null){ }
     }
 
     [Serializable]
