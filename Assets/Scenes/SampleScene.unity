@@ -726,7 +726,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f35dd6d2a748faa48b2bf3c79dc33ac8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _initializationOrder: 0
+  _initializationOrder: 1
   _webServer: {fileID: 835040116}
   _collabBar: {fileID: 2132868352}
   _popOut: {fileID: 2133166906}
@@ -756,15 +756,15 @@ MonoBehaviour:
     borderColor: {r: 0.99607843, g: 0.7019608, b: 0.8156863, a: 1}
     faceSourceName: Skeletom_Facecam
     screenSourceName: Video_Capture_Spout
-    micSourceName: Mic/Aux
+    micSourceName: obs_Mic/Aux
     icon: {fileID: 21300000, guid: 20dfb236a4574f54a9fb6eca2043438b, type: 3}
-  - enabled: 0
+  - enabled: 1
     key: kari
     name: Panko, Karikari
     borderColor: {r: 1, g: 0.8784314, b: 0.41960785, a: 1}
     faceSourceName: Kari_Facecam
     screenSourceName: Video_Capture_Spout
-    micSourceName: Discord Audio
+    micSourceName: discord_106091790301421568
     icon: {fileID: 21300000, guid: c8177d2f208b4a44a9e3db3ba0fa3d35, type: 3}
   - enabled: 0
     key: penny
@@ -3689,7 +3689,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 1
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -10901,6 +10901,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1286638394}
+  - component: {fileID: 1286638396}
+  - component: {fileID: 1286638395}
   m_Layer: 0
   m_Name: Discord Integration
   m_TagString: Untagged
@@ -10923,6 +10925,39 @@ Transform:
   m_Children: []
   m_Father: {fileID: 547252205}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1286638395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1286638392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7b7368e1ce3c8d45968410de8dc63cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _maximumCachedItems: 100
+--- !u!114 &1286638396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1286638392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f619435f7f6d1f499c5960dddf3aca5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _initializationOrder: 0
+  _imageHandler: {fileID: 1286638395}
+  onUserJoin:
+    m_PersistentCalls:
+      m_Calls: []
+  onUserSpeak:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1307363913 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 186273448545352107, guid: d6eee37b637fe5b4c931e210fcc501f1, type: 3}

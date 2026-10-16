@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Klak.Spout;
 using Skeletom.BattleStation.Audio;
+using Skeletom.BattleStation.Integrations.Discord;
 using Skeletom.BattleStation.Integrations.OBS;
 using Skeletom.BattleStation.Integrations.Twitch;
 using Skeletom.BattleStation.Server;
@@ -81,6 +82,7 @@ public class LayoutManager : Singleton<LayoutManager>
     [SerializeField]
     private List<StreamParticipant> _participants;
     private StreamParticipant _currentPresenter;
+    private readonly Dictionary<string, float> _micSources = new();
 
     [Serializable]
     private enum PresentationMode
@@ -103,6 +105,23 @@ public class LayoutManager : Singleton<LayoutManager>
     // Start is called before the first frame update
     void Start()
     {
+        DiscordIntegration.Instance.onUserJoin.AddListener((user, status) =>
+        {
+            if(DiscordIntegration.Instance.SelfUserId != user){
+                Debug.Log($"Participant {user} has {(status ? "joined" : "quit")}.");
+            }
+        });
+        DiscordIntegration.Instance.onUserSpeak.AddListener((user, status) =>
+        {
+            // Debug.Log($"Participant {user} has {(status ? "started" : "stopped")} speaking.");
+            _micSources[$"discord_{user}"] = status ? 1.0f : 0.0f;
+        });
+        OBSIntegration.Instance.onVolume.AddListener((source, vol) =>
+        {
+            _micSources[$"obs_{source}"] = vol;
+        });
+
+
         foreach (StreamParticipant participant in _participants)
         {
             if (participant.enabled)
@@ -280,5 +299,14 @@ public class LayoutManager : Singleton<LayoutManager>
             });
             _mainWindow.sourceName = _currentPresenter.screenSourceName;
         }
+    }
+
+    public float GetMicSourceVolume(string source)
+    {
+        if (_micSources.ContainsKey(source))
+        {
+            return _micSources[source];
+        }
+        return 0.0f;
     }
 }

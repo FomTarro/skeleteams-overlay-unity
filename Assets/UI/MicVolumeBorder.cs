@@ -1,13 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
-using Skeletom.BattleStation.Integrations.OBS;
 using Skeletom.Essentials.Utils;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class MicVolumeBorder : MonoBehaviour
 {
-
     [SerializeField]
     private string _micSource;
     [SerializeField]
@@ -19,23 +15,18 @@ public class MicVolumeBorder : MonoBehaviour
     private readonly ShiftingAverage _avg = new(10);
 
     // Start is called before the first frame update
-    void Start()
+    void Update()
     {
-        OBSIntegration.Instance.onVolume.AddListener((source, vol) =>
+        if (this.enabled)
         {
-            if (this.enabled)
-            {
-                if (_micSource.Equals(source))
-                {
-                    _avg.AddValue(vol);
-                    _outline.enabled = _avg.Average > _threshold;
-                }
-            }
-            else
-            {
-                _outline.enabled = false;
-            }
-        });
+            float vol = LayoutManager.Instance.GetMicSourceVolume(_micSource);
+            _avg.AddValue(vol);
+            _outline.enabled = _avg.Average > _threshold;
+        }
+        else
+        {
+            _outline.enabled = false;
+        }
     }
 
     public void Configure(string sourceName, Color color)

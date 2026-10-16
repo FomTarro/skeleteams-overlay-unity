@@ -498,6 +498,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
         {
             GetVoiceChannelState((res) =>
             {
+                string channelId = res.data.id;
                 if(!string.IsNullOrEmpty(res.data.name)){
                     Debug.Log($"User has joined channel: {res.data.name}");
                 }
@@ -507,51 +508,51 @@ namespace Skeletom.BattleStation.Integrations.Discord
                     // (Or should that be filtered out on the receiver end?)
                     onUserJoin.Invoke(voiceState.user.id, true);
                 }
+                // Subscribe to all voice channel events
+                SendSubscription<SpeakingStartSubscriptionRequest, SpeakingEvent>(channelId, (res) =>
+                {
+                    // Debug.Log($"{res.data.user_id} started speaking!");
+                    onUserSpeak.Invoke(res.data.user_id, true);
+                });
+                SendSubscription<SpeakingStopSubscriptionRequest, SpeakingEvent>(channelId, (res) =>
+                {
+                    // Debug.Log($"{res.data.user_id} stopped speaking.");
+                    onUserSpeak.Invoke(res.data.user_id, false);
+                });
+                SendSubscription<VoiceStateCreateSubscriptionRequest, VoiceStateEvent>(channelId, (res) =>
+                {
+                    // Debug.Log($"{res.data.user.id} has joined the channel.");
+                    if (!CURRENT_CHANNEL_USERS.Contains(res.data.user.id))
+                    {
+                        CURRENT_CHANNEL_USERS.Add(res.data.user.id);
+                    }
+                    onUserJoin.Invoke(res.data.user.id, true);
+                    // StreamUser user = new(res.data.user.id, res.data.user.global_name);
+                    // GetUserAvatar(res.data, (success) =>
+                    // {
+                    //     user.avatar = success;
+
+                    // },
+                    // (err) =>
+                    // {
+                        
+                    // });
+                });
+                SendSubscription<VoiceStateDeleteSubscriptionRequest, VoiceStateEvent>(channelId, (res) =>
+                {
+                    // Debug.Log($"{res.data.user.id} has left the channel.");
+                    if (CURRENT_CHANNEL_USERS.Contains(res.data.user.id))
+                    {
+                        CURRENT_CHANNEL_USERS.Remove(res.data.user.id);
+                    }
+                    onUserJoin.Invoke(res.data.user.id, false);
+                });
             },
             (err) =>
             {
                 
             });
-
-            // Subscribe to all voice channel events
-            SendSubscription<SpeakingStartSubscriptionRequest, SpeakingEvent>(channelId, (res) =>
-            {
-                Debug.Log($"{res.data.user_id} started speaking!");
-                onUserSpeak.Invoke(res.data.user_id, true);
-            });
-            SendSubscription<SpeakingStopSubscriptionRequest, SpeakingEvent>(channelId, (res) =>
-            {
-                Debug.Log($"{res.data.user_id} stopped speaking.");
-                onUserSpeak.Invoke(res.data.user_id, false);
-            });
-            SendSubscription<VoiceStateCreateSubscriptionRequest, VoiceStateEvent>(channelId, (res) =>
-            {
-                Debug.Log($"{res.data.user.id} has joined the channel.");
-                if (!CURRENT_CHANNEL_USERS.Contains(res.data.user.id))
-                {
-                    CURRENT_CHANNEL_USERS.Add(res.data.user.id);
-                }
-                onUserJoin.Invoke(res.data.user.id, true);
-                // StreamUser user = new(res.data.user.id, res.data.user.global_name);
-                // GetUserAvatar(res.data, (success) =>
-                // {
-                //     user.avatar = success;
-
-                // },
-                // (err) =>
-                // {
-                    
-                // });
-            });
-            SendSubscription<VoiceStateDeleteSubscriptionRequest, VoiceStateEvent>(channelId, (res) =>
-            {
-                Debug.Log($"{res.data.user.id} has left the channel.");
-                if (CURRENT_CHANNEL_USERS.Contains(res.data.user.id))
-                {
-                    CURRENT_CHANNEL_USERS.Remove(res.data.user.id);
-                }
-                onUserJoin.Invoke(res.data.user.id, false);
-            });
+            
         }
 
         private void OnChannelLeave()
