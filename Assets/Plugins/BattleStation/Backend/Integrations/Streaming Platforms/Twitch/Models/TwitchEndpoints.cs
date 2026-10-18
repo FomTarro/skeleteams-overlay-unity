@@ -29,64 +29,64 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public string TOKEN_VALIDATION_ENDPOINT { get; }
     }
 
-    public class TwitchAPI : ITwitchEndpoints
+    public struct TwitchAPI : ITwitchEndpoints
     {
-        public string USER_TOKEN_ENDPOINT => "https://id.twitch.tv/oauth2/authorize";
-        public string USER_TOKEN_REDIRECT => "http://localhost:61616/twitch/oauth2";
-        public string USER_INFO_ENDPOINT => "https://api.twitch.tv/helix/users";
+        public readonly string USER_TOKEN_ENDPOINT => "https://id.twitch.tv/oauth2/authorize";
+        public readonly string USER_TOKEN_REDIRECT => "http://localhost:61616/twitch/oauth2";
+        public readonly string USER_INFO_ENDPOINT => "https://api.twitch.tv/helix/users";
 
-        public string EVENTSUB_SOCKET_ENDPOINT => "wss://eventsub.wss.twitch.tv/ws";
-        public string EVENTSUB_SUBSCRIPTION_ENDPOINT => "https://api.twitch.tv/helix/eventsub/subscriptions";
+        public readonly string EVENTSUB_SOCKET_ENDPOINT => "wss://eventsub.wss.twitch.tv/ws";
+        public readonly string EVENTSUB_SUBSCRIPTION_ENDPOINT => "https://api.twitch.tv/helix/eventsub/subscriptions";
 
-        public string EMOTES_GLOBAL_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes/global";
+        public readonly string EMOTES_GLOBAL_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes/global";
 
-        public string EMOTES_SET_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes/set";
-        public string EMOTES_INDIVIDUAL_ENDPOINT => "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
-        public string EMOTES_CHANNEL_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes";
+        public readonly string EMOTES_SET_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes/set";
+        public readonly string EMOTES_INDIVIDUAL_ENDPOINT => "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
+        public readonly string EMOTES_CHANNEL_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes";
 
-        public string BADGES_GLOBAL_ENDPOINT => "https://api.twitch.tv/helix/chat/badges/global";
-        public string BADGES_CHANNEL_ENDPOINT => "https://api.twitch.tv/helix/chat/badges";
-        public string BADGES_INDIVIDUAL_ENDPOINT => throw new System.NotImplementedException();
+        public readonly string BADGES_GLOBAL_ENDPOINT => "https://api.twitch.tv/helix/chat/badges/global";
+        public readonly string BADGES_CHANNEL_ENDPOINT => "https://api.twitch.tv/helix/chat/badges";
+        public readonly string BADGES_INDIVIDUAL_ENDPOINT => throw new System.NotImplementedException();
 
-        public string CHANNEL_INFO_ENDPOINT => "https://api.twitch.tv/helix/channels";
+        public readonly string CHANNEL_INFO_ENDPOINT => "https://api.twitch.tv/helix/channels";
 
-        public string CHATTERS_ENDPOINT => "https://api.twitch.tv/helix/chat/chatters";
-        public string STREAMS_ENDPOINT => "https://api.twitch.tv/helix/stream";
+        public readonly string CHATTERS_ENDPOINT => "https://api.twitch.tv/helix/chat/chatters";
+        public readonly string STREAMS_ENDPOINT => "https://api.twitch.tv/helix/stream";
 
-        public string AD_SCHEDULE_ENDPOINT => "https://api.twitch.tv/helix/channels/ads";
+        public readonly string AD_SCHEDULE_ENDPOINT => "https://api.twitch.tv/helix/channels/ads";
 
-        public string SEND_SHOUTOUT_ENDPOINT => "https://api.twitch.tv/helix/chat/shoutouts";
+        public readonly string SEND_SHOUTOUT_ENDPOINT => "https://api.twitch.tv/helix/chat/shoutouts";
 
-        public string TOKEN_VALIDATION_ENDPOINT => "https://id.twitch.tv/oauth2/validate";
+        public readonly string TOKEN_VALIDATION_ENDPOINT => "https://id.twitch.tv/oauth2/validate";
     }
 
-    public class LocalAPI : ITwitchEndpoints
+    public struct LocalAPI : ITwitchEndpoints
     {
-        public string USER_TOKEN_ENDPOINT => "https://id.twitch.tv/oauth2/authorize";
-        public string USER_TOKEN_REDIRECT => "http://localhost:61616/twitch/oauth2";
-        public string USER_INFO_ENDPOINT => "https://api.twitch.tv/helix/users";
+        public readonly string USER_TOKEN_ENDPOINT => "https://id.twitch.tv/oauth2/authorize";
+        public readonly string USER_TOKEN_REDIRECT => "http://localhost:61616/twitch/oauth2";
+        public readonly string USER_INFO_ENDPOINT => "https://api.twitch.tv/helix/users";
 
-        public string EVENTSUB_SOCKET_ENDPOINT => "ws://localhost:8080/ws";
-        public string EVENTSUB_SUBSCRIPTION_ENDPOINT => "http://localhost:8080/eventsub/subscriptions";
+        public readonly string EVENTSUB_SOCKET_ENDPOINT => "ws://localhost:8080/ws";
+        public readonly string EVENTSUB_SUBSCRIPTION_ENDPOINT => "http://localhost:8080/eventsub/subscriptions";
 
-        public string EMOTES_GLOBAL_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes/global";
-        public string EMOTES_SET_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes/set";
-        public string EMOTES_INDIVIDUAL_ENDPOINT => "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
-        public string EMOTES_CHANNEL_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes";
+        public readonly string EMOTES_GLOBAL_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes/global";
+        public readonly string EMOTES_SET_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes/set";
+        public readonly string EMOTES_INDIVIDUAL_ENDPOINT => "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
+        public readonly string EMOTES_CHANNEL_ENDPOINT => "https://api.twitch.tv/helix/chat/emotes";
 
-        public string BADGES_GLOBAL_ENDPOINT => "https://api.twitch.tv/helix/chat/badges/global";
-        public string BADGES_CHANNEL_ENDPOINT => "https://api.twitch.tv/helix/chat/badges";
-        public string BADGES_INDIVIDUAL_ENDPOINT => throw new System.NotImplementedException();
+        public readonly string BADGES_GLOBAL_ENDPOINT => "https://api.twitch.tv/helix/chat/badges/global";
+        public readonly string BADGES_CHANNEL_ENDPOINT => "https://api.twitch.tv/helix/chat/badges";
+        public readonly string BADGES_INDIVIDUAL_ENDPOINT => throw new System.NotImplementedException();
 
-        public string CHANNEL_INFO_ENDPOINT => "https://api.twitch.tv/helix/channels";
+        public readonly string CHANNEL_INFO_ENDPOINT => "https://api.twitch.tv/helix/channels";
 
-        public string CHATTERS_ENDPOINT => "https://api.twitch.tv/helix/chat/chatters";
-        public string STREAMS_ENDPOINT => "https://api.twitch.tv/helix/stream";
+        public readonly string CHATTERS_ENDPOINT => "https://api.twitch.tv/helix/chat/chatters";
+        public readonly string STREAMS_ENDPOINT => "https://api.twitch.tv/helix/stream";
 
-        public string SEND_SHOUTOUT_ENDPOINT => "https://api.twitch.tv/helix/chat/shoutouts";
+        public readonly string SEND_SHOUTOUT_ENDPOINT => "https://api.twitch.tv/helix/chat/shoutouts";
 
-        public string AD_SCHEDULE_ENDPOINT => "https://api.twitch.tv/helix/channels/ads";
+        public readonly string AD_SCHEDULE_ENDPOINT => "https://api.twitch.tv/helix/channels/ads";
 
-        public string TOKEN_VALIDATION_ENDPOINT => "https://id.twitch.tv/oauth2/validate";
+        public readonly string TOKEN_VALIDATION_ENDPOINT => "https://id.twitch.tv/oauth2/validate";
     }
 }

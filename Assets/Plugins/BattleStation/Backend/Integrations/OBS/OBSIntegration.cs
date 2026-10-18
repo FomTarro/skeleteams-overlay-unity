@@ -20,6 +20,9 @@ namespace Skeletom.BattleStation.Integrations.OBS
 
         #endregion
 
+        private string WS_URL;
+        private int WS_PORT;
+        private string WS_PASSWORD;
         private readonly WebSocket _socket = new();
 
         private readonly Dictionary<string, Action<string>> EVENT_HANDLERS = new();
@@ -171,6 +174,10 @@ namespace Skeletom.BattleStation.Integrations.OBS
 
         public override void FromSaveData(IntegrationData data)
         {
+            WS_URL = data.url;
+            WS_PORT = data.port;
+            WS_PASSWORD = data.password;
+
             _socket.Start($"{data.url}:{data.port}",
                 () =>
                 {
@@ -185,13 +192,16 @@ namespace Skeletom.BattleStation.Integrations.OBS
                     Debug.LogError($"OBS Socket error: {err}");
                 }
             );
+            SaveDataManager.Instance.WriteSaveData(this);
         }
 
         public override IntegrationData ToSaveData()
         {
             return new IntegrationData()
             {
-
+                url = WS_URL,
+                port = WS_PORT,
+                password = WS_PASSWORD
             };
         }
 
