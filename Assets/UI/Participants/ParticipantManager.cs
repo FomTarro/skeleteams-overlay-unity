@@ -36,17 +36,28 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
 
     public override void Initialize()
     {
-        DiscordIntegration.Instance.onUserJoin.AddListener((user, status) =>
+        DiscordIntegration.Instance.onUserJoin.AddListener((user) =>
         {
-            if(DiscordIntegration.Instance.SelfUserId != user){
-                Debug.Log($"Participant {user} has {(status ? "joined" : "quit")}.");
+            if(DiscordIntegration.Instance.SelfUserId != user.id){
+                Debug.Log($"Participant {user.displayName} has joined.");
             }
         });
-        DiscordIntegration.Instance.onUserSpeak.AddListener((user, status) =>
+        DiscordIntegration.Instance.onUserLeave.AddListener((userId) =>
         {
-            if(DiscordIntegration.Instance.SelfUserId != user){
-                _micSources[$"discord_{user}"] = status ? 1.0f : 0.0f;
-                Debug.Log($"Participant {user} has {(status ? "started" : "stopped")} speaking.");
+            if(DiscordIntegration.Instance.SelfUserId != userId){
+                Debug.Log($"Participant {userId} has quit.");
+            }
+        });
+        DiscordIntegration.Instance.onUserSpeakStart.AddListener((userId) =>
+        {
+            if(DiscordIntegration.Instance.SelfUserId != userId){
+                _micSources[$"discord_{userId}"] = 1.0f;
+            }
+        });
+        DiscordIntegration.Instance.onUserSpeakStop.AddListener((userId) =>
+        {
+            if(DiscordIntegration.Instance.SelfUserId != userId){
+                _micSources[$"discord_{userId}"] = 0.0f;
             }
         });
         OBSIntegration.Instance.onVolume.AddListener((source, vol) =>

@@ -17,11 +17,12 @@ namespace Skeletom.BattleStation.Integrations.Discord
 
         private const string CLIENT_ID = "1524610169516986429";
         private string USER_TOKEN = "NO_TOKEN_SET";
-        public string SelfUserId { get; private set; } = "";
+        public string SelfUserId { get; private set; } = "NO_ID_SET";
 
         // This allows us to swap out endpoints for mock ones against a testing engine
         private readonly IDiscordEndpoints DISCORD_API = new DiscordAPI();
-        private IpcSocket _sock;
+        
+        private IpcSocket _socket;
         private const int REQUEST_TIMEOUT_MS = 4000;
         private readonly Dictionary<string, Action<string>> REQUEST_RESPONSE_HANDLERS = new();
         private readonly Dictionary<string, Action<ErrorResponse>> REQUEST_RESPONSE_ERROR_HANDLERS = new();
@@ -61,7 +62,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
             }
         }
 
-        private readonly LRUDictionary<string, DiscordUser> USER_CACHE = new(10, (user) => {
+        private readonly LRUDictionary<string, StreamUser> USER_CACHE = new(10, (user) => {
             foreach (var frame in user.avatar?.frames)
             {
                 Destroy(frame.image);
@@ -69,39 +70,43 @@ namespace Skeletom.BattleStation.Integrations.Discord
         });
 
         private string LAST_MESSAGE_RECEIVED;      
-        private string CURRENT_VOICE_CHANNEL;
+        private string CURRENT_VOICE_CHANNEL_ID;
         private readonly List<string> CURRENT_CHANNEL_USERS = new();
 
         #endregion
 
         #region Events
 
-        // TODO: eventually have these return a more complex object
         [Serializable]
-        public class UserEvent : UnityEvent<string, bool> { }
+        public class UserEvent : UnityEvent<StreamUser> { }
         public UserEvent onUserJoin = new();
-        public UserEvent onUserSpeak = new();
+
+        [Serializable]
+        public class UserIdEvent : UnityEvent<string> { }
+        public UserIdEvent onUserLeave = new();
+        public UserIdEvent onUserSpeakStart = new();
+        public UserIdEvent onUserSpeakStop = new();
 
         #endregion
 
         #region Lifecycle
 
-        public override void Disable()
-        {
-            _sock?.Disconnect();
-        }
-
         public override void Enable()
         {
-            if(_sock == null){
+            if(_socket == null){
                 string[] names = new string[10];
                 for(int i = 0; i < 10; i++)
                 {
                     names[i] = $"discord-ipc-{i}";
                 }
-                _sock = new IpcSocket(names, REQUEST_TIMEOUT_MS + 1000);
+                _socket = new IpcSocket(names, REQUEST_TIMEOUT_MS + 1000);
             }
             FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+        }
+
+        public override void Disable()
+        {
+            _socket?.Disconnect();
         }
 
         public override void Initialize()
@@ -111,13 +116,13 @@ namespace Skeletom.BattleStation.Integrations.Discord
 
         private void Update()
         {
-            if(_sock != null)
+            if(_socket != null)
             {
-                _sock.Tick();
+                _socket.Tick();
                 string data;
                 do
                 {
-                    data = _sock.GetNextResponse();
+                    data = _socket.GetNextResponse();
                     if (data != null)
                     {
                         ProcessSocketMessage(data);
@@ -184,9 +189,9 @@ namespace Skeletom.BattleStation.Integrations.Discord
             }
         }
 
-        public void ConnectToIPC()
+        private void ConnectToIPC()
         {
-            _sock.Connect(() =>
+            _socket.Connect(() =>
             {
                 Handshake((s) =>
                 {
@@ -236,7 +241,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
             BitConverter.GetBytes(opCode).CopyTo(header, 0);
             BitConverter.GetBytes(payload.Length).CopyTo(header, 4);
             payload.CopyTo(header, 8);
-            _sock.Send(header);
+            _socket.Send(header);
         }
 
         private void SendRequest<I, O>(I request, Action<O> onSuccess, Action<ErrorResponse> onError) where I : IpcMessage, IArgRequest
@@ -333,7 +338,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
                     // if the channel changed, unsub from old channel and sub to new channel
                     string newChannel = res.data.channel_id;
                     Debug.Log($"User has joined {newChannel}");
-                    if(newChannel != CURRENT_VOICE_CHANNEL)
+                    if(newChannel != CURRENT_VOICE_CHANNEL_ID)
                     {
                         OnChannelLeave();
                     }
@@ -346,7 +351,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
                     // Unsub from old channel
                     OnChannelLeave();
                 }
-                CURRENT_VOICE_CHANNEL = res.data.channel_id;
+                CURRENT_VOICE_CHANNEL_ID = res.data.channel_id;
             });
         }
 
@@ -374,7 +379,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
             }, onError);
         }
 
-        private void ExchangeCodeForToken(string code, string codeVerifier, Action<TokenHttpResponse> onSuccess, Action<ErrorResponse> onError)
+        private void ExchangeCodeForToken(string code, string codeVerifier, Action<API.TokenResponse> onSuccess, Action<ErrorResponse> onError)
         {
             string body = $"client_id={Uri.EscapeDataString(CLIENT_ID)}" +
                 $"&grant_type=authorization_code" +
@@ -391,7 +396,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
                     headers,
                     (str) =>
                     {
-                        TokenHttpResponse res = JsonUtility.FromJson<TokenHttpResponse>(str);
+                        API.TokenResponse res = JsonUtility.FromJson<API.TokenResponse>(str);
                         onSuccess(res);
                     },
                     (err) =>
@@ -504,15 +509,16 @@ namespace Skeletom.BattleStation.Integrations.Discord
                 if(!string.IsNullOrEmpty(res.data.name)){
                     Debug.Log($"User has joined channel: {res.data.name}");
                 }
+                // Users already in the channel when we join
                 foreach(VoiceStateData voiceState in res.data.voice_states)
                 {
-                    onUserJoin.Invoke(voiceState.user.id, true);
+                    HandleUserJoin(voiceState.user);
                 }
                 // Subscribe to all voice channel events
                 SendSubscription<SpeakingStartSubscriptionRequest, SpeakingEvent>(channelId, HandleSpeakStartEvent);
                 SendSubscription<SpeakingStopSubscriptionRequest, SpeakingEvent>(channelId, HandleSpeakStopEvent);
                 SendSubscription<VoiceStateCreateSubscriptionRequest, VoiceStateEvent>(channelId, HandleVoiceStateCreateEvent);
-                SendSubscription<VoiceStateDeleteSubscriptionRequest, VoiceStateEvent>(channelId, HandleVoiseStateDeleteEvent);
+                SendSubscription<VoiceStateDeleteSubscriptionRequest, VoiceStateEvent>(channelId, HandleVoiceStateDeleteEvent);
             },
             (err) =>
             {
@@ -523,65 +529,64 @@ namespace Skeletom.BattleStation.Integrations.Discord
         private void OnChannelLeave()
         {
             // Broadcast a User Leave/Stop Speaking event 
-            // for all users in the cache when we leave the channel
+            // for all users in the channel when we leave
             foreach(string id in CURRENT_CHANNEL_USERS)
             {
-                onUserJoin.Invoke(id, false);
-                onUserSpeak.Invoke(id, false);
+                onUserLeave.Invoke(id);
+                onUserSpeakStop.Invoke(id);
             }
-            SendUnsubscription<SpeakingStartSubscriptionRequest>(CURRENT_VOICE_CHANNEL);
-            SendUnsubscription<SpeakingStopSubscriptionRequest>(CURRENT_VOICE_CHANNEL);
-            SendUnsubscription<VoiceStateCreateSubscriptionRequest>(CURRENT_VOICE_CHANNEL);
-            SendUnsubscription<VoiceStateDeleteSubscriptionRequest>(CURRENT_VOICE_CHANNEL);
+            SendUnsubscription<SpeakingStartSubscriptionRequest>(CURRENT_VOICE_CHANNEL_ID);
+            SendUnsubscription<SpeakingStopSubscriptionRequest>(CURRENT_VOICE_CHANNEL_ID);
+            SendUnsubscription<VoiceStateCreateSubscriptionRequest>(CURRENT_VOICE_CHANNEL_ID);
+            SendUnsubscription<VoiceStateDeleteSubscriptionRequest>(CURRENT_VOICE_CHANNEL_ID);
             CURRENT_CHANNEL_USERS.Clear();
         }
 
         private void HandleSpeakStartEvent(SpeakingEvent speakingEvent)
         {
-            HandleSpeakEvent(speakingEvent, true);
+            onUserSpeakStart.Invoke(speakingEvent.data.user_id);
         }
 
         private void HandleSpeakStopEvent(SpeakingEvent speakingEvent)
         {
-            HandleSpeakEvent(speakingEvent, false);
-        }
-
-        private void HandleSpeakEvent(SpeakingEvent speakingEvent, bool isSpeaking)
-        {
-            DiscordUser user = new("TODO", speakingEvent.data.user_id);
-            onUserSpeak.Invoke(speakingEvent.data.user_id, isSpeaking);
+            onUserSpeakStop.Invoke(speakingEvent.data.user_id);
         }
 
         private void HandleVoiceStateCreateEvent(VoiceStateEvent voiceStateEvent)
         {
-            // Debug.Log($"{res.data.user.id} has joined the channel.");
-            if (!CURRENT_CHANNEL_USERS.Contains(voiceStateEvent.data.user.id))
-            {
-                CURRENT_CHANNEL_USERS.Add(voiceStateEvent.data.user.id);
-            }
-            onUserJoin.Invoke(voiceStateEvent.data.user.id, true);
-            // StreamUser user = new(
-            //     voiceStateEvent.data.user.id,
-            //     voiceStateEvent.data.user.global_name
-            // );
-            // GetUserAvatar(voiceStateEvent.data.user, (success) =>
-            // {
-            //     user.avatar = success;
-            // },
-            // (err) =>
-            // {
-                
-            // });
+            HandleUserJoin(voiceStateEvent.data.user);
         }
 
-        private void HandleVoiseStateDeleteEvent(VoiceStateEvent voiceStateEvent)
+        private void HandleUserJoin(UserData data)
+        {
+            // Debug.Log($"{res.data.user.id} has joined the channel.");
+            if (!CURRENT_CHANNEL_USERS.Contains(data.id))
+            {
+                CURRENT_CHANNEL_USERS.Add(data.id);
+            }
+            StreamUser user = new(
+                data.id,
+                data.global_name
+            );
+            GetUserAvatar(data, (success) =>
+            {
+                user.avatar = success;
+                onUserJoin.Invoke(user);
+            },
+            (err) =>
+            {
+                onUserJoin.Invoke(user);
+            });
+        }
+
+        private void HandleVoiceStateDeleteEvent(VoiceStateEvent voiceStateEvent)
         {
             // Debug.Log($"{res.data.user.id} has left the channel.");
             if (CURRENT_CHANNEL_USERS.Contains(voiceStateEvent.data.user.id))
             {
                 CURRENT_CHANNEL_USERS.Remove(voiceStateEvent.data.user.id);
             }
-            onUserJoin.Invoke(voiceStateEvent.data.user.id, false);
+            onUserLeave.Invoke(voiceStateEvent.data.user.id);
         }
 
         #endregion

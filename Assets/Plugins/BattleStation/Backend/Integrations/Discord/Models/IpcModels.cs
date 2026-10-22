@@ -119,12 +119,6 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
         public UserData user;
     }
 
-    [Serializable]
-    public class TokenHttpResponse
-    {
-        public string access_token;
-    }
-
     #endregion
 
     #region Shared Data

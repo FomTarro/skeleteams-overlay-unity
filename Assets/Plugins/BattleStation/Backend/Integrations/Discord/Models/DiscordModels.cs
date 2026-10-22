@@ -3,6 +3,13 @@ using System;
 namespace Skeletom.BattleStation.Integrations.Discord.API
 {
     [Serializable]
+    public class TokenResponse
+    {
+        public string access_token;
+    }
+
+
+    [Serializable]
     public class UserData
     {
         public string id;

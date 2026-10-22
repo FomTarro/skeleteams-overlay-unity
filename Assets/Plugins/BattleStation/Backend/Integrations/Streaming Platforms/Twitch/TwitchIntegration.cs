@@ -119,19 +119,19 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private void Update()
         {
-            _socket.Tick(Time.deltaTime);
-            string data = null;
-            do
+            if(_socket != null)
             {
-                if (_socket != null)
+                _socket.Tick(Time.deltaTime);
+                string data = null;
+                do
                 {
                     data = _socket.GetNextResponse();
                     if (data != null)
                     {
                         ProcessSocketMessage(data);
                     }
-                }
-            } while (data != null);
+                } while (data != null);
+            }
         }
 
         private void ProcessSocketMessage(string msg)

@@ -111,7 +111,7 @@ public class LayoutManager : Singleton<LayoutManager>
                 Debug.Log($"Participant {user} has {(status ? "joined" : "quit")}.");
             }
         });
-        DiscordIntegration.Instance.onUserSpeak.AddListener((user, status) =>
+        DiscordIntegration.Instance.onUserSpeakStart.AddListener((user, status) =>
         {
             // Debug.Log($"Participant {user} has {(status ? "started" : "stopped")} speaking.");
             _micSources[$"discord_{user}"] = status ? 1.0f : 0.0f;
