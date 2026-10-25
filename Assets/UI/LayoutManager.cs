@@ -111,15 +111,18 @@ public class LayoutManager : Singleton<LayoutManager>
         //         Debug.Log($"Participant {user} has {(status ? "joined" : "quit")}.");
         //     }
         // });
-        // DiscordIntegration.Instance.onUserSpeakStart.AddListener((user, status) =>
-        // {
-        //     // Debug.Log($"Participant {user} has {(status ? "started" : "stopped")} speaking.");
-        //     _micSources[$"discord_{user}"] = status ? 1.0f : 0.0f;
-        // });
-        // OBSIntegration.Instance.onVolume.AddListener((source, vol) =>
-        // {
-        //     _micSources[$"obs_{source}"] = vol;
-        // });
+        DiscordIntegration.Instance.onUserSpeakStart.AddListener((user) =>
+        {
+            _micSources[$"discord_{user}"] = 1.0f;
+        });
+        DiscordIntegration.Instance.onUserSpeakStop.AddListener((user) =>
+        {
+            _micSources[$"discord_{user}"] = 0.0f;
+        });
+        OBSIntegration.Instance.onVolume.AddListener((source, vol) =>
+        {
+            _micSources[$"obs_{source}"] = vol;
+        });
 
 
         foreach (StreamParticipant participant in _participants)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Skeletom.BattleStation.Integrations.OBS.Models;
 using Skeletom.Essentials.IO;
 using UnityEngine;
@@ -90,14 +91,14 @@ namespace Skeletom.BattleStation.Integrations.OBS
         {
             try
             {
-                OBSMessage<string> message = JsonConvert.DeserializeObject<OBSMessage<string>>(msg);
+                OBSMessage<JToken> message = JsonConvert.DeserializeObject<OBSMessage<JToken>>(msg);
                 if (OpCode.HELLO == message.op)
                 {
                     _socket.Send(JsonConvert.SerializeObject(new IdentifyMessage()));
                 }
                 else if (OpCode.EVENT == message.op)
                 {
-                    OBSMessage<OBSEvent<string>> eventMessage = JsonConvert.DeserializeObject<OBSMessage<OBSEvent<string>>>(msg);
+                    OBSMessage<OBSEvent<JToken>> eventMessage = JsonConvert.DeserializeObject<OBSMessage<OBSEvent<JToken>>>(msg);
                     if (EVENT_HANDLERS.ContainsKey(eventMessage.d.eventType))
                     {
                         EVENT_HANDLERS[eventMessage.d.eventType](msg);
@@ -105,7 +106,7 @@ namespace Skeletom.BattleStation.Integrations.OBS
                 }
                 else if (OpCode.REQUEST_RESPONSE == message.op)
                 {
-                    OBSResponseMessage<string> responseMessage = JsonConvert.DeserializeObject<OBSResponseMessage<string>>(msg);
+                    OBSResponseMessage<JToken> responseMessage = JsonConvert.DeserializeObject<OBSResponseMessage<JToken>>(msg);
                     if (REQUEST_HANDLERS.ContainsKey(responseMessage.d.requestId))
                     {
                         var handler = REQUEST_HANDLERS[responseMessage.d.requestId];

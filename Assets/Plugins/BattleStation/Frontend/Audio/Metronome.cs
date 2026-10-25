@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Skeletom.BattleStation.Audio {
@@ -15,15 +16,13 @@ namespace Skeletom.BattleStation.Audio {
         /// <summary>
         /// The current lerp value along the current beat, sweeping from 0 to beatsPerMeasure to allow for effects every beat of the measure
         /// </summary>
-        public Beat Sync
-        {
-            get { return new Beat(_progression, _base); }
-        }
+        public Beat Sync;
 
-        public readonly struct Beat
+        [Serializable]
+        public struct Beat
         {
-            public readonly float currentBeat;
-            public readonly int beatsPerMeasure;
+            public float currentBeat;
+            public int beatsPerMeasure;
 
             public Beat(float beat, int perMeasure)
             {
@@ -64,6 +63,7 @@ namespace Skeletom.BattleStation.Audio {
                     _nextTime += _interval; // add interval to our relative time
                     _nextDelta = _nextTime - Time.time;
                 }
+                Sync = new Beat(_progression, _base);
             }
         }
     }
