@@ -10,7 +10,6 @@ namespace Skeletom.BattleStation.Audio
         private float _progression = 0f;
         private int _bpm = 120;
         private float _nextTime = 0f;
-        private float _nextDelta = 0f;
         private float _interval = 1f;
 
         // private bool _ticking = false;
@@ -20,7 +19,7 @@ namespace Skeletom.BattleStation.Audio
         /// <summary>
         /// The current lerp value along the current beat, sweeping from 0 to beatsPerMeasure to allow for effects every beat of the measure
         /// </summary>
-        public Beat Sync = new Beat();
+        public Beat Sync { get; private set; }
 
         [Serializable]
         public struct Beat
@@ -35,22 +34,10 @@ namespace Skeletom.BattleStation.Audio
             }
         }
 
-        // public void StartMetronome(int bpm)
-        // {
-        //     // _ticking = true;
-        //     _bpm = bpm;
-        //     var multiplier = _base / 4f;
-        //     var tmpInterval = 60f / _bpm;
-        //     _interval = tmpInterval / multiplier;
-        //     _nextTime = Time.time;
-        // }
-
-
         public void StartMetronome(int bpm)
         {
             if (_ticking != null)
                 StopCoroutine(_ticking);
-            //_currentStep = 1;
             _bpm = bpm;
             var multiplier = _base / 4f;
             var tmpInterval = 60f / _bpm;
