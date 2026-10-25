@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
-namespace Skeletom.BattleStation.Audio {
+namespace Skeletom.BattleStation.Audio
+{
     public class Metronome : MonoBehaviour
     {
         private const int _base = 4;
@@ -11,12 +13,14 @@ namespace Skeletom.BattleStation.Audio {
         private float _nextDelta = 0f;
         private float _interval = 1f;
 
-        private bool _ticking = false;
+        // private bool _ticking = false;
+
+        private Coroutine _ticking;
 
         /// <summary>
         /// The current lerp value along the current beat, sweeping from 0 to beatsPerMeasure to allow for effects every beat of the measure
         /// </summary>
-        public Beat Sync;
+        public Beat Sync = new Beat();
 
         [Serializable]
         public struct Beat
@@ -31,40 +35,54 @@ namespace Skeletom.BattleStation.Audio {
             }
         }
 
+        // public void StartMetronome(int bpm)
+        // {
+        //     // _ticking = true;
+        //     _bpm = bpm;
+        //     var multiplier = _base / 4f;
+        //     var tmpInterval = 60f / _bpm;
+        //     _interval = tmpInterval / multiplier;
+        //     _nextTime = Time.time;
+        // }
+
+
         public void StartMetronome(int bpm)
         {
-            _ticking = true;
+            if (_ticking != null)
+                StopCoroutine(_ticking);
+            //_currentStep = 1;
             _bpm = bpm;
             var multiplier = _base / 4f;
             var tmpInterval = 60f / _bpm;
             _interval = tmpInterval / multiplier;
-            _nextTime = Time.time;
+            _nextTime = Time.time; // set the relative time to now
+            _ticking = StartCoroutine(Tick());
         }
 
-        public void StopMetronome()
+        IEnumerator Tick()
         {
-            _ticking = false;
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-            if(_ticking){
+            do
+            {
                 // do something with this beat
-                if(_nextDelta - Time.time > 0){
+                _nextTime += _interval; // add interval to our relative time
+                float nextDelta = _nextTime - Time.time;
+                do
+                {
                     _progression += (Time.deltaTime / _interval);
                     if (_progression >= _base)
                     {
                         _progression = 0f;
                     }
-                }
-                else
-                {
-                    _nextTime += _interval; // add interval to our relative time
-                }
-                _nextDelta = _nextTime - Time.time;
-                Sync = new Beat(_progression, _base);
-            }
+                    yield return null;
+                } while (nextDelta - Time.time > 0);
+
+            } while (true);
+        }
+
+        // Update is called once per frame
+        void Update()
+        {
+            Sync = new Beat(_progression, _base);
         }
     }
 }
