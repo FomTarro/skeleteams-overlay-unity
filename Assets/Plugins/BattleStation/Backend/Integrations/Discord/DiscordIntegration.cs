@@ -62,16 +62,17 @@ namespace Skeletom.BattleStation.Integrations.Discord
             }
         }
 
-        private readonly LRUDictionary<string, StreamUser> USER_CACHE = new(10, (user) => {
-            foreach (var frame in user.avatar?.frames)
-            {
-                Destroy(frame.image);
-            }
-        });
+        // private readonly LRUDictionary<string, StreamUser> USER_CACHE = new(10, (user) => {
+        //     foreach (var frame in user.avatar?.frames)
+        //     {
+        //         Destroy(frame.image);
+        //     }
+        // });
 
         private string LAST_MESSAGE_RECEIVED;      
         private string CURRENT_VOICE_CHANNEL_ID;
-        private readonly List<string> CURRENT_CHANNEL_USERS = new();
+        [SerializeField]
+        private List<StreamUser> CURRENT_CHANNEL_USERS = new();
 
         #endregion
 
@@ -485,7 +486,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
 
         private void GetUserInfo(string userId, Action<API.UserData> onSuccess, Action<StreamError> onError)
         {
-            // TODO
+            // TODO: HTTP API
         }
 
         #endregion
@@ -530,26 +531,20 @@ namespace Skeletom.BattleStation.Integrations.Discord
         {
             // Broadcast a User Leave/Stop Speaking event 
             // for all users in the channel when we leave
-            foreach(string id in CURRENT_CHANNEL_USERS)
+            // TODO: this should probably be a separate event for self channel join/leave
+            for(int i = CURRENT_CHANNEL_USERS.Count - 1; i >= 0; i--)
             {
-                onUserLeave.Invoke(id);
-                onUserSpeakStop.Invoke(id);
+                HandleUserLeave(CURRENT_CHANNEL_USERS[i].id);
             }
             SendUnsubscription<SpeakingStartSubscriptionRequest>(CURRENT_VOICE_CHANNEL_ID);
             SendUnsubscription<SpeakingStopSubscriptionRequest>(CURRENT_VOICE_CHANNEL_ID);
             SendUnsubscription<VoiceStateCreateSubscriptionRequest>(CURRENT_VOICE_CHANNEL_ID);
             SendUnsubscription<VoiceStateDeleteSubscriptionRequest>(CURRENT_VOICE_CHANNEL_ID);
-            CURRENT_CHANNEL_USERS.Clear();
         }
 
         private void HandleSpeakStartEvent(SpeakingEvent speakingEvent)
         {
             onUserSpeakStart.Invoke(speakingEvent.data.user_id);
-        }
-
-        private void HandleSpeakStopEvent(SpeakingEvent speakingEvent)
-        {
-            onUserSpeakStop.Invoke(speakingEvent.data.user_id);
         }
 
         private void HandleVoiceStateCreateEvent(VoiceStateEvent voiceStateEvent)
@@ -559,14 +554,9 @@ namespace Skeletom.BattleStation.Integrations.Discord
 
         private void HandleUserJoin(UserData data)
         {
-            // Debug.Log($"{res.data.user.id} has joined the channel.");
-            if (!CURRENT_CHANNEL_USERS.Contains(data.id))
-            {
-                CURRENT_CHANNEL_USERS.Add(data.id);
-            }
             StreamUser user = new(
-                data.id,
-                data.global_name
+                data.global_name,
+                data.id
             );
             GetUserAvatar(data, (success) =>
             {
@@ -577,16 +567,28 @@ namespace Skeletom.BattleStation.Integrations.Discord
             {
                 onUserJoin.Invoke(user);
             });
+            CURRENT_CHANNEL_USERS.Add(user);
         }
+
+        private void HandleSpeakStopEvent(SpeakingEvent speakingEvent)
+        {
+            onUserSpeakStop.Invoke(speakingEvent.data.user_id);
+        }
+
 
         private void HandleVoiceStateDeleteEvent(VoiceStateEvent voiceStateEvent)
         {
-            // Debug.Log($"{res.data.user.id} has left the channel.");
-            if (CURRENT_CHANNEL_USERS.Contains(voiceStateEvent.data.user.id))
-            {
-                CURRENT_CHANNEL_USERS.Remove(voiceStateEvent.data.user.id);
+            HandleUserLeave(voiceStateEvent.data.user.id);
+        }
+
+        private void HandleUserLeave(string userId)
+        {
+            int index = CURRENT_CHANNEL_USERS.FindIndex(user => userId == user.id);
+            if(index >= 0) {
+                onUserLeave.Invoke(userId);
+                onUserSpeakStop.Invoke(userId);
+                CURRENT_CHANNEL_USERS.RemoveAt(index);
             }
-            onUserLeave.Invoke(voiceStateEvent.data.user.id);
         }
 
         #endregion

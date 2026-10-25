@@ -105,21 +105,21 @@ public class LayoutManager : Singleton<LayoutManager>
     // Start is called before the first frame update
     void Start()
     {
-        DiscordIntegration.Instance.onUserJoin.AddListener((user, status) =>
-        {
-            if(DiscordIntegration.Instance.SelfUserId != user){
-                Debug.Log($"Participant {user} has {(status ? "joined" : "quit")}.");
-            }
-        });
-        DiscordIntegration.Instance.onUserSpeakStart.AddListener((user, status) =>
-        {
-            // Debug.Log($"Participant {user} has {(status ? "started" : "stopped")} speaking.");
-            _micSources[$"discord_{user}"] = status ? 1.0f : 0.0f;
-        });
-        OBSIntegration.Instance.onVolume.AddListener((source, vol) =>
-        {
-            _micSources[$"obs_{source}"] = vol;
-        });
+        // DiscordIntegration.Instance.onUserJoin.AddListener((user) =>
+        // {
+        //     if(DiscordIntegration.Instance.SelfUserId != user.id){
+        //         Debug.Log($"Participant {user} has {(status ? "joined" : "quit")}.");
+        //     }
+        // });
+        // DiscordIntegration.Instance.onUserSpeakStart.AddListener((user, status) =>
+        // {
+        //     // Debug.Log($"Participant {user} has {(status ? "started" : "stopped")} speaking.");
+        //     _micSources[$"discord_{user}"] = status ? 1.0f : 0.0f;
+        // });
+        // OBSIntegration.Instance.onVolume.AddListener((source, vol) =>
+        // {
+        //     _micSources[$"obs_{source}"] = vol;
+        // });
 
 
         foreach (StreamParticipant participant in _participants)
