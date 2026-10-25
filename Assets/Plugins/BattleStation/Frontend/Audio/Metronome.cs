@@ -61,8 +61,8 @@ namespace Skeletom.BattleStation.Audio {
                 else
                 {
                     _nextTime += _interval; // add interval to our relative time
-                    _nextDelta = _nextTime - Time.time;
                 }
+                _nextDelta = _nextTime - Time.time;
                 Sync = new Beat(_progression, _base);
             }
         }

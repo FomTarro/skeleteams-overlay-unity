@@ -34,6 +34,7 @@ namespace Skeletom.BattleStation.Audio {
             }
         }
 
+        // TODO: this should just extend the save file data type and add a Clip
         [Serializable]
         public class MusicTrack
         {
