@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using Skeletom.BattleStation.Integrations.Discord.IPC;
-using Skeletom.Essentials.Collections;
 using Skeletom.Essentials.IO;
 using Skeletom.Essentials.Utils;
 using UnityEngine;
