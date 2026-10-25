@@ -10244,7 +10244,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 2100000, guid: 5047fbf39ce58ae448dc5bfeae740c76, type: 2}
-  m_Color: {r: 0.14509805, g: 0.14509805, b: 0.14509805, a: 1}
+  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -10952,10 +10952,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _initializationOrder: 0
   _imageHandler: {fileID: 1286638395}
+  CURRENT_CHANNEL_USERS: []
   onUserJoin:
     m_PersistentCalls:
       m_Calls: []
-  onUserSpeak:
+  onUserLeave:
+    m_PersistentCalls:
+      m_Calls: []
+  onUserSpeakStart:
+    m_PersistentCalls:
+      m_Calls: []
+  onUserSpeakStop:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &1307363913 stripped
