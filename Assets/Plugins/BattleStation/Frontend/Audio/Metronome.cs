@@ -12,8 +12,6 @@ namespace Skeletom.BattleStation.Audio
         private float _nextTime = 0f;
         private float _interval = 1f;
 
-        // private bool _ticking = false;
-
         private Coroutine _ticking;
 
         /// <summary>
@@ -26,23 +24,30 @@ namespace Skeletom.BattleStation.Audio
         {
             public float currentBeat;
             public int beatsPerMeasure;
+            public int beatsPerMinute;
 
-            public Beat(float beat, int perMeasure)
+            public Beat(float beat, int perMeasure, int perMinute)
             {
                 currentBeat = beat;
                 beatsPerMeasure = perMeasure;
+                beatsPerMinute = perMinute;
             }
+        }
+
+        public void SetBPM(int bpm)
+        {
+            _bpm = bpm;
+            var multiplier = _base / 4f;
+            var tmpInterval = 60f / _bpm;
+            _interval = tmpInterval / multiplier;
+            _nextTime = Time.time; // set the relative time to now
         }
 
         public void StartMetronome(int bpm)
         {
             if (_ticking != null)
                 StopCoroutine(_ticking);
-            _bpm = bpm;
-            var multiplier = _base / 4f;
-            var tmpInterval = 60f / _bpm;
-            _interval = tmpInterval / multiplier;
-            _nextTime = Time.time; // set the relative time to now
+            SetBPM(bpm);
             _ticking = StartCoroutine(Tick());
         }
 
@@ -69,7 +74,7 @@ namespace Skeletom.BattleStation.Audio
         // Update is called once per frame
         void Update()
         {
-            Sync = new Beat(_progression, _base);
+            Sync = new Beat(_progression, _base, _bpm);
         }
     }
 }

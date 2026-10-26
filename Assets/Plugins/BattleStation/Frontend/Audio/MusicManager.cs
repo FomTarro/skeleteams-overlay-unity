@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.IO;
 using Skeletom.Essentials.Lifecycle;
@@ -10,20 +11,20 @@ using UnityEngine.Events;
 using UnityEngine.Networking;
 
 namespace Skeletom.BattleStation.Audio {
-    public class MusicManager : Singleton<MusicManager>, ISaveable<MusicManager.PlaylistMetadata>
+    public class MusicManager : Singleton<MusicManager>, ISaveable<MusicManager.MusicMetadata>
     {
         public string FileFolder => "Music";
 
         public string FileName => "metadata.json";
 
         [Serializable]
-        public class PlaylistMetadata : BaseSaveData
+        public class MusicMetadata : BaseSaveData
         {
             public float fadeTime;
             public List<TrackMetadata> tracks;
 
             [Serializable]
-            public struct TrackMetadata
+            public class TrackMetadata
             {
                 public string file;
                 public string id;
@@ -34,15 +35,10 @@ namespace Skeletom.BattleStation.Audio {
             }
         }
 
-        // TODO: this should just extend the save file data type and add a Clip
         [Serializable]
         public class MusicTrack
         {
-            public string id;
-            public string name;
-            public string artist;
-            public int year;
-            public int bpm;
+            public MusicMetadata.TrackMetadata metadata;
             public SaveDataManager.FileData file;
             public AudioClip clip;
         }
@@ -137,7 +133,7 @@ namespace Skeletom.BattleStation.Audio {
             {
                 StopCoroutine(_changingClip);
             }
-            MusicTrack track = _tracks.Find(t => t.id.Equals(id));
+            MusicTrack track = _tracks.Find(t => t.metadata.id.Equals(id));
             if (track != null)
             {
                 StartCoroutine(GetAudioClipFromFile(track, (t) =>
@@ -163,13 +159,21 @@ namespace Skeletom.BattleStation.Audio {
                 _source.Stop();
                 yield return new WaitForSeconds(seconds);
             }
+            t = 0.0f;
+            int bpm = _metronome.Sync.beatsPerMinute;
+            while (t <= 1.0)
+            {
+                t += Time.deltaTime / seconds;
+                _metronome.SetBPM((int)Mathf.Lerp(bpm, track.metadata.bpm, Mathf.SmoothStep(0.0f, 1.0f, t)));
+                yield return null;
+            }
             if (track == null)
             {
                 yield break;
             }
             _source.clip = track.clip;
             onMusicTrackChanged.Invoke(track);
-            _metronome.StartMetronome(track.bpm);
+            _metronome.StartMetronome(track.metadata.bpm);
             t = 0.0f;
             if (!_source.isPlaying)
                 _source.Play();
@@ -279,12 +283,12 @@ namespace Skeletom.BattleStation.Audio {
                 || webRequest.result == UnityWebRequest.Result.ProtocolError
                 || webRequest.result == UnityWebRequest.Result.DataProcessingError)
                 {
-                    Debug.LogError($"Error fetching clip {track.id}: {webRequest.error}");
+                    Debug.LogError($"Error fetching clip {track.metadata.id}: {webRequest.error}");
                 }
                 else
                 {
                     AudioClip myClip = DownloadHandlerAudioClip.GetContent(webRequest);
-                    myClip.name = track.name;
+                    myClip.name = track.metadata.name;
                     track.clip = myClip;
                 }
                 onLoad.Invoke(track);
@@ -303,7 +307,7 @@ namespace Skeletom.BattleStation.Audio {
             };
         }
 
-        public void FromSaveData(PlaylistMetadata data)
+        public void FromSaveData(MusicMetadata data)
         {
             // Hard reload
             foreach (MusicTrack track in _tracks)
@@ -322,28 +326,28 @@ namespace Skeletom.BattleStation.Audio {
                     files.Add(file);
                 }
             );
-            foreach (PlaylistMetadata.TrackMetadata track in data.tracks)
+            foreach (MusicMetadata.TrackMetadata track in data.tracks)
             {
                 SaveDataManager.FileData file = files.Find(f => f.name == track.file);
                 if (file.name != null && file.name.Length > 0)
                 {
                     MusicTrack newTrack = new()
                     {
-                        id = track.id,
-                        name = track.name,
+                        metadata = track,
                         file = file,
-                        bpm = track.bpm,
-                        artist = track.artist,
-                        year = track.year
                     };
                     _tracks.Add(newTrack);
                 }
             }
         }
 
-        public PlaylistMetadata ToSaveData()
+        public MusicMetadata ToSaveData()
         {
-            throw new NotImplementedException();
+            return new()
+            {
+                fadeTime = _fadeTime,
+                tracks = _tracks.Select(item => item.metadata).ToList()
+            };
         }
     }
 }
