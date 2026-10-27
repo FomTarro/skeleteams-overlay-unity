@@ -9,7 +9,7 @@ using UnityEngine.Events;
 
 namespace Skeletom.BattleStation.Integrations.OBS
 {
-    public class OBSIntegration : Integration<OBSIntegration, OBSIntegration.IntegrationData>
+    public class OBSIntegration : Integration<OBSIntegration.IntegrationData>
     {
         public override string FileName => "obs.json";
 
@@ -38,11 +38,6 @@ namespace Skeletom.BattleStation.Integrations.OBS
         }
 
         public override void Enable()
-        {
-
-        }
-
-        public override void Initialize()
         {
             // TODO: have these update an object reference that gets polled, because muting and volume are handled by separate events
             EVENT_HANDLERS.Add("InputVolumeMeters", (msg) =>

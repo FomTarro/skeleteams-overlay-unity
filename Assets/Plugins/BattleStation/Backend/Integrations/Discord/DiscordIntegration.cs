@@ -10,7 +10,7 @@ using UnityEngine.Events;
 
 namespace Skeletom.BattleStation.Integrations.Discord
 {
-    public class DiscordIntegration : Integration<DiscordIntegration, DiscordIntegration.IntegrationData>
+    public class DiscordIntegration : Integration<DiscordIntegration.IntegrationData>
     {
         public override string FileName => "discord.json";
 
@@ -109,10 +109,10 @@ namespace Skeletom.BattleStation.Integrations.Discord
             _socket?.Disconnect();
         }
 
-        public override void Initialize()
-        {
-            Enable();
-        }
+        // public override void Initialize()
+        // {
+        //     Enable();
+        // }
 
         private void Update()
         {

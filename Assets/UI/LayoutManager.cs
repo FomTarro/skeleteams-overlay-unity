@@ -1,12 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Klak.Spout;
 using Skeletom.BattleStation;
 using Skeletom.BattleStation.Audio;
-using Skeletom.BattleStation.Integrations.Discord;
-using Skeletom.BattleStation.Integrations.OBS;
-using Skeletom.BattleStation.Integrations.Twitch;
+using Skeletom.BattleStation.Integrations;
 using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.Lifecycle;
 using UnityEngine;
@@ -118,15 +115,15 @@ public class LayoutManager : Singleton<LayoutManager>
         //         Debug.Log($"Participant {user} has {(status ? "joined" : "quit")}.");
         //     }
         // });
-        DiscordIntegration.Instance.onUserSpeakStart.AddListener((user) =>
+        IntegrationManager.Instance.Discord.onUserSpeakStart.AddListener((user) =>
         {
             _micSources[$"discord_{user}"] = 1.0f;
         });
-        DiscordIntegration.Instance.onUserSpeakStop.AddListener((user) =>
+        IntegrationManager.Instance.Discord.onUserSpeakStop.AddListener((user) =>
         {
             _micSources[$"discord_{user}"] = 0.0f;
         });
-        OBSIntegration.Instance.onVolume.AddListener((source, vol) =>
+        IntegrationManager.Instance.OBS.onVolume.AddListener((source, vol) =>
         {
             _micSources[$"obs_{source}"] = vol;
         });
@@ -185,7 +182,7 @@ public class LayoutManager : Singleton<LayoutManager>
 
         _webServer.RegisterEndpoint(new Endpoint("/test/raid", (req) =>
         {
-            TwitchIntegration.Instance.onChannelRaid.Invoke(
+            IntegrationManager.Instance.Twitch.onChannelRaid.Invoke(
                 new Skeletom.BattleStation.Integrations.StreamRaid(
                     new Skeletom.BattleStation.Integrations.StreamUser("Skeletom", "12345"),
                     500
@@ -201,14 +198,14 @@ public class LayoutManager : Singleton<LayoutManager>
         _pollingDelta += Time.deltaTime;
         if (_pollingDelta > POLLING_INTERVAL)
         {
-            TwitchIntegration.Instance.GetCurrentChatUsers((list) =>
+            IntegrationManager.Instance.Twitch.GetCurrentChatUsers((list) =>
             {
                 onChatUserCounted.Invoke(list.Count);
             }, (err) =>
             {
                 Debug.LogError(err.message);
             });
-            TwitchIntegration.Instance.GetAdSchedule((schedule) =>
+            IntegrationManager.Instance.Twitch.GetAdSchedule((schedule) =>
             {
                 onNextAdTimeChecked.Invoke(DateTimeOffset.FromUnixTimeMilliseconds(schedule.next_ad_at * 1000).DateTime);
             }, (err) =>
@@ -216,7 +213,7 @@ public class LayoutManager : Singleton<LayoutManager>
                 Debug.LogError(err.message);
                 onNextAdTimeChecked.Invoke(DateTime.Now);
             });
-            OBSIntegration.Instance.GetRecordingStatus((status) =>
+            IntegrationManager.Instance.OBS.GetRecordingStatus((status) =>
             {
                 onStreamTimeChecked.Invoke(DateTime.Now.AddMilliseconds(-1 * status.outputDuration));
             },

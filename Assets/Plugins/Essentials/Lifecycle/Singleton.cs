@@ -9,7 +9,7 @@ namespace Skeletom.Essentials.Lifecycle {
     public abstract class Singleton<T> : OrderedInitializer where T : OrderedInitializer {
         private static T INSTANCE;
 
-        private static readonly object LOCK_OBJECT = new object();
+        private static readonly object LOCK_OBJECT = new();
 
         /// <summary>
         /// The instance of this singleton.
@@ -30,7 +30,7 @@ namespace Skeletom.Essentials.Lifecycle {
                         T[] objects = (T[])FindObjectsOfType(typeof(T));
                         // if we can't find an instance in the scene, just make one since we need it
                         if (objects.Length == 0) {
-                            GameObject newSingleton = new GameObject();
+                            GameObject newSingleton = new();
                             INSTANCE = newSingleton.AddComponent<T>();
                             newSingleton.name = "(Singleton) " + typeof(T).ToString();
                             INSTANCE.enabled = true;

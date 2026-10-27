@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Skeletom.BattleStation.Integrations.Twitch
 {
-    public class TwitchIntegration : StreamIntegration<TwitchIntegration, TwitchIntegration.IntegrationData>
+    public class TwitchIntegration : StreamIntegration<TwitchIntegration.IntegrationData>
     {
         public override string FileName => "twitch.json";
 
@@ -109,12 +109,6 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 _webServer.UnregisterEndpoint(endpoint);
             }
             _socket.Stop();
-        }
-
-        public override void Initialize()
-        {
-            // TODO: move this to a manager
-            Enable();
         }
 
         private void Update()

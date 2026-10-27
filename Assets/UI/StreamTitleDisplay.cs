@@ -10,7 +10,7 @@ public class StreamTitleDisplay : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        TwitchIntegration.Instance.onStreamInfoUpdate.AddListener(OnInfoUpdate);
+        IntegrationManager.Instance.Twitch.onStreamInfoUpdate.AddListener(OnInfoUpdate);
     }
 
     private void OnInfoUpdate(StreamInfo info)

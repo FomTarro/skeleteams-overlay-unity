@@ -7,7 +7,7 @@ using UnityEngine.Events;
 namespace Skeletom.BattleStation.Integrations
 {
     [RequireComponent(typeof(StreamImageHandler))]
-    public abstract class StreamIntegration<T, K> : Integration<T, K> where T : StreamIntegration<T, K> where K : BaseSaveData
+    public abstract class StreamIntegration<K> : Integration<K> where K : BaseSaveData
     {
         #region Caches
 
