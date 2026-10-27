@@ -5,8 +5,8 @@ public class ExampleSettingsManager : BaseSettingsManager<ExampleSettingsManager
 {
     public override void Initialize()
     {
-        FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
-        SaveDataManager.Instance.WriteSaveData(this);
+        FromSaveData(SaveDataManager.ReadSaveData(this));
+        SaveDataManager.WriteSaveData(this);
     }
 
     [Serializable]

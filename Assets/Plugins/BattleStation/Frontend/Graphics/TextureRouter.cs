@@ -12,7 +12,7 @@ public class TextureRouter : Singleton<TextureRouter>
     {
         foreach (TextureSource source in _sources)
         {
-            source.FromSaveData(SaveDataManager.Instance.ReadSaveData(source));
+            source.FromSaveData(SaveDataManager.ReadSaveData(source));
         }
     }
 

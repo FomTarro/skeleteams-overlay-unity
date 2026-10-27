@@ -101,7 +101,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
                 }
                 _socket = new IpcSocket(names, REQUEST_TIMEOUT_MS + 1000);
             }
-            FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+            FromSaveData(SaveDataManager.ReadSaveData(this));
         }
 
         public override void Disable()
@@ -326,7 +326,7 @@ namespace Skeletom.BattleStation.Integrations.Discord
         {
             // Save our updated token
             USER_TOKEN = token;
-            SaveDataManager.Instance.WriteSaveData(this);
+            SaveDataManager.WriteSaveData(this);
             // Check if we're currently in a voice channel
             OnChannelJoin(null);
             // Begin event subscriptions

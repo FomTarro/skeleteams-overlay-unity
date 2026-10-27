@@ -41,6 +41,7 @@ namespace Skeletom.BattleStation.Graphics.Animations
         public void DisplayTexture(AnimatedTexture texture)
         {
             _tex = texture;
+            _image.texture = _tex.frames[0].image;
         }
 
         protected override IEnumerator Animate()

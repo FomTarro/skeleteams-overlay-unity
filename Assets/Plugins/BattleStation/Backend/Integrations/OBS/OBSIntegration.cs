@@ -67,7 +67,7 @@ namespace Skeletom.BattleStation.Integrations.OBS
                 }
 
             });
-            FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+            FromSaveData(SaveDataManager.ReadSaveData(this));
         }
 
         private void Update()
@@ -193,7 +193,7 @@ namespace Skeletom.BattleStation.Integrations.OBS
                     Debug.LogError($"OBS Socket error: {err}");
                 }
             );
-            SaveDataManager.Instance.WriteSaveData(this);
+            SaveDataManager.WriteSaveData(this);
         }
 
         public override IntegrationData ToSaveData()

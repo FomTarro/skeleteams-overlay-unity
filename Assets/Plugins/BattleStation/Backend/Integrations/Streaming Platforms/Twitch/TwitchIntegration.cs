@@ -83,7 +83,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     // TODO: this probably goes in the integration manager
                     new Endpoint("/twitch/reload", (req) =>
                     {
-                        FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+                        FromSaveData(SaveDataManager.ReadSaveData(this));
                         return new EndpointResponse(200, "Reload Requested");
                     })
                 };
@@ -99,7 +99,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             {
                 _webServer.RegisterEndpoint(endpoint);
             }
-            FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+            FromSaveData(SaveDataManager.ReadSaveData(this));
         }
 
         public override void Disable()
@@ -230,7 +230,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         {
             USER_TOKEN = token;
             // TODO: figure out way to ignore write if the caller is a read function
-            SaveDataManager.Instance.WriteSaveData(this);
+            SaveDataManager.WriteSaveData(this);
             GetSelfUserInfo((user) =>
             {
                 BROADCASTER_ID = user.id;

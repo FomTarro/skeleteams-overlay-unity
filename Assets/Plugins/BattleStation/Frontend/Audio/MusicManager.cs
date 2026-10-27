@@ -11,34 +11,16 @@ using UnityEngine.Events;
 using UnityEngine.Networking;
 
 namespace Skeletom.BattleStation.Audio {
-    public class MusicManager : Singleton<MusicManager>, ISaveable<MusicManager.MusicMetadata>
+    public class MusicManager : Singleton<MusicManager>, ISaveable<MusicManager.Properties>
     {
         public string FileFolder => "Music";
 
         public string FileName => "metadata.json";
 
         [Serializable]
-        public class MusicMetadata : BaseSaveData
+        public class Track
         {
-            public float fadeTime;
-            public List<TrackMetadata> tracks;
-
-            [Serializable]
-            public class TrackMetadata
-            {
-                public string file;
-                public string id;
-                public string name;
-                public string artist;
-                public int year;
-                public int bpm;
-            }
-        }
-
-        [Serializable]
-        public class MusicTrack
-        {
-            public MusicMetadata.TrackMetadata metadata;
+            public Properties.Track metadata;
             public SaveDataManager.FileData file;
             public AudioClip clip;
         }
@@ -54,7 +36,7 @@ namespace Skeletom.BattleStation.Audio {
         private WebServer _webServer;
 
         [SerializeField]
-        private List<MusicTrack> _tracks = new();
+        private List<Track> _tracks = new();
 
         [SerializeField]
         private float _fadeTime = 0.5f;
@@ -79,7 +61,7 @@ namespace Skeletom.BattleStation.Audio {
         public VolumeChangeEvent onVolumeChanged = new();
 
         [Serializable]
-        public class MusicTrackChangeEvent : UnityEvent<MusicTrack> { }
+        public class MusicTrackChangeEvent : UnityEvent<Track> { }
         public MusicTrackChangeEvent onMusicTrackChanged = new();
 
         private List<Endpoint> WebServerEndpoints
@@ -109,7 +91,7 @@ namespace Skeletom.BattleStation.Audio {
                     }),
                     new Endpoint("/music/reload", (req) =>
                     {
-                        FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+                        FromSaveData(SaveDataManager.ReadSaveData(this));
                         return new EndpointResponse(200, "");
                     })
                 };
@@ -118,8 +100,8 @@ namespace Skeletom.BattleStation.Audio {
 
         public override void Initialize()
         {
-            SaveDataManager.Instance.OpenDataFolder();
-            FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+            SaveDataManager.OpenDataFolder();
+            FromSaveData(SaveDataManager.ReadSaveData(this));
             // Music controls via HTTP
             foreach (Endpoint endpoint in WebServerEndpoints)
             {
@@ -133,7 +115,7 @@ namespace Skeletom.BattleStation.Audio {
             {
                 StopCoroutine(_changingClip);
             }
-            MusicTrack track = _tracks.Find(t => t.metadata.id.Equals(id));
+            Track track = _tracks.Find(t => t.metadata.id.Equals(id));
             if (track != null)
             {
                 StartCoroutine(GetAudioClipFromFile(track, (t) =>
@@ -143,7 +125,7 @@ namespace Skeletom.BattleStation.Audio {
             }
         }
 
-        private IEnumerator ChangeTrack(MusicTrack track, float targetVolume, float seconds = 1.0f)
+        private IEnumerator ChangeTrack(Track track, float targetVolume, float seconds = 1.0f)
         {
             float t = 0.0f;
             float initialVol = GetVolume(VolumeGroup.MUSIC_RELATIVE);
@@ -254,7 +236,7 @@ namespace Skeletom.BattleStation.Audio {
             };
         }
 
-        private IEnumerator GetAudioClipFromFile(MusicTrack track, Action<MusicTrack> onLoad)
+        private IEnumerator GetAudioClipFromFile(Track track, Action<Track> onLoad)
         {
             if (track.clip != null)
             {
@@ -273,9 +255,9 @@ namespace Skeletom.BattleStation.Audio {
             }
             if (audioType != AudioType.UNKNOWN)
             {
-                Debug.LogError(SaveDataManager.Instance.MakeFileSystemURI(track.file.path));
+                Debug.LogError(SaveDataManager.MakeFileSystemURI(track.file.path));
                 using UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(
-                    SaveDataManager.Instance.MakeFileSystemURI(track.file.path),
+                    SaveDataManager.MakeFileSystemURI(track.file.path),
                     audioType
                 );
                 yield return webRequest.SendWebRequest();
@@ -307,10 +289,12 @@ namespace Skeletom.BattleStation.Audio {
             };
         }
 
-        public void FromSaveData(MusicMetadata data)
+        #region I/O
+
+        public void FromSaveData(Properties data)
         {
             // Hard reload
-            foreach (MusicTrack track in _tracks)
+            foreach (Track track in _tracks)
             {
                 if (track.clip != null)
                 {
@@ -319,19 +303,19 @@ namespace Skeletom.BattleStation.Audio {
             }
             _tracks = new();
             List<SaveDataManager.FileData> files = new();
-            SaveDataManager.Instance.IterateFilesInDirectory(
-                SaveDataManager.Instance.GetDirectory(this),
+            SaveDataManager.IterateFilesInDirectory(
+                SaveDataManager.GetDirectory(this),
                 (file) =>
                 {
                     files.Add(file);
                 }
             );
-            foreach (MusicMetadata.TrackMetadata track in data.tracks)
+            foreach (Properties.Track track in data.tracks)
             {
                 SaveDataManager.FileData file = files.Find(f => f.name == track.file);
                 if (file.name != null && file.name.Length > 0)
                 {
-                    MusicTrack newTrack = new()
+                    Track newTrack = new()
                     {
                         metadata = track,
                         file = file,
@@ -341,7 +325,7 @@ namespace Skeletom.BattleStation.Audio {
             }
         }
 
-        public MusicMetadata ToSaveData()
+        public Properties ToSaveData()
         {
             return new()
             {
@@ -349,5 +333,25 @@ namespace Skeletom.BattleStation.Audio {
                 tracks = _tracks.Select(item => item.metadata).ToList()
             };
         }
+
+        [Serializable]
+        public class Properties : BaseSaveData
+        {
+            public float fadeTime;
+            public List<Track> tracks;
+
+            [Serializable]
+            public class Track
+            {
+                public string file;
+                public string id;
+                public string name;
+                public string artist;
+                public int year;
+                public int bpm;
+            }
+        }
+
+        #endregion
     }
 }

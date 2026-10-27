@@ -749,39 +749,6 @@ MonoBehaviour:
       m_Calls: []
   _sceneTransitionJingle: {fileID: 109531032}
   _participantPrefab: {fileID: 8545664367697658339, guid: 72fd40f2b2400014e98c0b384dae3875, type: 3}
-  _participants:
-  - enabled: 1
-    key: skeletom
-    name: Skeletom
-    borderColor: {r: 0.99607843, g: 0.7019608, b: 0.8156863, a: 1}
-    faceSourceName: Skeletom_Facecam
-    screenSourceName: Video_Capture_Spout
-    micSourceName: obs_Mic/Aux
-    icon: {fileID: 21300000, guid: 20dfb236a4574f54a9fb6eca2043438b, type: 3}
-  - enabled: 1
-    key: kari
-    name: Panko, Karikari
-    borderColor: {r: 1, g: 0.8784314, b: 0.41960785, a: 1}
-    faceSourceName: Kari_Facecam
-    screenSourceName: Video_Capture_Spout
-    micSourceName: discord_106091790301421568
-    icon: {fileID: 21300000, guid: c8177d2f208b4a44a9e3db3ba0fa3d35, type: 3}
-  - enabled: 0
-    key: penny
-    name: Penny
-    borderColor: {r: 0.60784316, g: 0.78039217, b: 0.9098039, a: 1}
-    faceSourceName: Penny_Facecam
-    screenSourceName: Video_Capture_Spout
-    micSourceName: Discord Audio
-    icon: {fileID: 21300000, guid: e359a605bc37d8643842f88c2d4d5d00, type: 3}
-  - enabled: 0
-    key: fugi
-    name: CONF ROOM 187
-    borderColor: {r: 0.60784316, g: 0.78039217, b: 0.9098039, a: 1}
-    faceSourceName: Conf_Facecam
-    screenSourceName: Video_Capture_Spout
-    micSourceName: Discord Audio
-    icon: {fileID: 21300000, guid: e6c40edd3ab5d9e429824736dbee53b3, type: 3}
 --- !u!82 &109531032
 AudioSource:
   m_ObjectHideFlags: 0
@@ -3567,51 +3534,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8960609778450361730, guid: 12f43e5a24ff12249b15a332620f18a6, type: 3}
   m_PrefabInstance: {fileID: 2037718757}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &404186379
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 404186381}
-  - component: {fileID: 404186380}
-  m_Layer: 0
-  m_Name: Data Manager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &404186380
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 404186379}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dacbe41f7b1aab3479e862ae872a3ba2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _initializationOrder: 0
---- !u!4 &404186381
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 404186379}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1902992919}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &408461157
 GameObject:
   m_ObjectHideFlags: 0
@@ -7463,12 +7385,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 835040114}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -960.2074, y: -979.614, z: 0.016237479}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1902992919}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &850564988
 PrefabInstance:
@@ -8903,6 +8825,74 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _text: {fileID: 1068935070}
+--- !u!1 &1083951021
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1083951022}
+  - component: {fileID: 1083951024}
+  - component: {fileID: 1083951023}
+  m_Layer: 0
+  m_Name: Participant Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1083951022
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1083951021}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1902992919}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1083951023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1083951021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7b7368e1ce3c8d45968410de8dc63cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _maximumCachedItems: -1
+--- !u!114 &1083951024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1083951021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99d207c506892626faae6e76c877ef9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _initializationOrder: 2
+  _imageHandler: {fileID: 1083951023}
+  _webServer: {fileID: 835040116}
+  _loadedParticipants: []
+  onParticipantJoin:
+    m_PersistentCalls:
+      m_Calls: []
+  onParticipantLeave:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1100467078
 GameObject:
   m_ObjectHideFlags: 0
@@ -15470,8 +15460,9 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 109531029}
-  - {fileID: 404186381}
+  - {fileID: 1083951022}
   - {fileID: 338772482}
+  - {fileID: 835040117}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1906695725
@@ -19835,6 +19826,5 @@ SceneRoots:
   - {fileID: 408461161}
   - {fileID: 316279036}
   - {fileID: 1149463498}
-  - {fileID: 835040117}
   - {fileID: 547252205}
   - {fileID: 1902992919}

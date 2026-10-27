@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Skeletom.Essentials.Collections;
 using Skeletom.Essentials.Utils;
 using UnityEngine;
@@ -90,6 +91,50 @@ namespace Skeletom.BattleStation.Integrations
             else
             {
                 onError(new HttpUtils.HttpError(500, $"Item with key: {key} does not exist in cache"));
+            }
+        }
+
+        public void GetFromLocal(string path, string key, Action<T> onSuccess, Action<StreamError> onError)
+        {
+            if (CACHE.ContainsKey(key))
+            {
+                onSuccess(CACHE[key]);
+            }
+            // If another request is already processing this emote, wait for that.
+            else if (PENDING_CONTEXTS.ContainsKey(key))
+            {
+                PENDING_CONTEXTS[key].Enqueue(new ContextCallback(onSuccess, onError));
+            }
+            // If nothing is processing this emote, make a request to get and process it.
+            else
+            {
+                PENDING_CONTEXTS[key] = new Queue<ContextCallback>();
+                PENDING_CONTEXTS[key].Enqueue(new ContextCallback(onSuccess, onError));
+                if (File.Exists(path))
+                {
+                    try{
+                        byte[] bytes = File.ReadAllBytes(path);
+                        var result = HandleData(key, bytes);
+                        if (result.data != null)
+                        {
+                            Cache(key, result.data);
+                            ResolveContext(key, CACHE[key], null);
+                        }
+                        else
+                        {
+                            ResolveContext(key, null, result.error);
+                        }
+                    }catch(Exception e)
+                    {
+                        Debug.LogError($"Error while resolving item: {key} - {e.Message}");
+                        ResolveContext(key, null, new StreamError(StreamError.ErrorCode.RemoteError, e.Message));
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"Error while resolving item: {key} - File does not exist.");
+                    ResolveContext(key, null, new StreamError(StreamError.ErrorCode.RemoteError, "File not found."));
+                }
             }
         }
 

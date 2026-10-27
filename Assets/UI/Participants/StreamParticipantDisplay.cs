@@ -1,4 +1,6 @@
 using Klak.Spout;
+using Skeletom.BattleStation;
+using Skeletom.BattleStation.Graphics.Animations;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,19 +14,19 @@ public class StreamParticipantDisplay : MonoBehaviour
     [SerializeField]
     private SpoutReceiver _faceCamDisplay;
     [SerializeField]
-    private Image _iconDisplay;
+    private AnimatedTextureDisplay _iconDisplay;
     [SerializeField]
     private MicVolumeBorder _micBorder;
 
     public string Key { get; private set; }
 
-    public void Configure(LayoutManager.StreamParticipant participant)
+    public void Configure(ParticipantManager.StreamParticipant participant)
     {
-        this.Key = participant.key;
-        _nameCard.text = participant.name;
-        _faceCamDisplay.sourceName = participant.faceSourceName;
-        _iconDisplay.sprite = participant.icon;
-        _micBorder.Configure(participant.micSourceName, participant.borderColor);
+        this.Key = participant.metadata.key;
+        _nameCard.text = participant.metadata.name;
+        _faceCamDisplay.sourceName = participant.metadata.faceSource;
+        _iconDisplay.DisplayTexture(participant.icon);
+        _micBorder.Configure(participant.metadata.micSource, participant.borderColor);
         _nameCardBackground.color = new Color(participant.borderColor.r, participant.borderColor.g, participant.borderColor.b, 0.5f);
     }
 }

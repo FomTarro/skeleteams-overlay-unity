@@ -34,6 +34,7 @@ namespace Skeletom.Essentials.Lifecycle {
                             INSTANCE = newSingleton.AddComponent<T>();
                             newSingleton.name = "(Singleton) " + typeof(T).ToString();
                             INSTANCE.enabled = true;
+                            // TODO: this can actually cause a singleton to initialize twice, if this goes out of order.
                             INSTANCE.Initialize();
                             Debug.LogWarning("[Singleton] An instance of " + typeof(T) + " is needed in the scene, so '" + newSingleton + "' was created with DontDestroyOnLoad.");
                         }

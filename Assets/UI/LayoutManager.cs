@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Klak.Spout;
+using Skeletom.BattleStation;
 using Skeletom.BattleStation.Audio;
 using Skeletom.BattleStation.Integrations.Discord;
 using Skeletom.BattleStation.Integrations.OBS;
@@ -64,24 +65,10 @@ public class LayoutManager : Singleton<LayoutManager>
     [SerializeField]
     private AudioSource _sceneTransitionJingle;
 
-    [Serializable]
-    public class StreamParticipant
-    {
-        public bool enabled;
-        public string key;
-        public string name;
-        public Color borderColor;
-        public string faceSourceName;
-        public string screenSourceName;
-        public string micSourceName;
-        public Sprite icon;
-    }
     [SerializeField]
     private StreamParticipantDisplay _participantPrefab;
     private readonly List<StreamParticipantDisplay> _participantDisplays = new();
-    [SerializeField]
-    private List<StreamParticipant> _participants;
-    private StreamParticipant _currentPresenter;
+    private ParticipantManager.StreamParticipant _currentPresenter;
     private readonly Dictionary<string, float> _micSources = new();
 
     [Serializable]
@@ -99,7 +86,27 @@ public class LayoutManager : Singleton<LayoutManager>
 
     public override void Initialize()
     {
-
+        ParticipantManager.Instance.onParticipantJoin.AddListener((participant) =>
+        {
+            Debug.LogWarning("PARTICIPANT JOIN B");
+            if (participant.metadata.enabled)
+            {
+                StreamParticipantDisplay display = Instantiate(_participantPrefab, _collabBar.transform);
+                display.Configure(participant);
+                _participantDisplays.Add(display);
+                _webServer.RegisterEndpoint(new Endpoint("/camera/presenter/" + participant.metadata.key, (req) =>
+                {
+                    // set their face cam to the main display, hide pop-out, hide from collab bar
+                    Debug.Log("Setting Presenter to: " + participant.metadata.key);
+                    SetCurrentPresenter(participant);
+                    return new EndpointResponse(200, "");
+                }));
+            }
+            if(_currentPresenter == null)
+            {
+                SetCurrentPresenter(participant);
+            }
+        });
     }
 
     // Start is called before the first frame update
@@ -124,23 +131,6 @@ public class LayoutManager : Singleton<LayoutManager>
             _micSources[$"obs_{source}"] = vol;
         });
 
-
-        foreach (StreamParticipant participant in _participants)
-        {
-            if (participant.enabled)
-            {
-                StreamParticipantDisplay display = Instantiate(_participantPrefab, _collabBar.transform);
-                display.Configure(participant);
-                _participantDisplays.Add(display);
-                _webServer.RegisterEndpoint(new Endpoint("/camera/presenter/" + participant.key, (req) =>
-                {
-                    // set their face cam to the main display, hide pop-out, hide from collab bar
-                    Debug.Log("Setting Presenter to: " + participant.key);
-                    SetCurrentPresenter(participant);
-                    return new EndpointResponse(200, "");
-                }));
-            }
-        }
         _webServer.RegisterEndpoint(new Endpoint("/camera/face", (req) =>
         {
             SetMode(PresentationMode.Face);
@@ -192,8 +182,6 @@ public class LayoutManager : Singleton<LayoutManager>
         }));
 
         _popOut.alpha = 0;
-        SetCurrentPresenter(_participants[0]);
-
 
         _webServer.RegisterEndpoint(new Endpoint("/test/raid", (req) =>
         {
@@ -242,7 +230,7 @@ public class LayoutManager : Singleton<LayoutManager>
 
     #endregion
 
-    private void SetCurrentPresenter(StreamParticipant participant)
+    private void SetCurrentPresenter(ParticipantManager.StreamParticipant participant)
     {
         _currentPresenter = participant;
         _mainDisplay.Configure(participant);
@@ -260,7 +248,7 @@ public class LayoutManager : Singleton<LayoutManager>
             {
                 foreach (StreamParticipantDisplay display in _participantDisplays)
                 {
-                    display.gameObject.SetActive(!_currentPresenter.key.Equals(display.Key));
+                    display.gameObject.SetActive(!_currentPresenter.metadata.key.Equals(display.Key));
                 }
                 if (_participantDisplays.Count <= 1)
                 {
@@ -269,7 +257,7 @@ public class LayoutManager : Singleton<LayoutManager>
                 _mainWindowMicBorder.enabled = true;
             });
             _popOut.alpha = 0;
-            _mainWindow.sourceName = _currentPresenter.faceSourceName;
+            _mainWindow.sourceName = _currentPresenter.metadata.faceSource;
         }
         else if (mode == PresentationMode.Screen)
         {
@@ -283,7 +271,7 @@ public class LayoutManager : Singleton<LayoutManager>
                 _collabBar.SetActive(true);
             });
             _popOut.alpha = 0;
-            _mainWindow.sourceName = _currentPresenter.screenSourceName;
+            _mainWindow.sourceName = _currentPresenter.metadata.screenSource;
         }
         else if (mode == PresentationMode.PopOut)
         {
@@ -292,7 +280,7 @@ public class LayoutManager : Singleton<LayoutManager>
             {
                 foreach (StreamParticipantDisplay display in _participantDisplays)
                 {
-                    display.gameObject.SetActive(!_currentPresenter.key.Equals(display.Key));
+                    display.gameObject.SetActive(!_currentPresenter.metadata.key.Equals(display.Key));
                 }
                 if (_participantDisplays.Count <= 1)
                 {
@@ -300,7 +288,7 @@ public class LayoutManager : Singleton<LayoutManager>
                 }
                 _popOut.alpha = 1;
             });
-            _mainWindow.sourceName = _currentPresenter.screenSourceName;
+            _mainWindow.sourceName = _currentPresenter.metadata.screenSource;
         }
     }
 
