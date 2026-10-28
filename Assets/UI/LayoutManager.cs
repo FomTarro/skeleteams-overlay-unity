@@ -63,7 +63,7 @@ public class LayoutManager : Singleton<LayoutManager>
 
     [SerializeField]
     private StreamParticipantDisplay _participantPrefab;
-    private readonly List<StreamParticipantDisplay> _participantDisplays = new();
+    private List<StreamParticipantDisplay> _participantDisplays = new();
     private ParticipantManager.StreamParticipant _currentPresenter;
 
     [Serializable]
@@ -98,11 +98,24 @@ public class LayoutManager : Singleton<LayoutManager>
             {
                 SetCurrentPresenter(participant);
             }
+            RefreshDiplays();
         });
 
         ParticipantManager.Instance.onParticipantLeave.AddListener((participantId) =>
         {
-
+            Debug.LogWarning("PARTICIPANT LEAVE B");
+            _webServer.UnregisterEndpoint("/camera/presenter/" + participantId);
+            if (_currentPresenter.metadata.id == participantId)
+            {
+                // TODO: go back to first presenter
+            }
+            StreamParticipantDisplay display = _participantDisplays.Find(item => item.ID == participantId);
+            if (display != null)
+            {
+                _participantDisplays.Remove(display);
+                Destroy(display.gameObject);
+            }
+            RefreshDiplays();
         });
 
         _webServer.RegisterEndpoint(new Endpoint("/camera/face", (req) =>
@@ -157,15 +170,15 @@ public class LayoutManager : Singleton<LayoutManager>
 
         _popOut.alpha = 0;
 
-        _webServer.RegisterEndpoint(new Endpoint("/test/raid", (req) =>
-        {
-            IntegrationManager.Instance.Twitch.onChannelRaid.Invoke(
-                new StreamRaid(
-                    new StreamUser("Skeletom", "12345"),
-                    500
-                ));
-            return new EndpointResponse(200, "");
-        }));
+        // _webServer.RegisterEndpoint(new Endpoint("/test/raid", (req) =>
+        // {
+        //     IntegrationManager.Instance.Twitch.onChannelRaid.Invoke(
+        //         new StreamRaid(
+        //             new StreamUser("Skeletom", "12345"),
+        //             500
+        //         ));
+        //     return new EndpointResponse(200, "");
+        // }));
     }
 
     // Update is called once per frame
@@ -220,14 +233,7 @@ public class LayoutManager : Singleton<LayoutManager>
             _mainWindowMicBorder.enabled = false;
             _cameraAnimation.StartAnimation(() =>
             {
-                foreach (StreamParticipantDisplay display in _participantDisplays)
-                {
-                    display.gameObject.SetActive(!_currentPresenter.metadata.id.Equals(display.ID));
-                }
-                if (_participantDisplays.Count <= 1)
-                {
-                    _collabBar.SetActive(false);
-                }
+                RefreshDiplays();
                 _mainWindowMicBorder.enabled = true;
             });
             _popOut.alpha = 0;
@@ -238,13 +244,10 @@ public class LayoutManager : Singleton<LayoutManager>
             _mainWindowMicBorder.enabled = false;
             _cameraAnimation.StartAnimation(() =>
             {
-                foreach (StreamParticipantDisplay display in _participantDisplays)
-                {
-                    display.gameObject.SetActive(true);
-                }
-                _collabBar.SetActive(true);
+                RefreshDiplays();
             });
             _popOut.alpha = 0;
+            // TODO: there's a slight flicker when going from screen to face.
             _mainWindow.sourceName = _currentPresenter.metadata.screenSource;
         }
         else if (mode == PresentationMode.PopOut)
@@ -252,14 +255,7 @@ public class LayoutManager : Singleton<LayoutManager>
             _mainWindowMicBorder.enabled = false;
             _cameraAnimation.StartAnimation(() =>
             {
-                foreach (StreamParticipantDisplay display in _participantDisplays)
-                {
-                    display.gameObject.SetActive(!_currentPresenter.metadata.id.Equals(display.ID));
-                }
-                if (_participantDisplays.Count <= 1)
-                {
-                    _collabBar.SetActive(false);
-                }
+                RefreshDiplays();
                 _popOut.alpha = 1;
             });
             _mainWindow.sourceName = _currentPresenter.metadata.screenSource;
@@ -268,13 +264,28 @@ public class LayoutManager : Singleton<LayoutManager>
 
     private void RefreshDiplays()
     {
-        foreach (StreamParticipantDisplay display in _participantDisplays)
+        if (_currentMode == PresentationMode.Face || _currentMode == PresentationMode.PopOut)
         {
-            display.gameObject.SetActive(!_currentPresenter.metadata.id.Equals(display.ID));
+            foreach (StreamParticipantDisplay display in _participantDisplays)
+            {
+                display.gameObject.SetActive(!_currentPresenter.metadata.id.Equals(display.ID));
+            }
+            if (_participantDisplays.Count <= 1)
+            {
+                _collabBar.SetActive(false);
+            }
+            else
+            {
+                _collabBar.SetActive(true);
+            }
         }
-        if (_participantDisplays.Count <= 1)
+        else if (_currentMode == PresentationMode.Screen)
         {
-            _collabBar.SetActive(false);
+            foreach (StreamParticipantDisplay display in _participantDisplays)
+            {
+                display.gameObject.SetActive(true);
+            }
+            _collabBar.SetActive(true);
         }
     }
 }

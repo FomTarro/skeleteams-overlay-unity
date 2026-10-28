@@ -6,6 +6,9 @@ using UnityEngine.UI;
 
 public class StreamParticipantDisplay : MonoBehaviour
 {
+    public string ID { get { return _id; } }
+    [SerializeField]
+    private string _id;
     [SerializeField]
     private TMP_Text _nameCard;
     [SerializeField]
@@ -17,15 +20,29 @@ public class StreamParticipantDisplay : MonoBehaviour
     [SerializeField]
     private MicVolumeBorder _micBorder;
 
-    public string ID { get; private set; }
-
     public void Configure(ParticipantManager.StreamParticipant participant)
     {
-        this.ID = participant.metadata.id;
+        _id = participant.metadata.id;
         _nameCard.text = participant.metadata.name;
         _faceCamDisplay.sourceName = participant.metadata.faceSource;
-        _iconDisplay.DisplayTexture(participant.icon);
+        if (participant.icon != null)
+        {
+            _iconDisplay.DisplayTexture(participant.icon);
+        }
         _micBorder.Configure(participant.metadata.micSource, participant.borderColor);
-        _nameCardBackground.color = new Color(participant.borderColor.r, participant.borderColor.g, participant.borderColor.b, 0.5f);
+        _nameCardBackground.color = new Color(participant.borderColor.r * 0.5f, participant.borderColor.g * 0.5f, participant.borderColor.b * 0.5f, 1f);
+    }
+
+    private void Update()
+    {
+        if (_micBorder.OutlineEnabled && !_iconDisplay.IsAnimating)
+        {
+            _iconDisplay.StartAnimation();
+        }
+        else if (!_micBorder.OutlineEnabled)
+        {
+            _iconDisplay.StopAnimation();
+            _iconDisplay.ResetDefaults();
+        }
     }
 }

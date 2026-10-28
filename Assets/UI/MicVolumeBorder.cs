@@ -9,10 +9,12 @@ public class MicVolumeBorder : MonoBehaviour
     [SerializeField]
     private Outline _outline;
 
+    public bool OutlineEnabled { get { return _outline.enabled; } }
+
     [SerializeField]
     private float _threshold = 0.05f;
 
-    private readonly ShiftingAverage _avg = new(10);
+    private readonly ShiftingAverage _avg = new(60);
 
     // Start is called before the first frame update
     void Update()

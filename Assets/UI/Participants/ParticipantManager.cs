@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Skeletom.BattleStation.Integrations;
-using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.IO;
 using Skeletom.Essentials.Lifecycle;
 using UnityEngine;
@@ -11,9 +10,6 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
 {
     [SerializeField]
     private StreamImageHandler _imageHandler;
-
-    [SerializeField]
-    private WebServer _webServer;
 
     public string FileFolder => "Participants";
     public string FileName => "metadata.json";
@@ -28,6 +24,8 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
 
     [SerializeField]
     private List<StreamParticipant> _loadedParticipants = new();
+    [SerializeField]
+    private List<StreamParticipant> _activeParticipants = new();
 
     private readonly Dictionary<string, float> _micSources = new();
 
@@ -50,8 +48,8 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
         {
             if (IntegrationManager.Instance.Discord.SelfUserId != user.id)
             {
-                Debug.Log($"Participant {user.displayName} has joined.");
-                CreateParticipant(user);
+                Debug.Log($"Participant {user.id} has joined.");
+                CreateParticipantFromUser(user);
             }
         });
         IntegrationManager.Instance.Discord.onUserLeave.AddListener((userId) =>
@@ -59,6 +57,7 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
             if (IntegrationManager.Instance.Discord.SelfUserId != userId)
             {
                 Debug.Log($"Participant {userId} has quit.");
+                RemoveParticipant(userId);
             }
         });
         IntegrationManager.Instance.Discord.onUserSpeakStart.AddListener((userId) =>
@@ -84,35 +83,33 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
         return 0.0f;
     }
 
-    private void CreateParticipant(StreamUser user)
+    private void RemoveParticipant(string userId)
     {
-        // StreamParticipant overrideSettings = _loadedParticipants.Find(item => user.id == item.metadata.id);
+        onParticipantLeave.Invoke(userId);
+    }
 
-        // public bool enabled;
-        // public string id;
-        // public string name;
-        // public string color;
-        // public string faceSource;
-        // public string screenSource;
-        // public string micSource;
-        // public string icon;        
-        Properties.Participant metadata = new(){
-            id=user.id,
-            name=user.displayName,
-            color="#FEB3D0",
-            faceSource=$"{user.id}_face",
-            screenSource=$"{user.id}_screen",
-            micSource=$"discord_{user.id}",
-        };
-        CreateParticipant(metadata, (success) =>
+    private void CreateParticipantFromUser(StreamUser user)
+    {
+        StreamParticipant overrideSettings = _loadedParticipants.Find(item => item.metadata.id == user.id);
+        Properties.Participant metadata = new()
         {
-            success.icon = user.avatar;
-            _loadedParticipants.Add(success);
+            id = user.id,
+            name = overrideSettings != null && !string.IsNullOrEmpty(overrideSettings.metadata.name) ? overrideSettings.metadata.name : user.displayName,
+            color = overrideSettings != null && !string.IsNullOrEmpty(overrideSettings.metadata.color) ? overrideSettings.metadata.color : "#FEB3D0",
+            faceSource = overrideSettings != null && !string.IsNullOrEmpty(overrideSettings.metadata.faceSource) ? overrideSettings.metadata.faceSource : $"{user.id}_face",
+            screenSource = overrideSettings != null && !string.IsNullOrEmpty(overrideSettings.metadata.screenSource) ? overrideSettings.metadata.screenSource : $"{user.id}_screen",
+            micSource = overrideSettings != null && !string.IsNullOrEmpty(overrideSettings.metadata.micSource) ? overrideSettings.metadata.micSource : $"discord_{user.id}",
+            icon = overrideSettings != null && !string.IsNullOrEmpty(overrideSettings.metadata.icon) ? overrideSettings.metadata.icon : null
+        };
+        CreateParticipantFromMetadata(metadata, (success) =>
+        {
+            success.icon ??= user.avatar;
+            _activeParticipants.Add(success);
             onParticipantJoin.Invoke(success);
         });
     }
 
-    private void CreateParticipant(Properties.Participant participant, Action<StreamParticipant> onCreate)
+    private void CreateParticipantFromMetadata(Properties.Participant participant, Action<StreamParticipant> onCreate)
     {
         StreamParticipant streamParticipant = new()
         {
@@ -122,6 +119,7 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
         {
             onCreate(streamParticipant);
         });
+        dependencies.AddDependency("create");
         if (!string.IsNullOrEmpty(participant.color))
         {
             Color borderColor = Color.clear;
@@ -131,7 +129,7 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
         if (!string.IsNullOrEmpty(participant.icon))
         {
             dependencies.AddDependency("icon");
-            _imageHandler.GetFromLocal(participant.icon, $"participant_icon_${participant.id}",
+            _imageHandler.GetFromLocal(participant.icon, $"participant_icon_{participant.id}",
             (img) =>
             {
                 streamParticipant.icon = img;
@@ -143,6 +141,7 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
             });
         }
         dependencies.Enable(true);
+        dependencies.ResolveDependency("create");
     }
 
     #region I/O
@@ -152,10 +151,14 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
     {
         foreach (Properties.Participant participant in data.participants)
         {
-            CreateParticipant(participant, (success) =>
+            CreateParticipantFromMetadata(participant, (success) =>
             {
                 _loadedParticipants.Add(success);
-                onParticipantJoin.Invoke(success);
+                if (success.metadata.enabled)
+                {
+                    _activeParticipants.Add(success);
+                    onParticipantJoin.Invoke(success);
+                }
             });
         }
     }
