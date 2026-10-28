@@ -19,7 +19,7 @@ public class MicVolumeBorder : MonoBehaviour
     {
         if (this.enabled)
         {
-            float vol = LayoutManager.Instance.GetMicSourceVolume(_micSource);
+            float vol = ParticipantManager.Instance.GetMicSourceVolume(_micSource);
             _avg.AddValue(vol);
             _outline.enabled = _avg.Average > _threshold;
         }

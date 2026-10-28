@@ -726,7 +726,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f35dd6d2a748faa48b2bf3c79dc33ac8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _initializationOrder: 1
+  _initializationOrder: 0
   _webServer: {fileID: 835040116}
   _collabBar: {fileID: 2132868352}
   _popOut: {fileID: 2133166906}
@@ -5516,7 +5516,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a9c691ce4a34cc6b8297cfd2b84d5bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _initializationOrder: 0
+  _initializationOrder: 10
   _twitch: {fileID: 687667457}
   _discord: {fileID: 1286638396}
   _obs: {fileID: 1325093187}
@@ -8899,7 +8899,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99d207c506892626faae6e76c877ef9e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _initializationOrder: 0
+  _initializationOrder: 1
   _imageHandler: {fileID: 1083951023}
   _webServer: {fileID: 835040116}
   _loadedParticipants: []

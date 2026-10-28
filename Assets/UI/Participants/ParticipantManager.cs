@@ -11,27 +11,11 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
 {
     [SerializeField]
     private StreamImageHandler _imageHandler;
-    public StreamImageHandler ImageHandler
-    {
-        get
-        {
-            if(_imageHandler == null)
-            {
-                _imageHandler = GetComponent<StreamImageHandler>();
-                if(_imageHandler == null)
-                {
-                    _imageHandler = gameObject.AddComponent<StreamImageHandler>();
-                }
-            }
-            return _imageHandler;
-        }
-    }
 
     [SerializeField]
     private WebServer _webServer;
 
     public string FileFolder => "Participants";
-
     public string FileName => "metadata.json";
 
     [Serializable]
@@ -44,7 +28,6 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
 
     [SerializeField]
     private List<StreamParticipant> _loadedParticipants = new();
-    [SerializeField]
 
     private readonly Dictionary<string, float> _micSources = new();
 
@@ -62,17 +45,13 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
 
     public override void Initialize()
     {
-        
-    }
-
-    private void Start()
-    {
         FromSaveData(SaveDataManager.ReadSaveData(this));
         IntegrationManager.Instance.Discord.onUserJoin.AddListener((user) =>
         {
             if (IntegrationManager.Instance.Discord.SelfUserId != user.id)
             {
                 Debug.Log($"Participant {user.displayName} has joined.");
+                CreateParticipant(user);
             }
         });
         IntegrationManager.Instance.Discord.onUserLeave.AddListener((userId) =>
@@ -84,17 +63,11 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
         });
         IntegrationManager.Instance.Discord.onUserSpeakStart.AddListener((userId) =>
         {
-            if (IntegrationManager.Instance.Discord.SelfUserId != userId)
-            {
-                _micSources[$"discord_{userId}"] = 1.0f;
-            }
+            _micSources[$"discord_{userId}"] = 1.0f;
         });
         IntegrationManager.Instance.Discord.onUserSpeakStop.AddListener((userId) =>
         {
-            if (IntegrationManager.Instance.Discord.SelfUserId != userId)
-            {
-                _micSources[$"discord_{userId}"] = 0.0f;
-            }
+            _micSources[$"discord_{userId}"] = 0.0f;
         });
         IntegrationManager.Instance.OBS.onVolume.AddListener((source, vol) =>
         {
@@ -113,48 +86,77 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
 
     private void CreateParticipant(StreamUser user)
     {
-        
+        // StreamParticipant overrideSettings = _loadedParticipants.Find(item => user.id == item.metadata.id);
+
+        // public bool enabled;
+        // public string id;
+        // public string name;
+        // public string color;
+        // public string faceSource;
+        // public string screenSource;
+        // public string micSource;
+        // public string icon;        
+        Properties.Participant metadata = new(){
+            id=user.id,
+            name=user.displayName,
+            color="#FEB3D0",
+            faceSource=$"{user.id}_face",
+            screenSource=$"{user.id}_screen",
+            micSource=$"discord_{user.id}",
+        };
+        CreateParticipant(metadata, (success) =>
+        {
+            success.icon = user.avatar;
+            _loadedParticipants.Add(success);
+            onParticipantJoin.Invoke(success);
+        });
+    }
+
+    private void CreateParticipant(Properties.Participant participant, Action<StreamParticipant> onCreate)
+    {
+        StreamParticipant streamParticipant = new()
+        {
+            metadata = participant,
+        };
+        DependencyManager dependencies = new(() =>
+        {
+            onCreate(streamParticipant);
+        });
+        if (!string.IsNullOrEmpty(participant.color))
+        {
+            Color borderColor = Color.clear;
+            ColorUtility.TryParseHtmlString(participant.color, out borderColor);
+            streamParticipant.borderColor = borderColor;
+        }
+        if (!string.IsNullOrEmpty(participant.icon))
+        {
+            dependencies.AddDependency("icon");
+            _imageHandler.GetFromLocal(participant.icon, $"participant_icon_${participant.id}",
+            (img) =>
+            {
+                streamParticipant.icon = img;
+                dependencies.ResolveDependency("icon");
+            },
+            (err) =>
+            {
+                dependencies.ResolveDependency("icon");
+            });
+        }
+        dependencies.Enable(true);
     }
 
     #region I/O
+
 
     public void FromSaveData(Properties data)
     {
         foreach (Properties.Participant participant in data.participants)
         {
-            StreamParticipant streamParticipant = new()
+            CreateParticipant(participant, (success) =>
             {
-                metadata = participant,
-            };
-            DependencyManager dependencies = new(() =>
-            {
-                _loadedParticipants.Add(streamParticipant);
-                if(streamParticipant.metadata.enabled){
-                    Debug.LogWarning("PARTICIPANT JOIN A");
-                    onParticipantJoin.Invoke(streamParticipant);
-                }
+                _loadedParticipants.Add(success);
+                onParticipantJoin.Invoke(success);
             });
-            if (!string.IsNullOrEmpty(participant.color))
-            {
-                Color borderColor = Color.clear;
-                ColorUtility.TryParseHtmlString(participant.color, out borderColor);
-                streamParticipant.borderColor = borderColor;
-            }
-            if (!string.IsNullOrEmpty(participant.icon))
-            {
-                dependencies.AddDependency("icon");
-                _imageHandler.GetFromLocal(participant.icon, $"participant_icon_${participant.key}",
-                (img) =>
-                {
-                    streamParticipant.icon = img;
-                    dependencies.ResolveDependency("icon");
-                },
-                (err) =>
-                {
-                    dependencies.ResolveDependency("icon");
-                });
-            }
-            dependencies.Enable(true);
         }
     }
 
@@ -172,7 +174,7 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
         public struct Participant
         {
             public bool enabled;
-            public string key;
+            public string id;
             public string name;
             public string color;
             public string faceSource;

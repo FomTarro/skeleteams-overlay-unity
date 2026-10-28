@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Skeletom.BattleStation.Integrations.OBS.Models;
+using Skeletom.BattleStation.Integrations.OBS.Socket;
 using Skeletom.Essentials.IO;
 using UnityEngine;
 using UnityEngine.Events;

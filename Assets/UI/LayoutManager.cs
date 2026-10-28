@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Klak.Spout;
-using Skeletom.BattleStation;
 using Skeletom.BattleStation.Audio;
 using Skeletom.BattleStation.Integrations;
 using Skeletom.BattleStation.Server;
@@ -66,7 +65,6 @@ public class LayoutManager : Singleton<LayoutManager>
     private StreamParticipantDisplay _participantPrefab;
     private readonly List<StreamParticipantDisplay> _participantDisplays = new();
     private ParticipantManager.StreamParticipant _currentPresenter;
-    private readonly Dictionary<string, float> _micSources = new();
 
     [Serializable]
     private enum PresentationMode
@@ -86,46 +84,25 @@ public class LayoutManager : Singleton<LayoutManager>
         ParticipantManager.Instance.onParticipantJoin.AddListener((participant) =>
         {
             Debug.LogWarning("PARTICIPANT JOIN B");
-            if (participant.metadata.enabled)
+            StreamParticipantDisplay display = Instantiate(_participantPrefab, _collabBar.transform);
+            display.Configure(participant);
+            _participantDisplays.Add(display);
+            _webServer.RegisterEndpoint(new Endpoint("/camera/presenter/" + participant.metadata.id, (req) =>
             {
-                StreamParticipantDisplay display = Instantiate(_participantPrefab, _collabBar.transform);
-                display.Configure(participant);
-                _participantDisplays.Add(display);
-                _webServer.RegisterEndpoint(new Endpoint("/camera/presenter/" + participant.metadata.key, (req) =>
-                {
-                    // set their face cam to the main display, hide pop-out, hide from collab bar
-                    Debug.Log("Setting Presenter to: " + participant.metadata.key);
-                    SetCurrentPresenter(participant);
-                    return new EndpointResponse(200, "");
-                }));
-            }
-            if(_currentPresenter == null)
+                // set their face cam to the main display, hide pop-out, hide from collab bar
+                Debug.Log("Setting Presenter to: " + participant.metadata.id);
+                SetCurrentPresenter(participant);
+                return new EndpointResponse(200, "");
+            }));
+            if (_currentPresenter == null)
             {
                 SetCurrentPresenter(participant);
             }
         });
-    }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        // DiscordIntegration.Instance.onUserJoin.AddListener((user) =>
-        // {
-        //     if(DiscordIntegration.Instance.SelfUserId != user.id){
-        //         Debug.Log($"Participant {user} has {(status ? "joined" : "quit")}.");
-        //     }
-        // });
-        IntegrationManager.Instance.Discord.onUserSpeakStart.AddListener((user) =>
+        ParticipantManager.Instance.onParticipantLeave.AddListener((participantId) =>
         {
-            _micSources[$"discord_{user}"] = 1.0f;
-        });
-        IntegrationManager.Instance.Discord.onUserSpeakStop.AddListener((user) =>
-        {
-            _micSources[$"discord_{user}"] = 0.0f;
-        });
-        IntegrationManager.Instance.OBS.onVolume.AddListener((source, vol) =>
-        {
-            _micSources[$"obs_{source}"] = vol;
+
         });
 
         _webServer.RegisterEndpoint(new Endpoint("/camera/face", (req) =>
@@ -183,8 +160,8 @@ public class LayoutManager : Singleton<LayoutManager>
         _webServer.RegisterEndpoint(new Endpoint("/test/raid", (req) =>
         {
             IntegrationManager.Instance.Twitch.onChannelRaid.Invoke(
-                new Skeletom.BattleStation.Integrations.StreamRaid(
-                    new Skeletom.BattleStation.Integrations.StreamUser("Skeletom", "12345"),
+                new StreamRaid(
+                    new StreamUser("Skeletom", "12345"),
                     500
                 ));
             return new EndpointResponse(200, "");
@@ -245,7 +222,7 @@ public class LayoutManager : Singleton<LayoutManager>
             {
                 foreach (StreamParticipantDisplay display in _participantDisplays)
                 {
-                    display.gameObject.SetActive(!_currentPresenter.metadata.key.Equals(display.Key));
+                    display.gameObject.SetActive(!_currentPresenter.metadata.id.Equals(display.ID));
                 }
                 if (_participantDisplays.Count <= 1)
                 {
@@ -277,7 +254,7 @@ public class LayoutManager : Singleton<LayoutManager>
             {
                 foreach (StreamParticipantDisplay display in _participantDisplays)
                 {
-                    display.gameObject.SetActive(!_currentPresenter.metadata.key.Equals(display.Key));
+                    display.gameObject.SetActive(!_currentPresenter.metadata.id.Equals(display.ID));
                 }
                 if (_participantDisplays.Count <= 1)
                 {
@@ -289,12 +266,15 @@ public class LayoutManager : Singleton<LayoutManager>
         }
     }
 
-    public float GetMicSourceVolume(string source)
+    private void RefreshDiplays()
     {
-        if (_micSources.ContainsKey(source))
+        foreach (StreamParticipantDisplay display in _participantDisplays)
         {
-            return _micSources[source];
+            display.gameObject.SetActive(!_currentPresenter.metadata.id.Equals(display.ID));
         }
-        return 0.0f;
+        if (_participantDisplays.Count <= 1)
+        {
+            _collabBar.SetActive(false);
+        }
     }
 }

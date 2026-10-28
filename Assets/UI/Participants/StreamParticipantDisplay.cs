@@ -17,11 +17,11 @@ public class StreamParticipantDisplay : MonoBehaviour
     [SerializeField]
     private MicVolumeBorder _micBorder;
 
-    public string Key { get; private set; }
+    public string ID { get; private set; }
 
     public void Configure(ParticipantManager.StreamParticipant participant)
     {
-        this.Key = participant.metadata.key;
+        this.ID = participant.metadata.id;
         _nameCard.text = participant.metadata.name;
         _faceCamDisplay.sourceName = participant.metadata.faceSource;
         _iconDisplay.DisplayTexture(participant.icon);

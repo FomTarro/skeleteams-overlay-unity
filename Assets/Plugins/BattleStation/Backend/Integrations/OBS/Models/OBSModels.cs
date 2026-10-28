@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Skeletom.BattleStation.Integrations.OBS.Models
+namespace Skeletom.BattleStation.Integrations.OBS.Socket
 {
     #region Enums
 

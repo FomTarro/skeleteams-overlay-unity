@@ -17,7 +17,7 @@ namespace Skeletom.Essentials.Lifecycle
         /// <summary>
         /// Method to do ordered loading within
         /// 
-        /// Will be called after Awake()
+        /// Will be called after Scene Load
         /// </summary>
         public abstract void Initialize();
 
