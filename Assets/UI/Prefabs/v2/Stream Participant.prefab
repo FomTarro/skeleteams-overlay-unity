@@ -801,12 +801,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5fdd053f03ad684cb79dbace0ef579f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shadowColor: {r: 0, g: 0, b: 0, a: 0.09411765}
-  shadowDistance: {x: 1, y: -1}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.18431373}
+  shadowDistance: {x: 10, y: -10}
   m_UseGraphicAlpha: 1
-  iterations: 10
-  shadowSpread: {x: 24, y: 24}
-  aspectRatio: NaN
+  iterations: 8
+  shadowSpread: {x: 2, y: 2}
+  aspectRatio: 1.7641277
 --- !u!114 &1325599604358382967
 MonoBehaviour:
   m_ObjectHideFlags: 0

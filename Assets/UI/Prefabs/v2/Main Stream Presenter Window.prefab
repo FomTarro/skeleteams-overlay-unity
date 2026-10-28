@@ -1644,6 +1644,26 @@ PrefabInstance:
       propertyPath: aspectRatio
       value: 1.3333334
       objectReference: {fileID: 0}
+    - target: {fileID: 6692068668028768319, guid: 72fd40f2b2400014e98c0b384dae3875, type: 3}
+      propertyPath: shadowColor.a
+      value: 0.09411765
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692068668028768319, guid: 72fd40f2b2400014e98c0b384dae3875, type: 3}
+      propertyPath: shadowSpread.x
+      value: 24
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692068668028768319, guid: 72fd40f2b2400014e98c0b384dae3875, type: 3}
+      propertyPath: shadowSpread.y
+      value: 24
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692068668028768319, guid: 72fd40f2b2400014e98c0b384dae3875, type: 3}
+      propertyPath: shadowDistance.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692068668028768319, guid: 72fd40f2b2400014e98c0b384dae3875, type: 3}
+      propertyPath: shadowDistance.y
+      value: -1
+      objectReference: {fileID: 0}
     - target: {fileID: 7254887536679195735, guid: 72fd40f2b2400014e98c0b384dae3875, type: 3}
       propertyPath: m_Name
       value: Pop-Out
@@ -1875,10 +1895,6 @@ PrefabInstance:
     - target: {fileID: 6652962659233747997, guid: 72fd40f2b2400014e98c0b384dae3875, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6692068668028768319, guid: 72fd40f2b2400014e98c0b384dae3875, type: 3}
-      propertyPath: aspectRatio
-      value: 1.7598039
       objectReference: {fileID: 0}
     - target: {fileID: 7254887536679195735, guid: 72fd40f2b2400014e98c0b384dae3875, type: 3}
       propertyPath: m_Name

@@ -170,15 +170,15 @@ public class LayoutManager : Singleton<LayoutManager>
 
         _popOut.alpha = 0;
 
-        // _webServer.RegisterEndpoint(new Endpoint("/test/raid", (req) =>
-        // {
-        //     IntegrationManager.Instance.Twitch.onChannelRaid.Invoke(
-        //         new StreamRaid(
-        //             new StreamUser("Skeletom", "12345"),
-        //             500
-        //         ));
-        //     return new EndpointResponse(200, "");
-        // }));
+        _webServer.RegisterEndpoint(new Endpoint("/test/raid", (req) =>
+        {
+            IntegrationManager.Instance.Twitch.onChannelRaid.Invoke(
+                new StreamRaid(
+                    new StreamUser("Skeletom", "12345"),
+                    500
+                ));
+            return new EndpointResponse(200, "");
+        }));
     }
 
     // Update is called once per frame
