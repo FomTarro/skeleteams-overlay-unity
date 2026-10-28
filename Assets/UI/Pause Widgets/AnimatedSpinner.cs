@@ -15,8 +15,6 @@ public class AnimatedSpinner : BaseAnimatedElement
 
     public Vector3 rotationDirSpeed = Vector3.zero;
 
-    public int beatsPerCycle = 4;
-
     protected override void ResetImplementation()
     {
     }
@@ -26,10 +24,10 @@ public class AnimatedSpinner : BaseAnimatedElement
         while (true)
         {
             float deg = MathUtils.Normalize(
-                MusicManager.Instance.Beat.currentBeat, 
-                0, 
-                MusicManager.Instance.Beat.beatsPerMeasure, 
-                0, 
+                MusicManager.Instance.Beat.currentBeat,
+                0,
+                MusicManager.Instance.Beat.beatsPerMeasure,
+                0,
                 360
             );
             image.transform.eulerAngles = new Vector3(0, 0, deg);
