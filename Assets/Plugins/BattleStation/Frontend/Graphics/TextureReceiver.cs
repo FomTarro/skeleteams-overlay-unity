@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using System.Linq;
 using Klak.Spout;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +10,8 @@ public class TextureReceiver : MonoBehaviour
 
     private SpoutReceiver _receiver;
 
+    private bool _sourceExists;
+
     private void OnEnable()
     {
         _receiver = GetComponent<SpoutReceiver>();
@@ -18,10 +19,24 @@ public class TextureReceiver : MonoBehaviour
 
     private void Update()
     {
+        _sourceExists = CheckSourceExists();
         if (_target != null && _receiver != null)
         {
             _target.texture = _receiver.receivedTexture;
+            _target.enabled = _receiver.receivedTexture != null && _sourceExists;
         }
     }
-    
+
+    private bool CheckSourceExists()
+    {
+        foreach (var name in SpoutManager.GetSourceNames())
+        {
+            if (name == _receiver.sourceName)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

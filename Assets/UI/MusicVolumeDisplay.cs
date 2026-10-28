@@ -1,3 +1,4 @@
+using Skeletom.BattleStation.Audio;
 using UnityEngine;
 
 public class MusicVolumeDisplay : MonoBehaviour
@@ -22,11 +23,11 @@ public class MusicVolumeDisplay : MonoBehaviour
         {
             if (_title != null)
             {
-                _title.text = $"\"{song.name}\"";
+                _title.text = $"\"{song.metadata.name}\"";
             }
             if (_artist != null)
             {
-                _artist.text = $"({song.artist} / {song.year})";
+                _artist.text = $"({song.metadata.artist} / {song.metadata.year})";
             }
         });
     }

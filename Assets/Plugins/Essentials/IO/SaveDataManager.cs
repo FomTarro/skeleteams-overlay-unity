@@ -2,26 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Skeletom.Essentials.Lifecycle;
 using UnityEngine;
 
 namespace Skeletom.Essentials.IO
 {
-
 	/// <summary>
 	/// Manager for handling Read/Write operations.
 	/// </summary>
-	public class SaveDataManager : Singleton<SaveDataManager>
+	public class SaveDataManager
 	{
 
 		private static string ROOT_PATH { get { return Application.persistentDataPath; } }
 
-		public override void Initialize() { }
-
 		/// <summary>
 		/// Opens the root data folder in the file browser.
 		/// </summary>
-		public void OpenDataFolder()
+		public static void OpenDataFolder()
 		{
 			Application.OpenURL(ROOT_PATH);
 		}
@@ -32,7 +28,7 @@ namespace Skeletom.Essentials.IO
 		/// <typeparam name="T">The type of save data.</typeparam>
 		/// <param name="source">The Saveable instance.</param>
 		/// <returns>The full directory</returns>
-		public string GetDirectory<T>(ISaveable<T> source) where T : BaseSaveData
+		public static string GetDirectory<T>(ISaveable<T> source) where T : BaseSaveData
 		{
 			string folder = string.Empty;
 			bool directoryExists = CreateFolder(source.FileFolder, out folder);
@@ -44,7 +40,7 @@ namespace Skeletom.Essentials.IO
 		/// </summary>
 		/// <param name="source">The Saveable instance.</param>
 		/// <typeparam name="T">The type of save data.</typeparam>
-		public void WriteSaveData<T>(ISaveable<T> source) where T : BaseSaveData
+		public static void WriteSaveData<T>(ISaveable<T> source) where T : BaseSaveData
 		{
 			try
 			{
@@ -74,7 +70,7 @@ namespace Skeletom.Essentials.IO
 		/// <param name="source">The Saveable instance.</param>
 		/// <typeparam name="T">The type of save data.</typeparam>
 		/// <returns>The data which was read.</returns>
-		public T ReadSaveData<T>(ISaveable<T> source) where T : BaseSaveData, new()
+		public static T ReadSaveData<T>(ISaveable<T> source) where T : BaseSaveData, new()
 		{
 			try
 			{
@@ -139,7 +135,7 @@ namespace Skeletom.Essentials.IO
 		/// <param name="directory">The directroy to iterate over.</param>
 		/// <param name="onFile">The callback to execute on each file.</param>
 		/// <returns>List of all iterated files.</returns>
-		public List<FileData> IterateFilesInDirectory(string directory, Action<FileData> onFile)
+		public static List<FileData> IterateFilesInDirectory(string directory, Action<FileData> onFile)
 		{
 			string[] files = new string[0];
 			try
@@ -178,7 +174,7 @@ namespace Skeletom.Essentials.IO
 		/// <param name="filePaths">The list of file paths to copy.</param>
 		/// <param name="filter">The filter to apply to the list of files.</param>
 		/// <returns>List of all copied files</returns>
-		public List<FileData> CopyFilesToDirectory(string directory, List<string> filePaths, Func<FileData, bool> filter)
+		public static List<FileData> CopyFilesToDirectory(string directory, List<string> filePaths, Func<FileData, bool> filter)
 		{
 			List<FileData> newFiles = new();
 			if (Directory.Exists(directory))
@@ -214,7 +210,7 @@ namespace Skeletom.Essentials.IO
 		/// </summary>
 		/// <param name="filePath"></param>
 		/// <returns></returns>
-		public string MakeFileSystemURI(string filePath)
+		public static string MakeFileSystemURI(string filePath)
 		{
 			return new Uri(filePath).AbsoluteUri; 
 		}
@@ -226,7 +222,7 @@ namespace Skeletom.Essentials.IO
 			public TextAsset fileContent;
 		}
 
-		public bool WriteImage(string directory, string filename, Texture2D image)
+		public static bool WriteImage(string directory, string filename, Texture2D image)
 		{
 			try
 			{
@@ -240,7 +236,7 @@ namespace Skeletom.Essentials.IO
 			return false;
 		}
 
-		public bool WriteFile(string directory, string fileName, string content)
+		public static bool WriteFile(string directory, string fileName, string content)
 		{
 			try
 			{
@@ -254,7 +250,7 @@ namespace Skeletom.Essentials.IO
 			return false;
 		}
 
-		public bool WriteFile(string directory, GenericFile file)
+		public static bool WriteFile(string directory, GenericFile file)
 		{
 			try
 			{
@@ -268,7 +264,7 @@ namespace Skeletom.Essentials.IO
 			return false;
 		}
 
-		private bool WriteFile(string directory, string filename, byte[] bytes)
+		private static bool WriteFile(string directory, string filename, byte[] bytes)
 		{
 			try
 			{

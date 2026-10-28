@@ -786,6 +786,7 @@ GameObject:
   - component: {fileID: 8627548676874641983}
   - component: {fileID: 799551993376141079}
   - component: {fileID: 9161220905904029921}
+  - component: {fileID: 877654636422067563}
   m_Layer: 5
   m_Name: Text Container
   m_TagString: Untagged
@@ -897,6 +898,24 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &877654636422067563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4413934136323980477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5fdd053f03ad684cb79dbace0ef579f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.18431373}
+  shadowDistance: {x: 10, y: -10}
+  m_UseGraphicAlpha: 1
+  iterations: 8
+  shadowSpread: {x: 2, y: 2}
+  aspectRatio: 9.541667
 --- !u!1 &8056323191253977774
 GameObject:
   m_ObjectHideFlags: 0
@@ -1086,6 +1105,8 @@ MonoBehaviour:
   animateLoop: 0
   _animateDirection: 0
   _image: {fileID: 7946516825465324482}
+  _tex:
+    frames: []
 --- !u!114 &7946516825465324482
 MonoBehaviour:
   m_ObjectHideFlags: 0

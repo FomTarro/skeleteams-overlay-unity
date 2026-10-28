@@ -1,7 +1,6 @@
 using System;
 using Skeletom.BattleStation.Graphics.Animations;
 using Skeletom.BattleStation.Integrations;
-using Skeletom.BattleStation.Integrations.Twitch;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -60,6 +59,6 @@ public class GenericStreamAlert : StreamEventGameObject
 
     public void ShoutOutUser()
     {
-        TwitchIntegration.Instance.SendShoutout(_userId, () => { }, (err) => { Debug.LogError(err); });
+        IntegrationManager.Instance.Twitch.SendShoutout(_userId, () => { }, (err) => { Debug.LogError(err); });
     }
 }

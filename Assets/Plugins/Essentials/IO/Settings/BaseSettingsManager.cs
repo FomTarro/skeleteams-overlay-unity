@@ -15,7 +15,7 @@ namespace Skeletom.Essentials.IO
         {
             if (!IsLoading)
             {
-                SaveDataManager.Instance.WriteSaveData(this);
+                SaveDataManager.WriteSaveData(this);
                 LoadSettings();
             }
         }
@@ -24,7 +24,7 @@ namespace Skeletom.Essentials.IO
         {
             if (!IsLoading)
             {
-                FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+                FromSaveData(SaveDataManager.ReadSaveData(this));
             }
         }
 

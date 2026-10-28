@@ -35,12 +35,13 @@ namespace Skeletom.BattleStation.Graphics.Animations
 
         [SerializeField]
         private RawImage _image;
-
+        [SerializeField]
         private AnimatedTexture _tex;
 
         public void DisplayTexture(AnimatedTexture texture)
         {
             _tex = texture;
+            ResetDefaults();
         }
 
         protected override IEnumerator Animate()

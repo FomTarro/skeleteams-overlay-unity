@@ -1,6 +1,4 @@
-using System;
 using Skeletom.BattleStation.Integrations;
-using Skeletom.BattleStation.Integrations.Twitch;
 using UnityEngine;
 
 public class GenericStreamAlertLog : StreamEventLogGameObject<GenericStreamAlert>
@@ -11,7 +9,7 @@ public class GenericStreamAlertLog : StreamEventLogGameObject<GenericStreamAlert
     // Start is called before the first frame update
     void Start()
     {
-        TwitchIntegration.Instance.onChannelRaid.AddListener((raid) =>
+        IntegrationManager.Instance.Twitch.onChannelRaid.AddListener((raid) =>
         {
             StreamEvent content = new(
                 raid.raider,
@@ -24,7 +22,7 @@ public class GenericStreamAlertLog : StreamEventLogGameObject<GenericStreamAlert
             obj.SetLog(this);
             obj.transform.SetParent(_logParent);
         });
-        TwitchIntegration.Instance.onChatRedeem.AddListener((redeem) =>
+        IntegrationManager.Instance.Twitch.onChatRedeem.AddListener((redeem) =>
         {
             Debug.LogWarning(redeem.rewardId);
             // TODO: this is hardcoded, can we change that later?
