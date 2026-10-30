@@ -10,11 +10,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1982953872586797196, guid: e7c88c4d1c3079ce1a2d20abac7f5a0c, type: 3}
       propertyPath: m_Spacing
-      value: 24
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 1982953872586797196, guid: e7c88c4d1c3079ce1a2d20abac7f5a0c, type: 3}
       propertyPath: m_Padding.m_Top
-      value: 72
+      value: 48
       objectReference: {fileID: 0}
     - target: {fileID: 1982953872586797196, guid: e7c88c4d1c3079ce1a2d20abac7f5a0c, type: 3}
       propertyPath: m_ChildAlignment
@@ -22,11 +22,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1982953872586797196, guid: e7c88c4d1c3079ce1a2d20abac7f5a0c, type: 3}
       propertyPath: m_Padding.m_Right
-      value: 164
+      value: 48
       objectReference: {fileID: 0}
     - target: {fileID: 1982953872586797196, guid: e7c88c4d1c3079ce1a2d20abac7f5a0c, type: 3}
       propertyPath: m_ChildControlHeight
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1982953872586797196, guid: e7c88c4d1c3079ce1a2d20abac7f5a0c, type: 3}
+      propertyPath: m_ReverseArrangement
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2592531652462075459, guid: e7c88c4d1c3079ce1a2d20abac7f5a0c, type: 3}
       propertyPath: m_AnchorMax.x

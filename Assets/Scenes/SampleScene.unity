@@ -17942,7 +17942,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4385099483631911171, guid: 949bb1623132f08b49892963bd8580bd, type: 3}
       propertyPath: m_ChildForceExpandWidth
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4385099483631911171, guid: 949bb1623132f08b49892963bd8580bd, type: 3}
       propertyPath: m_ChildForceExpandHeight
