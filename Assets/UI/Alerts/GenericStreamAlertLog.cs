@@ -9,19 +9,6 @@ public class GenericStreamAlertLog : StreamEventLogGameObject<GenericStreamAlert
     // Start is called before the first frame update
     void Start()
     {
-        IntegrationManager.Instance.Twitch.onChannelRaid.AddListener((raid) =>
-        {
-            StreamEvent content = new(
-                raid.raider,
-                "Raid Alert",
-                "Incoming Channel Raid",
-                $"from {raid.raider.displayName}",
-                $"with {raid.viewers} raiders"
-            );
-            var obj = Display(content);
-            obj.SetLog(this);
-            obj.transform.SetParent(_logParent);
-        });
         IntegrationManager.Instance.Twitch.onChatRedeem.AddListener((redeem) =>
         {
             Debug.LogWarning(redeem.rewardId);
@@ -39,6 +26,19 @@ public class GenericStreamAlertLog : StreamEventLogGameObject<GenericStreamAlert
                 obj.SetLog(this);
                 obj.transform.SetParent(_logParent);
             }
+        });
+        IntegrationManager.Instance.Twitch.onChannelPaidSubscription.AddListener((redeem) =>
+        {
+            StreamEvent content = new(
+                redeem.subscriber,
+                "Paid Subscription",
+                "What should go here?",
+                $"{redeem.subscriber.displayName} has subscribed",
+                $"for {redeem.streak} months"
+            );
+            var obj = Display(content);
+            obj.SetLog(this);
+            obj.transform.SetParent(_logParent);
         });
     }
 }

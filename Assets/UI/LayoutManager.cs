@@ -179,6 +179,15 @@ public class LayoutManager : Singleton<LayoutManager>
                 ));
             return new EndpointResponse(200, "");
         }));
+
+        _webServer.RegisterEndpoint(new Endpoint("/test/sub", (req) =>
+        {
+            IntegrationManager.Instance.Twitch.onChannelPaidSubscription.Invoke(
+                new StreamChannelPaidSubscription(
+                    new StreamUser("Skeletom", "12345")
+                ));
+            return new EndpointResponse(200, "");
+        }));
     }
 
     // Update is called once per frame

@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 public class GenericStreamAlert : StreamEventGameObject
 {
-    private GenericStreamAlertLog _log;
+    private StreamEventLogGameObject<GenericStreamAlert> _log;
     private string _id;
     private string _userId;
     [SerializeField]
@@ -31,7 +31,7 @@ public class GenericStreamAlert : StreamEventGameObject
     private Button _shoutoutButton;
 
 
-    public void SetLog(GenericStreamAlertLog log)
+    public void SetLog(StreamEventLogGameObject<GenericStreamAlert> log)
     {
         _log = log;
     }
@@ -54,6 +54,7 @@ public class GenericStreamAlert : StreamEventGameObject
 
     public override void Dispose()
     {
+        _jingle.Stop();
         _animator.FadeTo(0, 0.5f, () => { _log.Dispose(_id); });
     }
 

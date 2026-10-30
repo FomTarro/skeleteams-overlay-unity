@@ -1,4 +1,3 @@
-using System.Linq;
 using Klak.Spout;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,7 +22,7 @@ public class TextureReceiver : MonoBehaviour
         if (_target != null && _receiver != null)
         {
             _target.texture = _receiver.receivedTexture;
-            _target.enabled = _receiver.receivedTexture != null && _sourceExists;
+            _target.enabled = _sourceExists && _receiver.receivedTexture != null;
         }
     }
 
