@@ -36,6 +36,8 @@ public class LayoutManager : Singleton<LayoutManager>
     [SerializeField]
     private CanvasGroup _chatting;
     [SerializeField]
+    private CanvasGroup _ending;
+    [SerializeField]
     private PauseScreen _pause;
 
     [Header("Events")]
@@ -57,6 +59,7 @@ public class LayoutManager : Singleton<LayoutManager>
     // TODO: this becomes part of the config
     private readonly string _chattingSong = "cafe";
     private readonly string _waitingSong = "hold";
+    private readonly string _mainSong = "skelenova";
 
     [SerializeField]
     private AudioSource _sceneTransitionJingle;
@@ -83,7 +86,6 @@ public class LayoutManager : Singleton<LayoutManager>
     {
         ParticipantManager.Instance.onParticipantJoin.AddListener((participant) =>
         {
-            Debug.LogWarning("PARTICIPANT JOIN B");
             StreamParticipantDisplay display = Instantiate(_participantPrefab, _collabBar.transform);
             display.Configure(participant);
             _participantDisplays.Add(display);
@@ -103,7 +105,6 @@ public class LayoutManager : Singleton<LayoutManager>
 
         ParticipantManager.Instance.onParticipantLeave.AddListener((participantId) =>
         {
-            Debug.LogWarning("PARTICIPANT LEAVE B");
             _webServer.UnregisterEndpoint("/camera/presenter/" + participantId);
             if (_currentPresenter.metadata.id == participantId)
             {
@@ -140,17 +141,28 @@ public class LayoutManager : Singleton<LayoutManager>
         {
             _waiting.alpha = 1;
             _chatting.alpha = 0;
-            _sceneRelativeVolume = 0.80f;
-            MusicManager.Instance.PlayTrack(_waitingSong, _sceneRelativeVolume);
+            _ending.alpha = 0;
+            MusicManager.Instance.RelativeSceneVolume = 0.80f;
+            MusicManager.Instance.PlayTrack(_waitingSong, MusicManager.Instance.RelativeSceneVolume);
             return new EndpointResponse(200, "");
         }));
         _webServer.RegisterEndpoint(new Endpoint("/scene/chatting", (req) =>
         {
             _waiting.alpha = 0;
             _chatting.alpha = 1;
-            _sceneRelativeVolume = 0.35f;
+            _ending.alpha = 0;
+            MusicManager.Instance.RelativeSceneVolume = 0.35f;
             _sceneTransitionJingle.Play();
-            MusicManager.Instance.PlayTrack(_chattingSong, _sceneRelativeVolume);
+            MusicManager.Instance.PlayTrack(_chattingSong, MusicManager.Instance.RelativeSceneVolume);
+            return new EndpointResponse(200, "");
+        }));
+        _webServer.RegisterEndpoint(new Endpoint("/scene/ending", (req) =>
+        {
+            _waiting.alpha = 0;
+            _chatting.alpha = 0;
+            _ending.alpha = 1;
+            MusicManager.Instance.RelativeSceneVolume = 0.80f;
+            MusicManager.Instance.PlayTrack(_waitingSong, MusicManager.Instance.RelativeSceneVolume);
             return new EndpointResponse(200, "");
         }));
 
@@ -163,7 +175,7 @@ public class LayoutManager : Singleton<LayoutManager>
             }
             else
             {
-                MusicManager.Instance.PlayTrack(_chattingSong, _sceneRelativeVolume);
+                MusicManager.Instance.PlayTrack(_chattingSong, MusicManager.Instance.RelativeSceneVolume);
             }
             return new EndpointResponse(200, "");
         }));

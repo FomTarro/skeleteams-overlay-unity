@@ -19,16 +19,14 @@ public class MicVolumeBorder : MonoBehaviour
     // Start is called before the first frame update
     void Update()
     {
-        if (this.enabled)
-        {
-            float vol = ParticipantManager.Instance.GetMicSourceVolume(_micSource);
-            _avg.AddValue(vol);
-            _outline.enabled = _avg.Average > _threshold;
-        }
-        else
-        {
-            _outline.enabled = false;
-        }
+        float vol = ParticipantManager.Instance.GetMicSourceVolume(_micSource);
+        _avg.AddValue(vol);
+        _outline.enabled = _avg.Average > _threshold;
+    }
+
+    public void OnDisable()
+    {
+        _outline.enabled = false;
     }
 
     public void Configure(string sourceName, Color color)

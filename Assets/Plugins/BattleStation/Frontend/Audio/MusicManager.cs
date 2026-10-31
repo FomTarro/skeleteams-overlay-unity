@@ -10,7 +10,8 @@ using UnityEngine.Audio;
 using UnityEngine.Events;
 using UnityEngine.Networking;
 
-namespace Skeletom.BattleStation.Audio {
+namespace Skeletom.BattleStation.Audio
+{
     public class MusicManager : Singleton<MusicManager>, ISaveable<MusicManager.Properties>
     {
         public string FileFolder => "Music";
@@ -40,6 +41,8 @@ namespace Skeletom.BattleStation.Audio {
 
         [SerializeField]
         private float _fadeTime = 0.5f;
+        // TODO: this is a hacky bandaid for remember volume to return to when switching songs!
+        public float RelativeSceneVolume { get; set; }
 
         [SerializeField]
         private AudioSource _source;
@@ -75,7 +78,7 @@ namespace Skeletom.BattleStation.Audio {
                         var queryParam = new List<QueryParameter>(req.queryParameters).Find(param => param.key.Equals("title"));
                         if (queryParam != null)
                         {
-                            PlayTrack(queryParam.value);
+                            PlayTrack(queryParam.value, RelativeSceneVolume);
                         }
                         return new EndpointResponse(200, "");
                     }),

@@ -1546,6 +1546,7 @@ MonoBehaviour:
   _mainDisplay: {fileID: 1913511560}
   _waiting: {fileID: 2081932026}
   _chatting: {fileID: 428761767}
+  _ending: {fileID: 2054654766}
   _pause: {fileID: 268799961}
   onChatUserCounted:
     m_PersistentCalls:
