@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Skeletom.BattleStation.Integrations.Twitch.API;
 using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.Collections;
 using Skeletom.Essentials.IO;
@@ -24,6 +25,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             "channel:read:redemptions",
             "channel:read:subscriptions",
             "channel:read:ads",
+            "channel:manage:polls",
             "moderator:read:followers",
             "moderator:read:chatters",
             "moderator:manage:shoutouts"
@@ -34,6 +36,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private WebServer _webServer;
         [SerializeField]
         private TextAsset _tokenRedirectPage;
+        [Serializable]
         private class TokenRedirectData
         {
             public string token;
@@ -506,6 +509,58 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     (str) =>
                     {
                         onSuccess();
+                    },
+                    (err) =>
+                    {
+                        onError(new StreamError(err));
+                    }
+                )
+            );
+        }
+
+        #endregion
+
+        #region Polls
+
+        public void CreatePoll(string title, int duration, List<string> choices, Action<API.PollData> onSuccess, Action<StreamError> onError)
+        {
+            string url = $"{TWITCH_API.POLLS_ENDPOINT}";
+            string body = JsonUtility.ToJson(new PollData()
+            {
+                broadcaster_id = BROADCASTER_ID,
+                title = title,
+                duration = duration,
+                channel_points_voting_enabled = true,
+                channel_points_per_vote = 100,
+                choices = choices.Select((title) => new PollChoice()
+                {
+                    title = title
+                }).ToList()
+            });
+            StartCoroutine(
+                HttpUtils.PostRequest(url, body, Headers,
+                    (str) =>
+                    {
+                        var poll = JsonUtility.FromJson<API.DataResponse<API.PollData>>(str).data;
+                        onSuccess(poll[0]);
+                    },
+                    (err) =>
+                    {
+                        onError(new StreamError(err));
+                    }
+                )
+            );
+        }
+
+        public void GetPoll(string id, Action<PollData> onSuccess, Action<StreamError> onError)
+        {
+            string url = $"{TWITCH_API.POLLS_ENDPOINT}?broadcaster_id={BROADCASTER_ID}&id={id}";
+            StartCoroutine(
+                HttpUtils.GetRequest(url, Headers,
+                    (str) =>
+                    {
+                        var poll = JsonUtility.FromJson<API.DataResponse<API.PollData>>(str).data;
+                        onSuccess(poll[0]);
                     },
                     (err) =>
                     {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Klak.Spout;
 using Skeletom.BattleStation.Audio;
 using Skeletom.BattleStation.Integrations;
+using Skeletom.BattleStation.Integrations.Twitch.API;
 using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.Lifecycle;
 using UnityEngine;
@@ -53,6 +54,10 @@ public class LayoutManager : Singleton<LayoutManager>
     [Serializable]
     public class StreamTimeEvent : UnityEvent<DateTime> { }
 
+    public PollEvent onPollChecked = new();
+    [Serializable]
+    public class PollEvent : UnityEvent<Dictionary<string, float>> { }
+
     private const float POLLING_INTERVAL = 5f;
 
     private float _sceneRelativeVolume = 1f;
@@ -79,6 +84,8 @@ public class LayoutManager : Singleton<LayoutManager>
     };
 
     private PresentationMode _currentMode = PresentationMode.None;
+
+    private string _pollId;
 
     #region Lifecycle
 
@@ -163,6 +170,16 @@ public class LayoutManager : Singleton<LayoutManager>
             _ending.alpha = 1;
             MusicManager.Instance.RelativeSceneVolume = 0.80f;
             MusicManager.Instance.PlayTrack(_waitingSong, MusicManager.Instance.RelativeSceneVolume);
+            IntegrationManager.Instance.Twitch.CreatePoll("How was the stream quality?", 120, new List<string>(){"Bad...", "Great!"},
+            (poll) =>
+            {
+                _pollId = poll.id;
+                Debug.Log($"Poll with ID {_pollId} created!");
+            },
+            (err) =>
+            {
+                Debug.LogError(err);
+            });
             return new EndpointResponse(200, "");
         }));
 
@@ -224,6 +241,26 @@ public class LayoutManager : Singleton<LayoutManager>
                 Debug.LogError(err.message);
                 onNextAdTimeChecked.Invoke(DateTime.Now);
             });
+            if(!string.IsNullOrEmpty(_pollId)){
+                IntegrationManager.Instance.Twitch.GetPoll(_pollId, (poll) =>
+                {
+                    int totalVotes = 0;
+                    Dictionary<string, float> voteShare = new();
+                    foreach(PollChoice choice in poll.choices)
+                    {
+                        totalVotes += choice.votes;
+                    }
+                    foreach(PollChoice choice in poll.choices)
+                    {
+                        voteShare[choice.title] = (float)(choice.votes)/totalVotes;
+                    }
+                    onPollChecked.Invoke(voteShare);
+                }, (err) =>
+                {
+                    Debug.LogError(err.message);
+                    _pollId = null;
+                });
+            }
             IntegrationManager.Instance.OBS.GetRecordingStatus((status) =>
             {
                 onStreamTimeChecked.Invoke(DateTime.Now.AddMilliseconds(-1 * status.outputDuration));

@@ -125,6 +125,34 @@ namespace Skeletom.BattleStation.Integrations.Twitch.API
 
     #endregion
 
+    #region Polls API
+
+    [Serializable]
+    public class PollData
+    {
+        public string id;
+        public string broadcaster_id;
+        public string broadcaster_name;
+        public string broadcaster_login;
+        public string title;
+        public int duration;
+        public bool channel_points_voting_enabled;
+        public int channel_points_per_vote;
+        public List<PollChoice> choices;
+    }
+
+    [Serializable]
+    public class PollChoice
+    {
+        public string id;
+        public string title;
+        public int votes;
+        public int channel_points_votes;
+        public int bits_votes;
+    }
+
+    #endregion
+
     #region Emotes API 
 
     [Serializable]
