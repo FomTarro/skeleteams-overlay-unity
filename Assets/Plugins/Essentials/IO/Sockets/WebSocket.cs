@@ -10,7 +10,7 @@ namespace Skeletom.Essentials.IO
 {
     public class WebSocket
     {
-        private static readonly UTF8Encoding Encoder = new UTF8Encoding();
+        private static readonly UTF8Encoding Encoder = new();
         private ClientWebSocket _socket;
         private readonly ConcurrentQueue<string> _intakeQueue;
         private readonly ConcurrentQueue<Action> _responseQueue;
@@ -123,16 +123,16 @@ namespace Skeletom.Essentials.IO
                     {
                         if (_socket.State == WebSocketState.Open)
                         {
-                            var result = await _socket.ReceiveAsync(token);
-                            if (result.closeStatus == null || result.closeStatus == WebSocketCloseStatus.Empty)
+                            var (buffer, messageType, closeStatus, closeStatusDescription) = await _socket.ReceiveAsync(token);
+                            if (closeStatus == null || closeStatus == WebSocketCloseStatus.Empty)
                                 _responseQueue.Enqueue(() =>
                                 {
-                                    if (result.buffer != null && result.messageType == WebSocketMessageType.Text)
+                                    if (buffer != null && messageType == WebSocketMessageType.Text)
                                     {
-                                        _intakeQueue.Enqueue(Encoder.GetString(result.buffer));
+                                        _intakeQueue.Enqueue(Encoder.GetString(buffer));
                                     }
                                 });
-                            else if (result.closeStatus == WebSocketCloseStatus.NormalClosure)
+                            else if (closeStatus == WebSocketCloseStatus.NormalClosure)
                             {
                                 _responseQueue.Enqueue(async () =>
                                 {
@@ -154,7 +154,7 @@ namespace Skeletom.Essentials.IO
                             }
                             else
                             {
-                                throw new Exception("WebSocket Error, close status: " + result.closeStatus);
+                                throw new Exception("WebSocket Error, close status: " + closeStatus);
                             }
                         }
                     }

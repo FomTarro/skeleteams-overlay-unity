@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Skeletom.BattleStation.Integrations.Twitch;
+using Skeletom.BattleStation.Integrations;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,14 +14,14 @@ public class VerticalChatLog : ChatLogGameObject<VerticalChatMessage>
     // Start is called before the first frame update
     void Start()
     {
-        TwitchIntegration.Instance.onChatMessage.AddListener((msg) =>
+        IntegrationManager.Instance.Twitch.onChatMessage.AddListener((msg) =>
         {
             var obj = Display(msg);
             obj.transform.SetParent(_logParent);
             CheckPriorMessages();
             LayoutRebuilder.ForceRebuildLayoutImmediate(_logParent);
         });
-        TwitchIntegration.Instance.onChatMessageDelete.AddListener((msg) =>
+        IntegrationManager.Instance.Twitch.onChatMessageDelete.AddListener((msg) =>
         {
             Dispose(msg.id);
             CheckPriorMessages();

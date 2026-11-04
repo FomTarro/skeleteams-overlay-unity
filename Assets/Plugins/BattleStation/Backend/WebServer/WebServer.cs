@@ -53,6 +53,14 @@ namespace Skeletom.BattleStation.Server
             }
         }
 
+        public void UnregisterEndpoint(string endpoint)
+        {
+            if (_endpoints.ContainsKey(endpoint.ToLower()))
+            {
+                _endpoints.Remove(endpoint.ToLower());
+            }
+        }
+
         public void StartServer()
         {
             StopServer();

@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Skeletom.BattleStation.Integrations.Twitch
 {
-    public class TwitchIntegration : StreamIntegration<TwitchIntegration, TwitchIntegration.IntegrationData>
+    public class TwitchIntegration : StreamIntegration<TwitchIntegration.IntegrationData>
     {
         public override string FileName => "twitch.json";
 
@@ -25,6 +25,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             "channel:read:redemptions",
             "channel:read:subscriptions",
             "channel:read:ads",
+            "channel:manage:polls",
             "moderator:read:followers",
             "moderator:read:chatters",
             "moderator:manage:shoutouts"
@@ -35,13 +36,14 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         private WebServer _webServer;
         [SerializeField]
         private TextAsset _tokenRedirectPage;
+        [Serializable]
         private class TokenRedirectData
         {
             public string token;
         }
 
         // This allows us to swap out endpoints for mock ones against a testing engine
-        private readonly IEndpoints TWITCH_API = new TwitchAPI();
+        private readonly ITwitchEndpoints TWITCH_API = new TwitchAPI();
 
         private readonly WebSocket _socket = new();
 
@@ -50,7 +52,6 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         // Rolling cache for preventing duplicate messages from being processed
         private readonly LRUDictionary<string, EventSub.EventMessage<EventSub.EventPayload<string>>> RECENT_EVENTS = new(1000, (del) => { });
-
 
         private HttpUtils.HttpHeaders Headers
         {
@@ -85,7 +86,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     // TODO: this probably goes in the integration manager
                     new Endpoint("/twitch/reload", (req) =>
                     {
-                        FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+                        FromSaveData(SaveDataManager.ReadSaveData(this));
                         return new EndpointResponse(200, "Reload Requested");
                     })
                 };
@@ -101,7 +102,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             {
                 _webServer.RegisterEndpoint(endpoint);
             }
-            FromSaveData(SaveDataManager.Instance.ReadSaveData(this));
+            FromSaveData(SaveDataManager.ReadSaveData(this));
         }
 
         public override void Disable()
@@ -113,27 +114,21 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             _socket.Stop();
         }
 
-        public override void Initialize()
-        {
-            // TODO: move this to a manager
-            Enable();
-        }
-
         private void Update()
         {
-            _socket.Tick(Time.deltaTime);
-            string data = null;
-            do
+            if(_socket != null)
             {
-                if (_socket != null)
+                _socket.Tick(Time.deltaTime);
+                string data = null;
+                do
                 {
                     data = _socket.GetNextResponse();
                     if (data != null)
                     {
                         ProcessSocketMessage(data);
                     }
-                }
-            } while (data != null);
+                } while (data != null);
+            }
         }
 
         private void ProcessSocketMessage(string msg)
@@ -183,13 +178,13 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                             return id;
                         }
                         // Kick off all HTTP subscriptions
-                        Subscribe<EventSub.ChatMessageEvent>(SubscribeToChatMessageEvent, PrepareChatMessage);
-                        Subscribe<EventSub.ChatMessageDeletionEvent>(SubscribeToChatMessageDeletionEvent, PrepareChatMessageDeletion);
-                        Subscribe<EventSub.ChannelPointRedeemEvent>(SubscribeToChannelPointRedeemEvent, PrepareChannelRedeem);
-                        Subscribe<EventSub.ChannelFollowEvent>(SubscribeToChannelFollowEvent, PrepareChannelFollow);
-                        Subscribe<EventSub.ChannelSubNewEvent>(SubscribeToChannelSubNewEvent, PrepareChannelSubscription);
-                        Subscribe<EventSub.ChannelRaidEvent>(SubscribeToChannelRaidEvent, PrepareChannelRaid);
-                        Subscribe<EventSub.ChannelUpdateEvent>(SubscribeToChannelUpdateEvent, PrepareChannelUpdate);
+                        Subscribe<EventSub.ChatMessageEvent>(SubscribeToChatMessageEvent, HandleChatMessage);
+                        Subscribe<EventSub.ChatMessageDeletionEvent>(SubscribeToChatMessageDeletionEvent, HandleChatMessageDeletion);
+                        Subscribe<EventSub.ChannelPointRedeemEvent>(SubscribeToChannelPointRedeemEvent, HandleChannelRedeem);
+                        Subscribe<EventSub.ChannelFollowEvent>(SubscribeToChannelFollowEvent, HandleChannelFollow);
+                        Subscribe<EventSub.ChannelSubNewEvent>(SubscribeToChannelSubNewEvent, HandleChannelSubscription);
+                        Subscribe<EventSub.ChannelRaidEvent>(SubscribeToChannelRaidEvent, HandleChannelRaid);
+                        Subscribe<EventSub.ChannelUpdateEvent>(SubscribeToChannelUpdateEvent, HandleChannelUpdate);
                         subscriptionsManager.Enable(true);
                     }
                     else if ("notification".Equals(message.metadata.message_type))
@@ -232,7 +227,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         {
             USER_TOKEN = token;
             // TODO: figure out way to ignore write if the caller is a read function
-            SaveDataManager.Instance.WriteSaveData(this);
+            SaveDataManager.WriteSaveData(this);
             GetSelfUserInfo((user) =>
             {
                 BROADCASTER_ID = user.id;
@@ -274,7 +269,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         private void ValidateToken(string token, Action<bool> onValidation)
         {
-            HttpUtils.HttpHeaders headers = new HttpUtils.HttpHeaders()
+            HttpUtils.HttpHeaders headers = new()
             {
                 authorization = token
             };
@@ -338,7 +333,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     (str) =>
                     {
                         var users = JsonUtility.FromJson<API.DataResponse<API.UserData>>(str).data;
-                        DependencyManager manager = new DependencyManager(() =>
+                        DependencyManager manager = new(() =>
                         {
                             onSuccess(users);
                         });
@@ -445,10 +440,10 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         #region Streams
 
-        public void GetStreams(Action<List<StreamData>> onSuccess, Action<StreamError> onError)
+        public void GetStreams(Action<List<API.StreamData>> onSuccess, Action<StreamError> onError)
         {
             string url = $"{TWITCH_API.CHATTERS_ENDPOINT}?user_id={BROADCASTER_ID}";
-            List<StreamData> streams = new();
+            List<API.StreamData> streams = new();
             void GetPage(string after = null)
             {
                 string paginatedUrl = $"{url}{(after != null ? $"&after={after}" : "")}";
@@ -514,6 +509,58 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     (str) =>
                     {
                         onSuccess();
+                    },
+                    (err) =>
+                    {
+                        onError(new StreamError(err));
+                    }
+                )
+            );
+        }
+
+        #endregion
+
+        #region Polls
+
+        public void CreatePoll(string title, int duration, List<string> choices, Action<API.PollData> onSuccess, Action<StreamError> onError)
+        {
+            string url = $"{TWITCH_API.POLLS_ENDPOINT}";
+            string body = JsonUtility.ToJson(new PollData()
+            {
+                broadcaster_id = BROADCASTER_ID,
+                title = title,
+                duration = duration,
+                channel_points_voting_enabled = true,
+                channel_points_per_vote = 100,
+                choices = choices.Select((title) => new PollChoice()
+                {
+                    title = title
+                }).ToList()
+            });
+            StartCoroutine(
+                HttpUtils.PostRequest(url, body, Headers,
+                    (str) =>
+                    {
+                        var poll = JsonUtility.FromJson<API.DataResponse<API.PollData>>(str).data;
+                        onSuccess(poll[0]);
+                    },
+                    (err) =>
+                    {
+                        onError(new StreamError(err));
+                    }
+                )
+            );
+        }
+
+        public void GetPoll(string id, Action<PollData> onSuccess, Action<StreamError> onError)
+        {
+            string url = $"{TWITCH_API.POLLS_ENDPOINT}?broadcaster_id={BROADCASTER_ID}&id={id}";
+            StartCoroutine(
+                HttpUtils.GetRequest(url, Headers,
+                    (str) =>
+                    {
+                        var poll = JsonUtility.FromJson<API.DataResponse<API.PollData>>(str).data;
+                        onSuccess(poll[0]);
                     },
                     (err) =>
                     {
@@ -653,7 +700,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                (str) =>
                {
                    API.DataResponse<API.BadgeSetData> response = JsonUtility.FromJson<API.DataResponse<API.BadgeSetData>>(str);
-                   List<StreamImage> badges = new List<StreamImage>();
+                   List<StreamImage> badges = new();
                    var chunks = CollectionUtils.Chunk(response.data, 50);
                    int count = chunks.Count;
                    if (count > 0)
@@ -778,7 +825,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             );
         }
 
-        private void PrepareChatMessage(EventSub.ChatMessageEvent chatEvent)
+        private void HandleChatMessage(EventSub.ChatMessageEvent chatEvent)
         {
             StreamUser chatter = new(chatEvent.chatter_user_name, chatEvent.chatter_user_id);
             List<StreamChatMessage.Fragment> fragments = new();
@@ -850,7 +897,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             });
             manager.Enable(true);
         }
-        private void PrepareChatMessageDeletion(EventSub.ChatMessageDeletionEvent chatEvent)
+
+        private void HandleChatMessageDeletion(EventSub.ChatMessageDeletionEvent chatEvent)
         {
             StreamChatMessageDeletion deletion = new(chatEvent.message_id);
             onChatMessageDelete.Invoke(deletion);
@@ -870,7 +918,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 onSuccess, onError, onEvent
             );
         }
-        private void PrepareChannelRedeem(EventSub.ChannelPointRedeemEvent redeemEvent)
+        private void HandleChannelRedeem(EventSub.ChannelPointRedeemEvent redeemEvent)
         {
             Debug.Log(redeemEvent.reward.title);
             StreamUser chatter = new(redeemEvent.user_name, redeemEvent.user_id);
@@ -916,7 +964,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 onSuccess, onError, onEvent
             );
         }
-        private void PrepareChannelFollow(EventSub.ChannelFollowEvent followEvent)
+        private void HandleChannelFollow(EventSub.ChannelFollowEvent followEvent)
         {
             StreamUser chatter = new(followEvent.user_name, followEvent.user_id);
             DependencyManager manager = new(
@@ -943,7 +991,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 onSuccess, onError, onEvent
             );
         }
-        private void PrepareChannelSubscription(EventSub.ChannelSubNewEvent subEvent)
+        private void HandleChannelSubscription(EventSub.ChannelSubNewEvent subEvent)
         {
             StreamUser chatter = new(subEvent.user_name, subEvent.user_id);
             StreamChannelPaidSubscription sub = new(chatter)
@@ -1016,7 +1064,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 onSuccess, onError, onEvent
             );
         }
-        private void PrepareChannelRaid(EventSub.ChannelRaidEvent raidEvent)
+        private void HandleChannelRaid(EventSub.ChannelRaidEvent raidEvent)
         {
             StreamUser raider = new(raidEvent.from_broadcaster_user_name, raidEvent.from_broadcaster_user_id);
             DependencyManager manager = new(
@@ -1050,7 +1098,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 onSuccess, onError, onEvent
             );
         }
-        private void PrepareChannelUpdate(EventSub.ChannelUpdateEvent updateEvent)
+        private void HandleChannelUpdate(EventSub.ChannelUpdateEvent updateEvent)
         {
             StreamInfo info = new()
             {

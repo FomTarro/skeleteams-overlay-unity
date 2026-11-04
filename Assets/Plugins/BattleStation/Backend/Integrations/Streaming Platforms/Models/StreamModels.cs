@@ -4,6 +4,8 @@ using Skeletom.BattleStation.Graphics.Animations;
 using Skeletom.Essentials.Utils;
 using UnityEngine;
 
+// Generic domain models representing platform-agnostic stream elements, 
+// such as chatters and emotes
 namespace Skeletom.BattleStation.Integrations
 {
     [Serializable]
@@ -45,7 +47,7 @@ namespace Skeletom.BattleStation.Integrations
             this.name = name;
         }
 
-        public StreamImage(string name, Texture image) : base(new List<Frame>() { new Frame(image, -1) })
+        public StreamImage(string name, Texture image) : base(new List<Frame>() { new(image, -1) })
         {
             this.name = name;
         }
@@ -58,7 +60,7 @@ namespace Skeletom.BattleStation.Integrations
         public string language;
         public string categoryId;
         public string categoryName;
-        public List<string> tags = new List<string>();
+        public List<string> tags = new();
     }
 
     [Serializable]

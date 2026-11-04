@@ -7,7 +7,7 @@ using UnityEngine.Events;
 namespace Skeletom.BattleStation.Integrations
 {
     [RequireComponent(typeof(StreamImageHandler))]
-    public abstract class StreamIntegration<T, K> : Integration<T, K> where T : StreamIntegration<T, K> where K : BaseSaveData
+    public abstract class StreamIntegration<K> : Integration<K> where K : BaseSaveData
     {
         #region Caches
 
@@ -38,7 +38,7 @@ namespace Skeletom.BattleStation.Integrations
         public ChatMessageEvent onChatMessage = new();
         [Serializable]
         public class ChatMessageDeletionEvent : UnityEvent<StreamChatMessageDeletion> { }
-        public ChatMessageDeletionEvent onChatMessageDelete = new ChatMessageDeletionEvent();
+        public ChatMessageDeletionEvent onChatMessageDelete = new();
 
         [Serializable]
         public class ChatPaidMessageEvent : UnityEvent<StreamPaidChatMessage> { }
