@@ -294,6 +294,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _text: {fileID: 4813347706829378699}
+  _colorLerp: 0.41
+  _good: {r: 0.5896226, g: 1, b: 0.63468367, a: 1}
+  _bad: {r: 0.99607843, g: 0.7019608, b: 0.8156863, a: 1}
 --- !u!1001 &925164114283179777
 PrefabInstance:
   m_ObjectHideFlags: 0

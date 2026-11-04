@@ -30,7 +30,7 @@ public class StreamParticipantDisplay : MonoBehaviour
             _iconDisplay.DisplayTexture(participant.icon);
         }
         _micBorder.Configure(participant.metadata.micSource, participant.borderColor);
-        _nameCardBackground.color = new Color(participant.borderColor.r * 0.5f, participant.borderColor.g * 0.5f, participant.borderColor.b * 0.5f, 1f);
+        _nameCardBackground.color = new Color(participant.borderColor.r, participant.borderColor.g, participant.borderColor.b, 0.5f);
     }
 
     private void Update()

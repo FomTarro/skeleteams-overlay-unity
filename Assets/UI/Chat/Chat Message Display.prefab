@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_IgnoreLayout: 0
-  m_MinWidth: 16
+  m_MinWidth: -1
   m_MinHeight: 16
   m_PreferredWidth: -1
   m_PreferredHeight: -1
@@ -344,7 +344,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Padding:
-    m_Left: 16
+    m_Left: 24
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
@@ -684,7 +684,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: wow <sprite index="0">!! <link=1><sprite index=0></link>!! aaa aaa  aaaaaaaaaa
-    aaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaa
+    aaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaa
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca638d9d0ae25c6cea3113035291c1ea, type: 2}
   m_sharedMaterial: {fileID: -1777233704293413815, guid: ca638d9d0ae25c6cea3113035291c1ea, type: 2}
@@ -885,7 +885,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Padding:
-    m_Left: 24
+    m_Left: 36
     m_Right: 10
     m_Top: 5
     m_Bottom: 5
@@ -915,7 +915,7 @@ MonoBehaviour:
   m_UseGraphicAlpha: 1
   iterations: 8
   shadowSpread: {x: 2, y: 2}
-  aspectRatio: 9.128962
+  aspectRatio: 6.8579845
 --- !u!1 &8056323191253977774
 GameObject:
   m_ObjectHideFlags: 0
@@ -1489,7 +1489,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4686395522966320371, guid: 87e56bc837d49fa4d9b23b4cdb0dcf85, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 16
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 4686395522966320371, guid: 87e56bc837d49fa4d9b23b4cdb0dcf85, type: 3}
       propertyPath: m_AnchoredPosition.y
