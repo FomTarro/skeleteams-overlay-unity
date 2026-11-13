@@ -273,7 +273,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 6
-  m_Spacing: 16
+  m_Spacing: 8
   m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 1
@@ -294,7 +294,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _text: {fileID: 4813347706829378699}
-  _colorLerp: 0.41
   _good: {r: 0.5896226, g: 1, b: 0.63468367, a: 1}
   _bad: {r: 0.99607843, g: 0.7019608, b: 0.8156863, a: 1}
 --- !u!1001 &925164114283179777

@@ -31,7 +31,7 @@ public class AdTimer : MonoBehaviour
             diff = TimeSpan.Zero;
         }
         string str = diff.ToString(@"hh\:mm\:ss");
-        float t = MathUtils.Normalize((diff.Ticks/10_000_000), 60*50, 0, 0, 1);
+        float t = MathUtils.Normalize((diff.Ticks/10_000_000), 0, 60*50, 0, 1);
         string html = ColorUtility.ToHtmlStringRGBA(Color.Lerp(_bad, _good, t));
         _text.text = $"Next ad break: <color=#{html}>{str}</color>";
     }
