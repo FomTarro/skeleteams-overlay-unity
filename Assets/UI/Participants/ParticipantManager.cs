@@ -46,7 +46,8 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
         FromSaveData(SaveDataManager.ReadSaveData(this));
         IntegrationManager.Instance.Discord.onUserJoin.AddListener((user) =>
         {
-            if (IntegrationManager.Instance.Discord.SelfUserId != user.id)
+            if (IntegrationManager.Instance.Discord.SelfUserId != user.id
+            && _activeParticipants.FindIndex(p => user.id.Equals(p.metadata.id)) < 0)
             {
                 Debug.Log($"Participant {user.id} has joined.");
                 CreateParticipantFromUser(user);
@@ -85,6 +86,11 @@ public class ParticipantManager : Singleton<ParticipantManager>, ISaveable<Parti
 
     private void RemoveParticipant(string userId)
     {
+        int index = _activeParticipants.FindIndex(p => userId.Equals(p.metadata.id));
+        if (index >= 0)
+        {
+            _activeParticipants.RemoveAt(index);
+        }
         onParticipantLeave.Invoke(userId);
     }
 

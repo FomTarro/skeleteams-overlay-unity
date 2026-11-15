@@ -62,8 +62,8 @@ public class LayoutManager : Singleton<LayoutManager>
 
     private float _sceneRelativeVolume = 1f;
     // TODO: this becomes part of the config
-    private readonly string _chattingSong = "cafe";
-    private readonly string _waitingSong = "hold";
+    private readonly string _chattingSong = "file_select";
+    private readonly string _waitingSong = "white_space";
     private readonly string _mainSong = "skelenova";
 
     [SerializeField]
@@ -170,7 +170,7 @@ public class LayoutManager : Singleton<LayoutManager>
             _ending.alpha = 1;
             MusicManager.Instance.RelativeSceneVolume = 0.80f;
             MusicManager.Instance.PlayTrack(_waitingSong, MusicManager.Instance.RelativeSceneVolume);
-            IntegrationManager.Instance.Twitch.CreatePoll("How was the stream quality?", 120, new List<string>(){"Bad...", "Great!"},
+            IntegrationManager.Instance.Twitch.CreatePoll("How was the stream quality?", 120, new List<string>() { "Bad...", "Great!" },
             (poll) =>
             {
                 _pollId = poll.id;
@@ -241,18 +241,19 @@ public class LayoutManager : Singleton<LayoutManager>
                 Debug.LogError(err.message);
                 onNextAdTimeChecked.Invoke(DateTime.Now);
             });
-            if(!string.IsNullOrEmpty(_pollId)){
+            if (!string.IsNullOrEmpty(_pollId))
+            {
                 IntegrationManager.Instance.Twitch.GetPoll(_pollId, (poll) =>
                 {
                     int totalVotes = 0;
                     Dictionary<string, float> voteShare = new();
-                    foreach(PollChoice choice in poll.choices)
+                    foreach (PollChoice choice in poll.choices)
                     {
                         totalVotes += choice.votes;
                     }
-                    foreach(PollChoice choice in poll.choices)
+                    foreach (PollChoice choice in poll.choices)
                     {
-                        voteShare[choice.title] = (float)(choice.votes)/totalVotes;
+                        voteShare[choice.title] = (float)(choice.votes) / totalVotes;
                     }
                     onPollChecked.Invoke(voteShare);
                 }, (err) =>
