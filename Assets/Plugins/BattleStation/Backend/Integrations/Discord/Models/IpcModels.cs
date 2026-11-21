@@ -158,6 +158,31 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
 
     #endregion
 
+    #region Text Channel Selection
+
+    [Serializable]
+    public class TextChannelSelectRequest : ArgRequest<ChannelArgs>
+    {
+        public TextChannelSelectRequest()
+        {
+            cmd = "SELECT_TEXT_CHANNEL";
+        }
+    }
+
+    [Serializable]
+    public class TextChannelSelectResponse : DataResponse<TextChannelSelectResponseData> { }
+
+    [Serializable]
+    public class TextChannelSelectResponseData
+    {
+        public string id;
+        public string name;
+        public string guild_id;
+        public string topic;
+    }
+
+    #endregion
+
     #region Basic Event Subscription
 
     [Serializable]
@@ -177,7 +202,7 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
 
     #endregion
 
-    #region Channel Select Event
+    #region Voice Channel Select Event
 
     [Serializable]
     public class ChannelSelectSubscriptionRequest : EventSubscriptionRequest
@@ -262,4 +287,97 @@ namespace Skeletom.BattleStation.Integrations.Discord.IPC
 
     #endregion
 
+    #region Text Message Events 
+
+    [Serializable]
+    public class TextMessageCreateSubscriptionRequest : EventSubscriptionRequest
+    {
+        public TextMessageCreateSubscriptionRequest() : base()
+        {
+            evt = "MESSAGE_CREATE";
+        }
+    }
+
+    [Serializable]
+    public class TextMessageDeleteSubscriptionRequest : EventSubscriptionRequest
+    {
+        public TextMessageDeleteSubscriptionRequest() : base()
+        {
+            evt = "MESSAGE_DELETE";
+        }
+    }
+
+
+    [Serializable]
+    public class TextMessageEditSubscriptionRequest : EventSubscriptionRequest
+    {
+        public TextMessageEditSubscriptionRequest() : base()
+        {
+            evt = "MESSAGE_UPDATE";
+        }
+    }
+
+    [Serializable]
+    public class TextMessageEvent : DataResponse<TextMessageData> { }
+
+    [Serializable]
+    public class TextMessageData
+    {
+        public TextMessage message;
+    }
+
+    [Serializable]
+    public class TextMessage
+    {
+        public string id;
+        public UserData author;
+        public string author_color;
+        public bool blocked;
+        public string content;
+        public TextMessageFragment[] content_parsed;
+        public string timestamp;
+        public string edited_timestamp;
+    }
+
+    [Serializable]
+    public class TextMessageFragment
+    {
+        public string emojiId;
+        public string name;
+        public bool animated;
+        public string content;
+        public string type;
+    }
+
+    // "channel_id": "199737254929760256",
+    // "message": {
+    //   "id": "199743874640379904",
+    //   "blocked": false,
+    //   "content": "test",
+    //   "content_parsed": [
+    //     {
+    //       "content": "test",
+    //       "type": "text"
+    //     }
+    //   ],
+    //   "author_color": "#ffffff",
+    //   "edited_timestamp": null,
+    //   "timestamp": "2016-07-05T04:30:50.776Z",
+    //   "tts": false,
+    //   "mentions": [],
+    //   "mention_roles": [],
+    //   "mention_everyone": false,
+    //   "embeds": [],
+    //   "attachments": [],
+    //   "type": 0,
+    //   "pinned": false,
+    //   "author": {
+    //     "id": "190320984123768832",
+    //     "username": "test user 2",
+    //     "discriminator": "7479",
+    //     "avatar": "b004ec1740a63ca06ae2e14c5cee11f3",
+    //     "bot": false
+    //   }
+    // }
+    #endregion
 }

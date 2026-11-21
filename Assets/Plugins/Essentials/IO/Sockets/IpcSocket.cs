@@ -85,7 +85,8 @@ namespace Skeletom.Essentials.IO
 
         private bool ConnectStream()
         {
-            bool isWindows = Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor;
+            bool isWindows = Application.platform == RuntimePlatform.WindowsPlayer 
+            || Application.platform == RuntimePlatform.WindowsEditor;
             return isWindows ? ConnectWindowsPipe() : ConnectUnixSocket();
         }
 
@@ -207,13 +208,11 @@ namespace Skeletom.Essentials.IO
                 Debug.Log($"[{_selectedName}] - Connected to IPC!");
                 _actionQueue.Enqueue(_onConnect);
                 while (_stream != null && !token.IsCancellationRequested) {
-                    try
-                    {
+                    try{
                         // If attempting to write throws an exception,
                         // our connection is disrupted!
                         await _stream.WriteAsync(new byte[0], 0, 0, token);
-                    }catch
-                    {
+                    }catch{
                         Debug.LogError($"[{_selectedName}] - IPC disconnected...");
                         _actionQueue.Enqueue(async () =>
                         {
@@ -221,14 +220,12 @@ namespace Skeletom.Essentials.IO
                             await Reconnect(token);
                         });
                         return;
-                    }
-                    try{
+                    }try{
                         string message = await ReadMessageAsync();
                         if (message != null){
                             _intakeQueue.Enqueue(message);
                         }
-                    }catch(Exception e)
-                    {
+                    }catch(Exception e){
                         _actionQueue.Enqueue(async () =>
                         {
                             Debug.LogError($"[{_selectedName}] - IPC read error: '{e.Message}', {e}");

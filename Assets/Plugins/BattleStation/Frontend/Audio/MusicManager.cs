@@ -268,7 +268,7 @@ namespace Skeletom.BattleStation.Audio
                 || webRequest.result == UnityWebRequest.Result.ProtocolError
                 || webRequest.result == UnityWebRequest.Result.DataProcessingError)
                 {
-                    Debug.LogError($"Error fetching clip {track.metadata.id}: {webRequest.error}");
+                    Debug.LogError($"Error fetching clip {track.metadata.id} - {webRequest.error}");
                 }
                 else
                 {

@@ -7,12 +7,16 @@ using UnityEngine;
 
 namespace Skeletom.BattleStation.Integrations
 {
+    /// <summary>
+    /// Handler for caching arbitrary data from remote and local file sources.
+    /// </summary>
+    /// <typeparam name="T">The type of data to cache.</typeparam>
     public abstract class CacheHandler<T> : MonoBehaviour where T : class
     {
         [SerializeField]
         private int _maximumCachedItems = -1;
         private LRUDictionary<string, T> _cache;
-        public LRUDictionary<string, T> CACHE => _cache ??= new LRUDictionary<string, T>(_maximumCachedItems < 0 ? int.MaxValue : _maximumCachedItems, CleanUncachedData);
+        private LRUDictionary<string, T> CACHE => _cache ??= new LRUDictionary<string, T>(_maximumCachedItems < 0 ? int.MaxValue : _maximumCachedItems, DisposeUncachedData);
         private readonly Dictionary<string, Queue<ContextCallback>> PENDING_CONTEXTS = new();
         private struct ContextCallback
         {
@@ -22,6 +26,17 @@ namespace Skeletom.BattleStation.Integrations
             {
                 this.onSuccess = onSuccess;
                 this.onError = onError;
+            }
+        }
+
+        protected readonly struct ContextResolution
+        {
+            public readonly T data;
+            public readonly StreamError error;
+            public ContextResolution(T data, StreamError error)
+            {
+                this.data = data;
+                this.error = error;
             }
         }
 
@@ -54,34 +69,34 @@ namespace Skeletom.BattleStation.Integrations
             }
         }
 
-        private void Cache(string key, T data)
+        private T Cache(string key, T data)
         {
             if (data != null)
             {
                 Uncache(key);
                 CACHE.Add(key, data);
             }
+            return data;
         }
 
-        protected abstract void CleanUncachedData(T data);
+        protected abstract void DisposeUncachedData(T data);
 
         private void Uncache(string key)
         {
             if (CACHE.ContainsKey(key))
             {
-                CleanUncachedData(CACHE.Get(key));
+                DisposeUncachedData(CACHE.Get(key));
                 CACHE.Remove(key);
             }
-
         }
 
         /// <summary>
-        /// Attempts to get an image from the cache.
-        /// Used in cases where the URL is not known ad is not able to be derived.
+        /// Attempts to get an data from the cache.
+        /// Used in cases where the URL or file path is not known and is not able to be derived.
         /// </summary>
         /// <param name="key">The key name of the image to search for.</param>
-        /// <param name="onSuccess">Callback function that receives the image if it exists in the cache.</param>
-        /// <param name="onError">Callback function to handle errors of any kind.</param>
+        /// <param name="onSuccess">The callback function that receives the data if it exists in the cache.</param>
+        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         public void GetFromCache(string key, Action<T> onSuccess, Action<HttpUtils.HttpError> onError)
         {
             if (CACHE.ContainsKey(key))
@@ -94,22 +109,19 @@ namespace Skeletom.BattleStation.Integrations
             }
         }
 
+        /// <summary>
+        /// Attempts to get data from a local file path, storing it in the cache under the provided key name. 
+        /// If the data is already cached, it will simply be returned without parsing the file again.
+        /// If a call to the parse the local file is currently in progress, the result of that call will be shared with this request. 
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="key"></param>
+        /// <param name="onSuccess"></param>
+        /// <param name="onError"></param>
         public void GetFromLocal(string path, string key, Action<T> onSuccess, Action<StreamError> onError)
         {
-            if (CACHE.ContainsKey(key))
+            CheckCache(key, onSuccess, onError, () =>
             {
-                onSuccess(CACHE[key]);
-            }
-            // If another request is already processing this emote, wait for that.
-            else if (PENDING_CONTEXTS.ContainsKey(key))
-            {
-                PENDING_CONTEXTS[key].Enqueue(new ContextCallback(onSuccess, onError));
-            }
-            // If nothing is processing this emote, make a request to get and process it.
-            else
-            {
-                PENDING_CONTEXTS[key] = new Queue<ContextCallback>();
-                PENDING_CONTEXTS[key].Enqueue(new ContextCallback(onSuccess, onError));
                 if (File.Exists(path))
                 {
                     try{
@@ -117,8 +129,7 @@ namespace Skeletom.BattleStation.Integrations
                         var result = HandleData(key, bytes);
                         if (result.data != null)
                         {
-                            Cache(key, result.data);
-                            ResolveContext(key, CACHE[key], null);
+                            ResolveContext(key, Cache(key, result.data), null);
                         }
                         else
                         {
@@ -135,22 +146,50 @@ namespace Skeletom.BattleStation.Integrations
                     Debug.LogError($"Error while resolving item: {key} - File does not exist.");
                     ResolveContext(key, null, new StreamError(StreamError.ErrorCode.RemoteError, "File not found."));
                 }
-            }
+            });
         }
 
         /// <summary>
-        /// Attempts to get an image from a remote URL, storing it in the cache under the provided key name. 
-        /// If the image is already cached, it will simply be returned without calling the URL.
+        /// Attempts to get data from a remote URL, storing it in the cache under the provided key name. 
+        /// If the data is already cached, it will simply be returned without calling the URL.
         /// If a call to the remote URL is currently in progress, the result of that call will be shared with this request.
         /// </summary>
-        /// <param name="url">The URL to get the image from.</param>
+        /// <param name="url">The URL to get the data from.</param>
         /// <param name="headers">Any necessary HTTP headers for making the call.</param>
-        /// <param name="key">The key name to store the image as.</param>
-        /// <param name="onSuccess">Callback function that receives the image if successful.</param>
+        /// <param name="key">The key name to store the data with.</param>
+        /// <param name="onSuccess">Callback function that receives the data if successful.</param>
         /// <param name="onError">Callback function to handle errors of any kind.</param>
         public void GetFromRemote(string url, HttpUtils.HttpHeaders headers, string key, Action<T> onSuccess, Action<StreamError> onError)
         {
-            // If the emote is already cached, return it immediately.
+            CheckCache(key, onSuccess, onError, () =>
+            {
+                StartCoroutine(
+                    HttpUtils.GetBytesRequest(url, headers,
+                        (bytes) =>
+                        {
+                            var result = HandleData(key, bytes);
+                            if (result.data != null)
+                            {
+                                ResolveContext(key, Cache(key, result.data), null);
+                            }
+                            else
+                            {
+                                ResolveContext(key, null, result.error);
+                            }
+                        },
+                        (err) =>
+                        {
+                            Debug.LogError($"Error while resolving item: {key} - {err}");
+                            ResolveContext(key, null, new StreamError(err));
+                        }
+                    )
+                );
+            });
+        }
+
+        private void CheckCache(string key, Action<T> onSuccess, Action<StreamError> onError, Action getImage)
+        {
+             // If the emote is already cached, return it immediately.
             if (CACHE.ContainsKey(key))
             {
                 onSuccess(CACHE[key]);
@@ -165,39 +204,7 @@ namespace Skeletom.BattleStation.Integrations
             {
                 PENDING_CONTEXTS[key] = new Queue<ContextCallback>();
                 PENDING_CONTEXTS[key].Enqueue(new ContextCallback(onSuccess, onError));
-                StartCoroutine(
-                    HttpUtils.GetBytesRequest(url, headers,
-                        (bytes) =>
-                        {
-                            var result = HandleData(key, bytes);
-                            if (result.data != null)
-                            {
-                                Cache(key, result.data);
-                                ResolveContext(key, CACHE[key], null);
-                            }
-                            else
-                            {
-                                ResolveContext(key, null, result.error);
-                            }
-                        },
-                        (err) =>
-                        {
-                            Debug.LogError($"Error while resolving item: {key} - {err}");
-                            ResolveContext(key, null, new StreamError(err));
-                        }
-                    )
-                );
-            }
-        }
-
-        protected readonly struct ContextResolution
-        {
-            public readonly T data;
-            public readonly StreamError error;
-            public ContextResolution(T data, StreamError error)
-            {
-                this.data = data;
-                this.error = error;
+                getImage();
             }
         }
 

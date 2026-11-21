@@ -11,7 +11,17 @@ namespace Skeletom.BattleStation.Integrations.OBS
 {
     public class OBSIntegration : Integration<OBSIntegration.IntegrationData>
     {
+        private readonly Utils.Logger LOGGER = new("OBS");
         public override string FileName => "obs.json";
+
+        private string WS_URL;
+        private int WS_PORT;
+        private string WS_PASSWORD;
+        private readonly WebSocket _socket = new();
+
+        private readonly Dictionary<string, Action<string>> EVENT_HANDLERS = new();
+        // TODO: Standardize these across the various integrations
+        private readonly Dictionary<string, Action<string>> REQUEST_HANDLERS = new();
 
         #region Events
 
@@ -21,25 +31,15 @@ namespace Skeletom.BattleStation.Integrations.OBS
 
         #endregion
 
-        private string WS_URL;
-        private int WS_PORT;
-        private string WS_PASSWORD;
-        private readonly WebSocket _socket = new();
-
-        private readonly Dictionary<string, Action<string>> EVENT_HANDLERS = new();
-
-        private readonly Dictionary<string, Action<string>> REQUEST_HANDLERS = new();
-
         #region Lifecycle
 
         public override void Disable()
         {
-
+            _socket?.Stop();
         }
 
         public override void Enable()
         {
-            // TODO: have these update an object reference that gets polled, because muting and volume are handled by separate events
             EVENT_HANDLERS.Add("InputVolumeMeters", (msg) =>
             {
                 var eventMessage = JsonConvert.DeserializeObject<OBSMessage<OBSEvent<InputVolumeMetersEventData>>>(msg);
@@ -55,10 +55,8 @@ namespace Skeletom.BattleStation.Integrations.OBS
             EVENT_HANDLERS.Add("InputMuteStateChanged", (msg) =>
             {
                 var eventMessage = JsonConvert.DeserializeObject<OBSMessage<OBSEvent<InputMuteStateChangedEventData>>>(msg);
-                if ("Mic/Aux".Equals(eventMessage.d.eventData.inputName))
-                {
-                    Debug.Log(eventMessage.d.eventData.inputMuted);
-                    // Debug.Log("Mic Volume: " + micInput.inputLevelsMul[0, 2]);
+                if(eventMessage.d.eventData.inputMuted){
+                    onVolume.Invoke(eventMessage.d.eventData.inputName, 0);
                 }
 
             });
@@ -112,7 +110,7 @@ namespace Skeletom.BattleStation.Integrations.OBS
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                LOGGER.LogError(e.Message);
             }
         }
 
@@ -173,19 +171,18 @@ namespace Skeletom.BattleStation.Integrations.OBS
             WS_URL = data.url;
             WS_PORT = data.port;
             WS_PASSWORD = data.password;
-
             _socket.Start($"{data.url}:{data.port}",
                 () =>
                 {
-                    Debug.Log("OBS Socket connected!");
+                    LOGGER.Log("Socket connected!");
                 },
                 () =>
                 {
-                    Debug.Log("OBS Socket disconnected.");
+                    LOGGER.Log("Socket disconnected.");
                 },
                 (err) =>
                 {
-                    Debug.LogError($"OBS Socket error: {err}");
+                    LOGGER.LogError($"Socket error: {err}");
                 }
             );
             SaveDataManager.WriteSaveData(this);

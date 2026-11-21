@@ -28,8 +28,8 @@ namespace Skeletom.Essentials.Utils
         /// </summary>
         /// <param name="url">The URL to call.</param>
         /// <param name="headers">Optional request headers.</param>
-        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <param name="onSuccess">The callback executed on a successful request.</param>
+        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <returns></returns>
         public static IEnumerator GetRequest(string url, HttpHeaders headers, Action<string> onSuccess, Action<HttpError> onError)
         {
@@ -62,8 +62,8 @@ namespace Skeletom.Essentials.Utils
         /// </summary>
         /// <param name="url">The URL to call.</param>
         /// <param name="headers">Optional request headers.</param>
-        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <param name="onSuccess">The callback executed on a successful request.</param>
+        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <returns></returns>
         public static IEnumerator GetTextureRequest(string url, HttpHeaders headers, Action<Texture2D> onSuccess, Action<HttpError> onError)
         {
@@ -80,8 +80,8 @@ namespace Skeletom.Essentials.Utils
         /// <param name="url">The URL to call.</param>
         /// <param name="body">The body of the POST.</param>
         /// <param name="headers">Optional request headers.</param>
-        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <param name="onSuccess">The callback executed on a successful request.</param>
+        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <returns></returns>
         public static IEnumerator PostRequest(string url, string body, HttpHeaders headers, Action<string> onSuccess, Action<HttpError> onError)
         {
@@ -168,7 +168,6 @@ namespace Skeletom.Essentials.Utils
         /// <returns>The local IPv4.</returns>
         public static IPAddress GetLocalIPAddress()
         {
-
             using (Socket socket = new(AddressFamily.InterNetwork, SocketType.Dgram, 0))
             {
                 socket.Connect("8.8.8.8", 65530);

@@ -27,6 +27,20 @@ public class VerticalChatLog : ChatLogGameObject<VerticalChatMessage>
             CheckPriorMessages();
             LayoutRebuilder.ForceRebuildLayoutImmediate(_logParent);
         });
+
+        IntegrationManager.Instance.Discord.onChatMessage.AddListener((msg) =>
+        {
+            var obj = Display(msg);
+            obj.transform.SetParent(_logParent);
+            CheckPriorMessages();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_logParent);
+        });
+        IntegrationManager.Instance.Discord.onChatMessageDelete.AddListener((msg) =>
+        {
+            Dispose(msg.id);
+            CheckPriorMessages();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_logParent);
+        });
     }
 
     private void CheckPriorMessages()

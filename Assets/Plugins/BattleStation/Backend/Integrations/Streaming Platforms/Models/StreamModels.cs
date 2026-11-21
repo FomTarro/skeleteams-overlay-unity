@@ -117,16 +117,24 @@ namespace Skeletom.BattleStation.Integrations
             }
         }
 
-        public string id;
-        public string ID { get { return id; } }
+        public string ID { get; private set; }
+        public string platform;
         public DateTime timestamp;
         public StreamUser chatter;
         public Color nameColor = Color.white;
         public List<StreamBadge> badges = new();
         public List<Fragment> message = new();
-        public StreamChatMessage(string id, DateTime timestamp, StreamUser chatter, string nameColorHexCode, ICollection<StreamBadge> badges, ICollection<Fragment> message)
+        public StreamChatMessage(
+            string id, 
+            string platform, 
+            DateTime timestamp, 
+            StreamUser chatter, 
+            string nameColorHexCode, 
+            ICollection<StreamBadge> badges, 
+            ICollection<Fragment> message)
         {
-            this.id = id;
+            this.ID = id;
+            this.platform = platform;
             this.timestamp = timestamp;
             this.chatter = chatter;
             this.message = new List<Fragment>(message);
@@ -154,7 +162,12 @@ namespace Skeletom.BattleStation.Integrations
         public string title;
         public string description;
         public string details;
-        public StreamEvent(StreamUser user, string title, string type, string description, string details)
+        public StreamEvent(
+            StreamUser user,
+            string title,
+            string type,
+            string description,
+            string details)
         {
             this.ID = Guid.NewGuid().ToString();
             this.title = title;

@@ -12,6 +12,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 {
     public class TwitchIntegration : StreamIntegration<TwitchIntegration.IntegrationData>
     {
+        private readonly Utils.Logger LOGGER = new("Twitch");
         public override string FileName => "twitch.json";
 
         private const string CLIENT_ID = "x2rikvl9behn8k54flc95ulhbq265m";
@@ -147,13 +148,13 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                         DependencyManager subscriptionsManager = new(
                             () =>
                             {
-                                Debug.Log("EventSub subscriptions complete, caching emotes and badges...");
+                                LOGGER.Log("EventSub subscriptions complete, caching emotes and badges...");
                                 // Subscribing to events is time-sensitive (sessionId will be invalidated after 10s of inactivity),
                                 // So let's do our subscriptions before we do the heavy caching operation
                                 // GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
                                 // GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
-                                GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { Debug.LogError(err); });
-                                GetGlobalBadges((badges) => { }, (err) => { Debug.LogError(err); });
+                                GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { LOGGER.LogError($"{err}"); });
+                                GetGlobalBadges((badges) => { }, (err) => { LOGGER.LogError($"{err}"); });
                                 // GetCurrentChatUsers((chatters) => {Debug.Log(string.Join(", ", chatters.Select(chatter => chatter.displayName))); }, (err) => { Debug.LogError(err); });
                             },
                             (key, pending) =>
@@ -198,12 +199,12 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 }
                 else
                 {
-                    Debug.LogWarning($"Duplicate event recieved with ID: {message.metadata.message_id}");
+                    LOGGER.LogWarning($"Duplicate event recieved with ID: {message.metadata.message_id}");
                 }
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                LOGGER.LogError($"{e}");
             }
         }
 
@@ -231,7 +232,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             GetSelfUserInfo((user) =>
             {
                 BROADCASTER_ID = user.id;
-                Debug.Log($"Broadcaster ID: {BROADCASTER_ID}");
+                LOGGER.Log($"Broadcaster ID: {BROADCASTER_ID}");
                 GetSelfChannelInfo((channel) =>
                 {
                     StreamInfo info = new()
@@ -245,25 +246,25 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                     onStreamInfoUpdate.Invoke(info);
                 }, (err) =>
                 {
-                    Debug.LogError(err);
+                    LOGGER.LogError(err.message);
                 });
                 _socket.Start(TWITCH_API.EVENTSUB_SOCKET_ENDPOINT,
                     () =>
                     {
-                        Debug.Log("Twitch EventSub Socket connected!");
+                        LOGGER.Log("EventSub Socket connected!");
                     },
                     () =>
                     {
-                        Debug.Log("Twitch EventSub Socket disconnected.");
+                        LOGGER.Log("EventSub Socket disconnected.");
                     },
                     (err) =>
                     {
-                        Debug.LogError($"Twitch EventSub Socket error: {err}");
+                        LOGGER.LogError($"EventSub Socket error: {err}");
                     }
                 );
             }, (err) =>
             {
-                Debug.LogError(err);
+                LOGGER.LogError(err.message);
             });
         }
 
@@ -382,6 +383,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             {
                 GetUserInfo(new List<string>() { userId }, (success2) =>
                 {
+                    // This works because the GetUserInfo method 
+                    // caches the avatar as part of data processing
                     ImageHandler.GetFromCache($"avatar_{userId}", (success2) =>
                     {
                         onSuccess(success2);
@@ -576,21 +579,21 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         public void GetGlobalEmotes(Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
-            Debug.Log("Fetching global emotes.");
+            LOGGER.Log("Fetching global emotes...");
             string url = TWITCH_API.EMOTES_GLOBAL_ENDPOINT;
             GetBatchEmotes(url, onSuccess, onError);
         }
 
         public void GetChannelEmotes(string broadcasterId, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
-            Debug.Log($"Fetching channel emotes for Broadcaster ID: {broadcasterId}");
+            LOGGER.Log($"Fetching channel emotes for Broadcaster ID: {broadcasterId}");
             string url = $"{TWITCH_API.EMOTES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
 
         public void GetSetEmotes(string setId, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
-            Debug.Log($"Fetching set emotes for set ID: {setId}");
+            LOGGER.Log($"Fetching set emotes for set ID: {setId}");
             string url = $"{TWITCH_API.EMOTES_SET_ENDPOINT}?emote_set_id={setId}";
             GetBatchEmotes(url, onSuccess, onError);
         }
@@ -612,17 +615,17 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                             {
                                 if (index < count)
                                 {
-                                    Debug.Log($"Handling emote chunk {index} of {count}...");
+                                    LOGGER.Log($"Handling emote chunk {index} of {count}...");
                                     DependencyManager chunkManager = new(
                                         () =>
                                         {
-                                            Debug.Log($"{emotes.Count} total emotes resolved!");
+                                            LOGGER.Log($"{emotes.Count} total emotes resolved!");
                                             onSuccess(emotes);
                                             Batch(index + 1);
                                         },
                                         (key, pending) =>
                                         {
-                                            Debug.Log($"Waiting on {pending} more emotes to resolve...");
+                                            LOGGER.Log($"Waiting on {pending} more emotes to resolve...");
                                         }
                                     );
                                     foreach (var data in chunks[index])
@@ -637,7 +640,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                         },
                                         (err) =>
                                         {
-                                            Debug.LogError(err);
+                                            LOGGER.LogError(err.message);
                                             chunkManager.ResolveDependency(taskId);
                                         });
                                     }
@@ -682,13 +685,13 @@ namespace Skeletom.BattleStation.Integrations.Twitch
 
         public void GetGlobalBadges(Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
-            Debug.Log("Fetching global badges.");
+            LOGGER.Log("Fetching global badges...");
             GetBatchBadges(TWITCH_API.BADGES_GLOBAL_ENDPOINT, onSuccess, onError);
         }
 
         public void GetChannelBadges(string broadcasterId, Action<List<StreamImage>> onSuccess, Action<StreamError> onError)
         {
-            Debug.Log($"Fetching channel badges for Broadcaster ID: {broadcasterId}");
+            LOGGER.Log($"Fetching channel badges for Broadcaster ID: {broadcasterId}");
             string url = $"{TWITCH_API.BADGES_CHANNEL_ENDPOINT}?broadcaster_id={broadcasterId}";
             GetBatchBadges(url, onSuccess, onError);
         }
@@ -709,17 +712,17 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                        {
                            if (index < count)
                            {
-                               Debug.Log($"Handling badge chunk {index} of {count}...");
+                               LOGGER.Log($"Handling badge chunk {index} of {count}...");
                                DependencyManager chunkManager = new(
                                    () =>
                                    {
-                                       Debug.Log($"{badges.Count} total badges resolved!");
+                                       LOGGER.Log($"{badges.Count} total badges resolved!");
                                        onSuccess(badges);
                                        GetBatch(index + 1);
                                    },
                                    (key, pending) =>
                                    {
-                                       Debug.Log($"Waiting on {pending} more badges to resolve...");
+                                       LOGGER.Log($"Waiting on {pending} more badges to resolve...");
                                    }
                                );
                                foreach (API.BadgeSetData data in chunks[index])
@@ -737,7 +740,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                        },
                                        (err) =>
                                        {
-                                           Debug.LogError(err);
+                                           LOGGER.LogError(err.message);
                                            chunkManager.ResolveDependency(taskId);
                                        });
                                    }
@@ -783,12 +786,12 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                             EventSub.EventMessage<EventSub.EventPayload<T>> obj = JsonUtility.FromJson<EventSub.EventMessage<EventSub.EventPayload<T>>>(msg);
                             onEvent(obj.payload.@event);
                         };
-                        Debug.Log($"Subscribed to {eventType} - {data.id}");
+                        LOGGER.Log($"Subscribed to {eventType} - {data.id}");
                         onSuccess(response);
                     },
                     (err) =>
                     {
-                        Debug.LogError($"Error subscribing to {eventType} - {err}");
+                        LOGGER.LogError($"Error subscribing to {eventType} - {err}");
                         onError(new StreamError(err));
                     }
                 )
@@ -835,7 +838,14 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             DependencyManager manager = new(
                 () =>
                 {
-                    StreamChatMessage message = new(chatEvent.message_id, timestamp, chatter, chatEvent.color, badges, fragments);
+                    StreamChatMessage message = new(
+                        chatEvent.message_id,
+                        "Twitch",
+                        timestamp,
+                        chatter,
+                        chatEvent.color,
+                        badges,
+                        fragments);
                     onChatMessage.Invoke(message);
                 }
             );
@@ -892,7 +902,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 manager.ResolveDependency(avatarTaskId);
             }, (err) =>
             {
-                Debug.LogError(err.message);
+                LOGGER.LogError(err.message);
                 manager.ResolveDependency(avatarTaskId);
             });
             manager.Enable(true);
@@ -920,7 +930,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         }
         private void HandleChannelRedeem(EventSub.ChannelPointRedeemEvent redeemEvent)
         {
-            Debug.Log(redeemEvent.reward.title);
+            LOGGER.Log($"Handling channel point redeem: {redeemEvent.reward.title}");
             StreamUser chatter = new(redeemEvent.user_name, redeemEvent.user_id);
             DependencyManager manager = new(
                 () =>
@@ -943,7 +953,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 manager.ResolveDependency(avatarTaskId);
             }, (err) =>
             {
-                Debug.LogError(err.message);
+                LOGGER.LogError(err.message);
                 manager.ResolveDependency(avatarTaskId);
             });
             manager.Enable(true);
@@ -1011,7 +1021,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 manager.ResolveDependency(avatarTaskId);
             }, (err) =>
             {
-                Debug.LogError(err.message);
+                LOGGER.LogError(err.message);
                 manager.ResolveDependency(avatarTaskId);
             });
             manager.Enable(true);
@@ -1078,7 +1088,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                 manager.ResolveDependency(avatarTaskId);
             }, (err) =>
             {
-                Debug.LogError(err.message);
+                LOGGER.LogError(err.message);
                 manager.ResolveDependency(avatarTaskId);
             });
             manager.Enable(true);
