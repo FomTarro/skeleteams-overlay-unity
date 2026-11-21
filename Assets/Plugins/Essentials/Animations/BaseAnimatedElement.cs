@@ -63,7 +63,7 @@ namespace Skeletom.Essentials.Animations
 
 		private Coroutine _animationRoutine;
 
-		protected List<UnityAction> _finishCallbackList = new List<UnityAction>();
+		protected List<UnityAction> _finishCallbackList = new();
 
 		private void Awake()
 		{
@@ -159,7 +159,7 @@ namespace Skeletom.Essentials.Animations
 			{
 				// feels kinda hacky, but allows chaining easily
 				// testing needed for sure
-				List<UnityAction> tempList = new List<UnityAction>(_finishCallbackList);
+				List<UnityAction> tempList = new(_finishCallbackList);
 				foreach (UnityAction action in tempList)
 				{
 					action.Invoke();

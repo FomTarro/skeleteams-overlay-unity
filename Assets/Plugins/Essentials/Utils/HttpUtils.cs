@@ -21,15 +21,15 @@ namespace Skeletom.Essentials.Utils
             }
         }
 
-        private static readonly Dictionary<string, Queue<PendingWebRequest>> CONTEXTS = new Dictionary<string, Queue<PendingWebRequest>>();
+        private static readonly Dictionary<string, Queue<PendingWebRequest>> CONTEXTS = new();
 
         /// <summary>
         /// Makes a GET request to the given URL, executing the corresponding callback on completion.
         /// </summary>
         /// <param name="url">The URL to call.</param>
         /// <param name="headers">Optional request headers.</param>
-        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <param name="onSuccess">The callback executed on a successful request.</param>
+        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <returns></returns>
         public static IEnumerator GetRequest(string url, HttpHeaders headers, Action<string> onSuccess, Action<HttpError> onError)
         {
@@ -62,8 +62,8 @@ namespace Skeletom.Essentials.Utils
         /// </summary>
         /// <param name="url">The URL to call.</param>
         /// <param name="headers">Optional request headers.</param>
-        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <param name="onSuccess">The callback executed on a successful request.</param>
+        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <returns></returns>
         public static IEnumerator GetTextureRequest(string url, HttpHeaders headers, Action<Texture2D> onSuccess, Action<HttpError> onError)
         {
@@ -80,12 +80,12 @@ namespace Skeletom.Essentials.Utils
         /// <param name="url">The URL to call.</param>
         /// <param name="body">The body of the POST.</param>
         /// <param name="headers">Optional request headers.</param>
-        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <param name="onSuccess">The callback executed on a successful request.</param>
+        /// <param name="onError">The callback executed on an unsuccessful request.</param>
         /// <returns></returns>
         public static IEnumerator PostRequest(string url, string body, HttpHeaders headers, Action<string> onSuccess, Action<HttpError> onError)
         {
-            UnityWebRequest webRequest = new UnityWebRequest(url, "POST");
+            UnityWebRequest webRequest = new(url, "POST");
             byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(body);
             if (body.Length > 0)
             {
@@ -135,7 +135,7 @@ namespace Skeletom.Essentials.Utils
                                 if (req.result != UnityWebRequest.Result.Success)
                                 {
                                     string errorMessage = string.Format($"Error making request to URL: {req.url} : {req.error}");
-                                    HttpError error = new HttpError(req.responseCode, errorMessage);
+                                    HttpError error = new(req.responseCode, errorMessage);
                                     pair.onError.Invoke(error);
                                 }
                                 else
@@ -146,7 +146,7 @@ namespace Skeletom.Essentials.Utils
                                     }
                                     catch (Exception e)
                                     {
-                                        HttpError error = new HttpError(500, e.ToString());
+                                        HttpError error = new(500, e.ToString());
                                         pair.onError.Invoke(error);
                                     }
                                 }
@@ -168,8 +168,7 @@ namespace Skeletom.Essentials.Utils
         /// <returns>The local IPv4.</returns>
         public static IPAddress GetLocalIPAddress()
         {
-
-            using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+            using (Socket socket = new(AddressFamily.InterNetwork, SocketType.Dgram, 0))
             {
                 socket.Connect("8.8.8.8", 65530);
                 IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
@@ -198,7 +197,7 @@ namespace Skeletom.Essentials.Utils
         {
             public string authorization;
             public string contentType = "application/json";
-            public Dictionary<string, string> customHeaders = new Dictionary<string, string>();
+            public Dictionary<string, string> customHeaders = new();
 
             public bool Equals(HttpHeaders other)
             {
@@ -227,7 +226,7 @@ namespace Skeletom.Essentials.Utils
 
             public override string ToString()
             {
-                List<string> pairs = new List<string>();
+                List<string> pairs = new();
                 foreach (string key in customHeaders.Keys)
                 {
                     pairs.Add($"{key}::${customHeaders[key]}");

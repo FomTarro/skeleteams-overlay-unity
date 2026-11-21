@@ -3,10 +3,15 @@ using UnityEngine;
 
 namespace Skeletom.BattleStation.Integrations
 {
+    /// <summary>
+    /// Handler for caching images from remote and local file sources, 
+    /// storing them as StreamImage data types.
+    /// </summary>
     public class StreamImageHandler : CacheHandler<StreamImage>
     {
-        protected override void CleanUncachedData(StreamImage data)
+        protected override void DisposeUncachedData(StreamImage data)
         {
+            // Delete frames on disposal
             foreach (var frame in data.frames)
             {
                 Destroy(frame.image);
@@ -15,7 +20,7 @@ namespace Skeletom.BattleStation.Integrations
 
         protected override ContextResolution HandleData(string key, byte[] data)
         {
-            var format = GetImageFormat(data);
+            ImageFormat format = GetImageFormat(data);
             if (format == ImageFormat.Gif)
             {
                 var frames = GifToTextureDecoder.Decode(data).Select(
@@ -26,7 +31,7 @@ namespace Skeletom.BattleStation.Integrations
             }
             else
             {
-                var tex = new Texture2D(2, 2);
+                Texture2D tex = new(2, 2);
                 if (tex.LoadImage(data))
                 {
                     Debug.Log($"Resolved static image: {key}");

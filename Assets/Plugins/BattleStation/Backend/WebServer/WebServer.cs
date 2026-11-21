@@ -9,6 +9,7 @@ namespace Skeletom.BattleStation.Server
 {
     public class WebServer : MonoBehaviour, IServer
     {
+        private readonly Utils.Logger LOGGER = new("WebServer");
 
         [SerializeField]
         private int _port = 9000;
@@ -53,14 +54,22 @@ namespace Skeletom.BattleStation.Server
             }
         }
 
+        public void UnregisterEndpoint(string endpoint)
+        {
+            if (_endpoints.ContainsKey(endpoint.ToLower()))
+            {
+                _endpoints.Remove(endpoint.ToLower());
+            }
+        }
+
         public void StartServer()
         {
             StopServer();
-            Debug.Log(string.Format("HTTP Server starting on port: {0}...", this._port));
+            LOGGER.Log($"HTTP Server starting on port: {_port}...");
             CLOSE_THREAD_AND_CONTEXTS = false;
             LISTENER_THREAD = new Thread(ListenThread);
             LISTENER_THREAD.Start();
-            Debug.Log(string.Format("HTTP Server started on port: {0}", this._port));
+            LOGGER.Log($"HTTP Server started on port: {_port}");
         }
 
         public void StopServer()
@@ -71,7 +80,7 @@ namespace Skeletom.BattleStation.Server
             {
                 HTTP_LISTENER.Close();
                 LISTENER_THREAD.Abort();
-                Debug.Log(string.Format("HTTP Server stopped on port: {0}", this._port));
+                LOGGER.Log($"HTTP Server stopped on port: {_port}");
             }
         }
 
@@ -91,7 +100,6 @@ namespace Skeletom.BattleStation.Server
                 while (!CLOSE_THREAD_AND_CONTEXTS)
                 {
                     HttpListenerContext context = HTTP_LISTENER.GetContext();
-                    //Debug.LogFormat("Recieved request from {0}.", context.Request.RemoteEndPoint.ToString());
                     context.Response.StatusCode = 200;
                     lock (WAITING_CONTEXTS)
                     {
@@ -103,12 +111,12 @@ namespace Skeletom.BattleStation.Server
             {
                 if (typeof(ThreadAbortException) == e.GetType())
                 {
-                    Debug.Log("HTTP Server is aborting listener thread...");
+                    LOGGER.Log("HTTP Server is aborting listener thread...");
                 }
                 else
                 {
-                    Debug.LogError(string.Format("HTTP Server error at {0}.", e.StackTrace));
-                    Debug.LogError(e.Message, this);
+                    LOGGER.LogError($"HTTP Server error at {e.StackTrace}.");
+                    LOGGER.LogError($"{e.Message}");
                 }
             }
         }
@@ -162,7 +170,7 @@ namespace Skeletom.BattleStation.Server
             }
             catch (Exception e)
             {
-                Debug.LogError(string.Format("HTTP Server error: {0}", e));
+                LOGGER.LogError($"HTTP Server error: {e.Message}");
                 if (nextContext != null)
                 {
                     nextContext.Response.StatusCode = 500;

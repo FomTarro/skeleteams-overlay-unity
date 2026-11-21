@@ -17,7 +17,7 @@ namespace Skeletom.Essentials.Lifecycle
         /// <summary>
         /// Method to do ordered loading within
         /// 
-        /// Will be called after Awake()
+        /// Will be called after Scene Load
         /// </summary>
         public abstract void Initialize();
 
@@ -27,11 +27,10 @@ namespace Skeletom.Essentials.Lifecycle
         private bool _initialized = false;
         public bool IsInitialized { get { return _initialized; } }
 
-        private void Awake()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        public static void InitializeAll()
         {
-            // the first object to run Start will Initialize all of the currently extant 
-            if (!LOADING_STARTED)
-            {
+            if(!LOADING_STARTED){
                 LOADING_STARTED = true;
                 OrderedInitializer[] objects = FindObjectsOfType<OrderedInitializer>();
                 Array.Sort(objects);
@@ -49,10 +48,6 @@ namespace Skeletom.Essentials.Lifecycle
                     }
                 }
                 LOADING_FINISHED = true;
-            }
-            if (LOADING_FINISHED && !_initialized)
-            {
-                this.Initialize();
             }
         }
 
