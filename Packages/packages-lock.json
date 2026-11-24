@@ -1,5 +1,19 @@
 {
   "dependencies": {
+    "com.cysharp.yetanotherhttphandler": {
+      "version": "https://github.com/Cysharp/YetAnotherHttpHandler.git?path=src/YetAnotherHttpHandler#1.11.7",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "c386c1cc48d2e56711c15286cf2769353fdccf07"
+    },
+    "com.github-glitchenzo.nugetforunity": {
+      "version": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "4a2d9c8e6a4f0fa50ecb24ec2d14ae588b1951da"
+    },
     "com.olegknyazev.softmask": {
       "version": "https://github.com/olegknyazev/SoftMask.git?path=/Packages/com.olegknyazev.softmask#1.7.0",
       "depth": 0,

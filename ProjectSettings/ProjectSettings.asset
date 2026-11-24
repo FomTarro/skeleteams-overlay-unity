@@ -162,7 +162,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Standalone: com.DefaultCompany.skeleteams-overlay-unity
+    Standalone: com.Skeletom.skeleteams-overlay-unity
   buildNumber:
     Standalone: 0
     VisionOS: 0

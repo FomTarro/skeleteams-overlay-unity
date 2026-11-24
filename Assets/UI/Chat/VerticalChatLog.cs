@@ -28,6 +28,20 @@ public class VerticalChatLog : ChatLogGameObject<VerticalChatMessage>
             LayoutRebuilder.ForceRebuildLayoutImmediate(_logParent);
         });
 
+        IntegrationManager.Instance.YouTube.onChatMessage.AddListener((msg) =>
+        {
+            var obj = Display(msg);
+            obj.transform.SetParent(_logParent);
+            CheckPriorMessages();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_logParent);
+        });
+        IntegrationManager.Instance.YouTube.onChatMessageDelete.AddListener((msg) =>
+        {
+            Dispose(msg.id);
+            CheckPriorMessages();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_logParent);
+        });
+
         IntegrationManager.Instance.Discord.onChatMessage.AddListener((msg) =>
         {
             var obj = Display(msg);

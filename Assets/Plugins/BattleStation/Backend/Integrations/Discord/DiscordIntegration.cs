@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using Skeletom.BattleStation.Integrations.Discord.IPC;
+using Skeletom.BattleStation.Utils;
 using Skeletom.Essentials.IO;
 using Skeletom.Essentials.Utils;
 using UnityEngine;
@@ -406,8 +407,8 @@ namespace Skeletom.BattleStation.Integrations.Discord
 
         private void RequestToken(Action<AuthenticateResponse> onSuccess, Action<ErrorResponse> onError)
         {
-            string codeVerifier = GenerateCodeVerifier();
-            string codeChallenge = GenerateCodeChallenge(codeVerifier);
+            string codeVerifier = PKCE.GenerateCodeVerifier();
+            string codeChallenge = PKCE.GenerateCodeChallenge(codeVerifier);
             AuthorizeRequest request = new()
             {
                 args = new AuthorizeRequestArgs
@@ -474,31 +475,6 @@ namespace Skeletom.BattleStation.Integrations.Discord
                 onSuccess(s);
                 SetToken(s.data.access_token);
             }, onError);
-        }
-
-        // PKCE helpers
-        private static string GenerateCodeVerifier()
-        {
-            var bytes = new byte[32];
-            using (var rng = RandomNumberGenerator.Create()){
-                rng.GetBytes(bytes);
-            }
-            return Base64UrlEncode(bytes);
-        }
-
-        private static string GenerateCodeChallenge(string verifier)
-        {
-            using var sha256 = SHA256.Create();
-            var hash = sha256.ComputeHash(Encoding.ASCII.GetBytes(verifier));
-            return Base64UrlEncode(hash);
-        }
-
-        private static string Base64UrlEncode(byte[] bytes)
-        {
-            return Convert.ToBase64String(bytes)
-                .TrimEnd('=')
-                .Replace('+', '-')
-                .Replace('/', '_');
         }
 
         #endregion

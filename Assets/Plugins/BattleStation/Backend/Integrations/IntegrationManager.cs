@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Skeletom.BattleStation.Integrations.Discord;
 using Skeletom.BattleStation.Integrations.OBS;
 using Skeletom.BattleStation.Integrations.Twitch;
+using Skeletom.BattleStation.Integrations.YouTube;
 using Skeletom.Essentials.Lifecycle;
 using UnityEngine;
 
@@ -14,6 +15,9 @@ namespace Skeletom.BattleStation.Integrations
         [SerializeField]
         private TwitchIntegration _twitch;
         public TwitchIntegration Twitch { get { return _twitch; } }
+        [SerializeField]
+        private YouTubeIntegration _youtube;
+        public YouTubeIntegration YouTube { get { return _youtube; } }
 
         [Header("Other Software")]
         [SerializeField]
