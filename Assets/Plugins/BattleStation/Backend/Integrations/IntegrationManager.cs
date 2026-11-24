@@ -31,6 +31,7 @@ namespace Skeletom.BattleStation.Integrations
         public override void Initialize()
         {
             _twitch.Enable();
+            _youtube.Enable();
             _obs.Enable();
             _discord.Enable();
         }

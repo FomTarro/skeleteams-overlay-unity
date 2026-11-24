@@ -1,0 +1,2813 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>YTLiveChat</name>
+    </assembly>
+    <members>
+        <member name="T:YTLiveChat.Contracts.Models.Author">
+            <summary>
+            Represents the Author of the message
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Author.Name">
+            <summary>
+            Public name of the Author
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Author.Thumbnail">
+            <summary>
+            ImagePart containing the Authors Thumbnail
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Author.ChannelId">
+            <summary>
+            ChannelId if available
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Author.ChannelHandle">
+            <summary>
+            The @handle of the author (e.g. <c>"@channelHandle"</c>), when available.
+            Currently populated only for ticker bar items (super chats / paid stickers in the ticker bar),
+            where YouTube includes the handle directly in the ticker item renderer.
+            Null for regular chat messages and membership events.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Author.Badge">
+            <summary>
+            Current Badge of the Author within the Live Channel
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.Badge">
+            <summary>
+            Badges available on YouTube for Users
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Badge.Label">
+            <summary>
+            Text representation of the Badge
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Badge.Thumbnail">
+            <summary>
+            ImagePart containing the Badge Thumbnail
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.BannerType">
+            <summary>
+            Discriminates the type of a banner produced by <c>addBannerToLiveChatCommand</c>.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.BannerType.Unknown">
+            <summary>Unrecognised banner type.</summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.BannerType.PinnedMessage">
+            <summary>A pinned chat message (<c>LIVE_CHAT_BANNER_TYPE_PINNED_MESSAGE</c>).</summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.BannerType.CrossChannelRedirect">
+            <summary>
+            A cross-channel redirect, shown when a stream ends and viewers are directed to another live
+            (<c>LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT</c>).
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.BannerType.ChatSummary">
+            <summary>
+            An AI-generated chat summary banner (<c>LIVE_CHAT_BANNER_TYPE_CHAT_SUMMARY</c>).
+            Shown periodically during long streams as an experimental YouTube feature.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.BannerType.CallForQuestions">
+            <summary>
+            A pinned Q&amp;A question banner (<c>liveChatCallForQuestionsRenderer</c>).
+            Shown when a streamer highlights a viewer's question for the audience.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.BannerItem">
+            <summary>
+            Base class for all banner types produced by <c>addBannerToLiveChatCommand</c>.
+            Pattern-match on <see cref="T:YTLiveChat.Contracts.Models.PinnedMessageBannerItem"/> or
+            <see cref="T:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem"/> to access type-specific properties.
+            <code>
+            if (e.Banner is CrossChannelRedirectBannerItem redirect)
+            {
+                // redirect.RedirectChannelHandle, redirect.RedirectVideoId
+            }
+            else if (e.Banner is PinnedMessageBannerItem pinned)
+            {
+                // pinned.Author, pinned.Message, pinned.PinnedBy, ...
+            }
+            </code>
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.BannerItem.ActionId">
+            <summary>
+            The server-assigned action ID used to match a subsequent
+            <c>removeBannerForLiveChatCommand</c> (see <see cref="P:YTLiveChat.Contracts.Services.BannerRemovedEventArgs.TargetActionId"/>).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.BannerItem.BannerType">
+            <summary>
+            The kind of banner. Use this to decide which concrete subclass to cast to,
+            or pattern-match directly on the subclass type.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.PinnedMessageBannerItem">
+            <summary>
+            A pinned chat message banner (<c>LIVE_CHAT_BANNER_TYPE_PINNED_MESSAGE</c>).
+            Produced when a channel owner or moderator pins a message in live chat.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PinnedMessageBannerItem.PinnedBy">
+            <summary>
+            The concatenated "Pinned by @handle" text from the banner header, or null if absent.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PinnedMessageBannerItem.Author">
+            <summary>
+            The author of the pinned message.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PinnedMessageBannerItem.Message">
+            <summary>
+            The content of the pinned message.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PinnedMessageBannerItem.MessageId">
+            <summary>
+            The original chat item ID of the pinned message.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PinnedMessageBannerItem.Timestamp">
+            <summary>
+            The timestamp of the pinned message.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PinnedMessageBannerItem.IsVerified">
+            <summary>Whether the author of the pinned message is a verified channel.</summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PinnedMessageBannerItem.IsModerator">
+            <summary>Whether the author of the pinned message is a chat moderator.</summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PinnedMessageBannerItem.IsOwner">
+            <summary>Whether the author of the pinned message is the channel owner.</summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.ChatSummaryBannerItem">
+            <summary>
+            An AI-generated chat summary banner (<c>LIVE_CHAT_BANNER_TYPE_CHAT_SUMMARY</c>).
+            Shown periodically during long streams as an experimental YouTube feature. The summary
+            text is auto-generated from recent chat messages.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatSummaryBannerItem.SummaryId">
+            <summary>
+            The server-assigned summary identifier (distinct from <see cref="P:YTLiveChat.Contracts.Models.BannerItem.ActionId"/>).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatSummaryBannerItem.Summary">
+            <summary>
+            The full <c>chatSummary.runs</c> content as structured message parts, preserving bold,
+            deemphasized, and plain text runs. Typically contains: a bold title run, a newline,
+            a deemphasized disclaimer run, a newline, and the body text run.
+            Concatenate <see cref="P:YTLiveChat.Contracts.Models.TextPart.Text"/> values for a plain-text summary.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.CallForQuestionsBannerItem">
+            <summary>
+            A pinned Q&amp;A question banner (<c>liveChatCallForQuestionsRenderer</c>).
+            Shown when a streamer highlights a viewer's question for the chat audience.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CallForQuestionsBannerItem.QuestionMessage">
+            <summary>
+            The question text as structured message parts (may include emoji).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CallForQuestionsBannerItem.CreatorHandle">
+            <summary>
+            The streamer's @handle (e.g. <c>"@Alofokeradioshow"</c>), or null if absent.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CallForQuestionsBannerItem.CreatorAvatar">
+            <summary>
+            Thumbnail image of the streamer's profile photo.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CallForQuestionsBannerItem.FeatureLabel">
+            <summary>
+            Feature label text (typically <c>"Q&amp;A"</c>).
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.CrossChannelRedirectType">
+            <summary>
+            Discriminates the two observed variants of a
+            <see cref="T:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem"/>.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Unknown">
+            <summary>Unrecognised or future variant.</summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Redirect">
+            <summary>
+            The current stream ended and the channel owner is redirecting viewers to another
+            live stream ("Don't miss out! People are going to watch something from @Handle").
+            The button is "Go now" (<c>watchEndpoint</c>); <see cref="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectVideoId"/>
+            is always non-null for this variant.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Raid">
+            <summary>
+            Another channel's viewers have joined this stream and are watching together
+            ("@Handle and their viewers just joined. Say hello!").
+            The button is "Learn more" (<c>urlEndpoint</c>); <see cref="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectVideoId"/>
+            is always null for this variant.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem">
+            <summary>
+            A cross-channel redirect banner (<c>LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT</c>).
+            Two distinct variants exist — check <see cref="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectType"/> to tell them apart:
+            <list type="bullet">
+              <item>
+                <description>
+                  <see cref="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Redirect"/> — the stream ended and the channel
+                  owner is sending viewers away to another live stream ("Don't miss out!…"). The "Go now"
+                  button carries a direct <c>watchEndpoint</c>; <see cref="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectVideoId"/> is non-null.
+                  Pass it to <c>IYTLiveChat.Start(liveId: ...)</c> to follow immediately.
+                </description>
+              </item>
+              <item>
+                <description>
+                  <see cref="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Raid"/> — another channel's viewers have joined this
+                  stream and are watching together ("@Handle and their viewers just joined. Say hello!"). The
+                  "Learn more" button links to a support page; <see cref="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectVideoId"/> is null.
+                  Use <see cref="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectChannelHandle"/> with <c>Start(handle: ...)</c> to connect to
+                  that channel's current stream separately.
+                </description>
+              </item>
+            </list>
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectType">
+            <summary>
+            Whether the channel owner is redirecting viewers away to another stream (<see cref="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Redirect"/>)
+            or another channel's viewers have joined this stream (<see cref="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Raid"/>).
+            Use this instead of null-checking <see cref="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectVideoId"/> to branch on intent.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectChannelHandle">
+            <summary>
+            The @handle of the channel involved (e.g. <c>"@TakanashiKiara"</c>).
+            Extracted from the bold text run in the banner message.
+            For <see cref="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Redirect"/>, pass to
+            <c>IYTLiveChat.Start(handle: ...)</c> as an alternative to <see cref="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectVideoId"/>.
+            For <see cref="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Raid"/>, use it to look up that channel's
+            current livestream via <c>Start(handle: ...)</c>.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectVideoId">
+            <summary>
+            The video ID of the destination livestream.
+            Non-null only for <see cref="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Redirect"/> ("Go now" button).
+            Null for <see cref="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Raid"/> ("Learn more" button).
+            Pass to <c>IYTLiveChat.Start(liveId: ...)</c> to connect directly when non-null.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.ChannelPhoto">
+            <summary>
+            Thumbnail image of the other channel's profile photo.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.BannerMessage">
+            <summary>
+            The full banner message as structured parts, e.g.:
+            <list type="bullet">
+              <item><description><see cref="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Redirect"/>: "Don't miss out! People are going to watch something from " + "@TakanashiKiara" (bold)</description></item>
+              <item><description><see cref="F:YTLiveChat.Contracts.Models.CrossChannelRedirectType.Raid"/>: "@holoen_ceciliaimmergreen" (bold) + " and their viewers just joined. Say hello!"</description></item>
+            </list>
+            Concatenate <see cref="P:YTLiveChat.Contracts.Models.TextPart.Text"/> values for a plain-text summary.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.ChatItem">
+            <summary>
+            Represents a single item received from the YouTube Live Chat feed.
+            Can be a regular message, Super Chat, Membership event, etc.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.Id">
+            <summary>
+            Unique Identifier for the chat item.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.Author">
+            <summary>
+            Author of the ChatItem (user sending message, making donation, receiving gift, etc.).
+            Note: For GiftPurchase events, this is the Gifter. For GiftRedemption, this is the Recipient.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.Message">
+            <summary>
+            Array of message parts (Text, Emoji, Image).
+            For Super Chats, this represents the user's optional comment.
+            For Membership events (New/Milestone/Redemption), this often contains the system message from the header/subtext.
+            For GiftPurchase events, this is typically empty as the main info is in MembershipDetails.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.Superchat">
+            <summary>
+            Contains Super Chat or Super Sticker details if applicable. Null otherwise.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.MembershipDetails">
+            <summary>
+            Contains Membership event details if applicable (New, Milestone, GiftPurchase, GiftRedemption). Null otherwise.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.IsMembership">
+            <summary>
+            Whether or not Author has *any* membership level on the current Live Channel.
+            Determined primarily by the presence of a membership badge.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.IsVerified">
+            <summary>
+            Whether or not Author is Verified on YouTube.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.IsOwner">
+            <summary>
+            Whether or not Author is the Owner of the current Live Channel.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.IsModerator">
+            <summary>
+            Whether or not Author is a Moderator of the current Live Channel.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.Timestamp">
+            <summary>
+            Timestamp when the ChatItem was created/received from the API (approximated).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.ViewerLeaderboardRank">
+            <summary>
+            Optional leaderboard rank shown by YouTube's points system for this message (e.g. 1, 2, 3).
+            Present when chat message includes the crown rank button.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ChatItem.IsTicker">
+            <summary>
+            Indicates this item originated from a ticker action (top bar) rather than standard addChatItem action.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.CreatorGoalItem">
+            <summary>
+            Represents a Super Chat creator goal ticker chip
+            (<c>showCreatorGoalTickerChipCommand</c>).
+            Emitted whenever the live-chat ticker bar shows or refreshes the creator's goal progress chip.
+            Multiple events for the same goal share the same <see cref="P:YTLiveChat.Contracts.Models.CreatorGoalItem.EntityKey"/>.
+            </summary>
+            <remarks>
+            Creator goals are a YouTube feature that lets streamers set a Super Chat donation target
+            visible to viewers in the ticker. The <c>showCreatorGoalTickerChipCommand</c> action type
+            fires once per Super Chat received while a goal is active (and occasionally on its own).
+            </remarks>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CreatorGoalItem.Id">
+            <summary>
+            Unique identifier for this ticker chip action instance.
+            Different chip instances for the same goal share <see cref="P:YTLiveChat.Contracts.Models.CreatorGoalItem.EntityKey"/> but have distinct <see cref="P:YTLiveChat.Contracts.Models.CreatorGoalItem.Id"/> values.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CreatorGoalItem.EntityKey">
+            <summary>
+            Entity key that identifies the specific goal across all related actions.
+            Use this to correlate multiple <c>showCreatorGoalTickerChipCommand</c> events for the same goal.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CreatorGoalItem.GoalType">
+            <summary>
+            Human-readable goal type, e.g. <c>"Super Chat Goal"</c>.
+            Derived from the accessibility label (<c>a11yLabel</c>: "See Super Chat goal").
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CreatorGoalItem.ProgressLabel">
+            <summary>
+            Progress accessibility label from the engagement panel, e.g.
+            <c>"Super Chat goal progress: $0 out of $1"</c>.
+            The placeholder tokens (<c>$0</c>, <c>$1</c>) are filled by the YouTube client at display time.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.CreatorGoalItem.AccessibilityLabel">
+            <summary>
+            Screen-reader label from the ticker chip, e.g. <c>"See Super Chat goal"</c>.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.EngagementMessageType">
+            <summary>
+            Represents the type of viewer engagement message.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.EngagementMessageType.Unknown">
+            <summary>The specific type could not be determined.</summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.EngagementMessageType.CommunityGuidelines">
+            <summary>
+            YouTube community guidelines reminder shown at the start of chat
+            ("Welcome to live chat! Remember to guard your privacy and abide by our community guidelines.").
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.EngagementMessageType.SubscribersOnly">
+            <summary>
+            Subscribers-only mode notification shown when the channel restricts chat
+            to subscribers of a minimum duration.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.EngagementMessageType.PollResult">
+            <summary>
+            Poll result summary shown after a poll closes (icon type "POLL").
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.EngagementItem">
+            <summary>
+            Represents a YouTube viewer engagement message (<c>liveChatViewerEngagementMessageRenderer</c>),
+            such as community guidelines reminders, subscribers-only mode notices, or poll result summaries.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.EngagementItem.Id">
+            <summary>Unique identifier for this engagement message.</summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.EngagementItem.Timestamp">
+            <summary>Timestamp when the engagement message was issued.</summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.EngagementItem.MessageType">
+            <summary>The type of engagement message.</summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.EngagementItem.Message">
+            <summary>
+            Structured message parts from the message runs, preserving bold, italic,
+            deemphasized, and emoji formatting. Concatenate <see cref="P:YTLiveChat.Contracts.Models.TextPart.Text"/> values
+            for a plain-text summary.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.EngagementItem.LearnMoreUrl">
+            <summary>
+            URL for a "Learn more" action button, if present.
+            Typically points to a YouTube support page.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.GiftItem">
+            <summary>
+            Represents a virtual gift sent by a viewer using YouTube Jewels.
+            Produced by <c>giftMessageViewModel</c> in an <c>addChatItemAction</c>.
+            </summary>
+            <remarks>
+            YouTube Jewels is a virtual gifting system distinct from gift memberships
+            (<c>liveChatSponsorshipsGiftPurchaseAnnouncementRenderer</c>). Viewers spend
+            Jewels (purchased with real money) to send named gift items to the streamer.
+            </remarks>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.GiftItem.Id">
+            <summary>
+            Unique identifier for this gift action.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.GiftItem.AuthorHandle">
+            <summary>
+            The sender's @handle (e.g. <c>"@yaniescobar2170"</c>).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.GiftItem.AuthorAvatar">
+            <summary>
+            The sender's profile picture, when provided by YouTube (~45% of gifts).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.GiftItem.Text">
+            <summary>
+            Pre-formatted description as supplied by YouTube,
+            e.g. <c>"sent Gold coin for 10 Jewels"</c>.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.GiftItem.GiftItemName">
+            <summary>
+            The gift item name, parsed from <see cref="P:YTLiveChat.Contracts.Models.GiftItem.Text"/>
+            (e.g. <c>"Gold coin"</c>, <c>"Happy poop"</c>, <c>"Floating heart"</c>).
+            Null when the text does not match the expected pattern.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.GiftItem.JewelAmount">
+            <summary>
+            Number of Jewels spent on this gift, parsed from <see cref="P:YTLiveChat.Contracts.Models.GiftItem.Text"/>
+            (e.g. <c>10</c> from <c>"sent Gold coin for 10 Jewels"</c>).
+            Null when the text does not match the expected pattern.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.GiftItem.GiftImageName">
+            <summary>
+            Client-side image name for the gift icon (e.g. <c>"GIFT"</c>).
+            This is an internal YouTube client symbol identifier, not a URL.
+            All gift types currently share the same generic icon; the specific
+            item name is only available via <see cref="P:YTLiveChat.Contracts.Models.GiftItem.GiftItemName"/>.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.GiftItem.GiftImageColor">
+            <summary>
+            ARGB color tint of the gift icon as a 6-digit uppercase hex string
+            (e.g. <c>"FF0000"</c>), or <see langword="null"/> when absent.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.GiftItem.GiftImage">
+            <summary>
+            CDN image of the gift item from <c>giftMessageViewModel.giftImage</c>.
+            Present on ~45% of gifts. Distinct from <see cref="P:YTLiveChat.Contracts.Models.GiftItem.GiftImageName"/> which is a
+            client-side resource symbol identifier.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.MembershipEventType">
+            <summary>
+            Represents the type of membership event.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.MembershipEventType.Unknown">
+            <summary>
+            The specific type could not be determined.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.MembershipEventType.New">
+            <summary>
+            A user has become a new member.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.MembershipEventType.Milestone">
+            <summary>
+            A user has reached a membership duration milestone.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.MembershipEventType.GiftPurchase">
+            <summary>
+            A user announced they gifted memberships (from LiveChatSponsorshipsGiftPurchaseAnnouncementRenderer).
+            The author of the ChatItem is the gifter.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.MembershipEventType.GiftRedemption">
+            <summary>
+            A user received a gifted membership (from LiveChatSponsorshipsGiftRedemptionAnnouncementRenderer).
+            The author of the ChatItem is the recipient.
+            </summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.MembershipEventType.Upgraded">
+            <summary>
+            A user upgraded their existing membership to a higher tier.
+            Detected from <c>headerSubtext</c> using the runs shape
+            <c>["Upgraded membership to ", "{TierName}", "!"]</c>.
+            <c>LevelName</c> carries the destination tier name.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.MembershipDetails">
+            <summary>
+            Contains specific details related to a YouTube membership event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.MembershipDetails.EventType">
+            <summary>
+            The type of membership event (New, Milestone, GiftPurchase, GiftRedemption).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.MembershipDetails.LevelName">
+            <summary>
+            The user-visible name of the membership level or tier.
+            This is typically only available for new join events from welcome text (for example, "Welcome to {Tier}!").
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.MembershipDetails.MembershipBadgeLabel">
+            <summary>
+            The raw membership badge label (for example "New member", "Member (2 years)").
+            This often represents tenure, not membership tier.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.MembershipDetails.HeaderPrimaryText">
+            <summary>
+            The primary text displayed in the membership item's header (e.g., "Member for 6 months", "Gifted 5 memberships", "Welcome!").
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.MembershipDetails.HeaderSubtext">
+            <summary>
+            The secondary text displayed (e.g., "New member" from headerSubtext).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.MembershipDetails.MilestoneMonths">
+            <summary>
+            The number of months for a Milestone event, parsed from HeaderPrimaryText. Null otherwise.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.MembershipDetails.GifterUsername">
+            <summary>
+            The username of the user who gifted the membership(s).
+            Only applicable if EventType is GiftPurchase. Null otherwise.
+            Extracted from the author of the gift purchase announcement.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.MembershipDetails.GiftCount">
+            <summary>
+            The number of memberships gifted in a GiftPurchase event.
+            Only applicable if EventType is GiftPurchase. Null otherwise.
+            Parsed from HeaderPrimaryText (e.g., "Gifted 5 memberships"). Defaults to 1 if parsing fails but text indicates a gift.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.MembershipDetails.RecipientUsername">
+            <summary>
+            The username of the user who received the gifted membership.
+            Only applicable if EventType is GiftRedemption. Null otherwise.
+            Extracted from the author of the gift redemption announcement.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.MessagePart">
+            <summary>
+            Base class for individual message parts
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.ImagePart">
+            <summary>
+            Image variant of a message part
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ImagePart.Url">
+            <summary>
+            URL of the image
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.ImagePart.Alt">
+            <summary>
+            Alt string of the image
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Contracts.Models.ImagePart.ToString">
+            <summary>
+            Create a quasi json representation of an ImagePart
+            </summary>
+            <returns>String representation of Image in quasi json</returns>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.EmojiPart">
+            <summary>
+            Emoji variant of a message part
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.EmojiPart.EmojiText">
+            <summary>
+            Text representation of the emoji
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.EmojiPart.IsCustomEmoji">
+            <summary>
+            Whether or not Emoji is a custom emoji of the channel
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Contracts.Models.EmojiPart.ToString">
+            <summary>
+            Create a quasi json representation of an EmojiPart
+            </summary>
+            <returns>String representation of an Emoji in quasi json</returns>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.TextPart">
+            <summary>
+            Text run variant of a message part, carrying the raw text and optional inline formatting flags.
+            Use <see cref="P:YTLiveChat.Contracts.Models.TextPart.Text"/> for plain-text rendering; check <see cref="P:YTLiveChat.Contracts.Models.TextPart.Bold"/>, <see cref="P:YTLiveChat.Contracts.Models.TextPart.Italics"/>,
+            and <see cref="P:YTLiveChat.Contracts.Models.TextPart.IsDeemphasized"/> for rich rendering. All flags default to <see langword="false"/>.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.TextPart.Text">
+            <summary>
+            Contained text of the message
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.TextPart.Bold">
+            <summary>
+            Whether this run is rendered in bold.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.TextPart.Italics">
+            <summary>
+            Whether this run is rendered in italics.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.TextPart.IsDeemphasized">
+            <summary>
+            Whether this run is rendered in a deemphasized (subdued) style,
+            e.g. the disclaimer line in an AI-generated chat summary banner.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.TextPart.TextColor">
+            <summary>
+            Per-run text color as a 6-digit uppercase hex string (e.g. <c>"FFFFFF"</c>), or
+            <see langword="null"/> when the run carries no explicit color. Currently observed
+            on <c>liveChatBannerRedirectRenderer</c> message runs.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Contracts.Models.TextPart.ToString">
+            <summary>
+            Return the text
+            </summary>
+            <returns>string representation of TextPart</returns>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.PollChoice">
+            <summary>
+            Represents one voting option in a live poll.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PollChoice.Text">
+            <summary>
+            The display text of the choice as structured message parts.
+            Concatenate <see cref="P:YTLiveChat.Contracts.Models.TextPart.Text"/> values for a plain-text label.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PollChoice.IsSelected">
+            <summary>
+            Whether the authenticated viewer has selected this choice.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PollChoice.VoteRatio">
+            <summary>
+            Fraction of total votes for this choice (0.0–1.0). Zero before any votes are cast.
+            Multiply by 100 to get the percentage.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.PollItem">
+            <summary>
+            Represents the current state of a live poll, produced by
+            <c>showLiveChatActionPanelAction</c> (initial open) and
+            <c>updateLiveChatPollAction</c> (live updates).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PollItem.PollId">
+            <summary>
+            The unique identifier for this poll.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PollItem.Question">
+            <summary>
+            The poll question as structured message parts, or null when the server sends an empty
+            question field. Concatenate <see cref="P:YTLiveChat.Contracts.Models.TextPart.Text"/> values for a plain-text label.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PollItem.CreatorHandle">
+            <summary>
+            The handle of the creator who started the poll (e.g. "@ShirakamiFubuki").
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PollItem.TotalVotes">
+            <summary>
+            Total number of votes cast, parsed from the server's metadata text (e.g. "1,234 votes" → 1234).
+            Null if the vote-count field is absent or cannot be parsed.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PollItem.Choices">
+            <summary>
+            The poll choices in display order.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PollItem.IsNew">
+            <summary>
+            True when produced by <c>showLiveChatActionPanelAction</c> (poll just opened);
+            false when produced by <c>updateLiveChatPollAction</c> (vote-count update).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.PollItem.PollType">
+            <summary>
+            The InnerTube poll type string (e.g. <c>"LIVE_CHAT_POLL_TYPE_CREATOR"</c>).
+            Null when absent from the payload.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.StreamStatus">
+            <summary>Live status of a stream entry.</summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.StreamStatus.Live">
+            <summary>Currently broadcasting.</summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.StreamStatus.Upcoming">
+            <summary>Scheduled for a future date.</summary>
+        </member>
+        <member name="F:YTLiveChat.Contracts.Models.StreamStatus.Past">
+            <summary>Finished broadcast (replay available).</summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.StreamInfo">
+            <summary>
+            Details for a single stream entry from a channel's streams page.
+            Returned by <see cref="M:YTLiveChat.Contracts.Services.IYTLiveChat.GetStreamsAsync(System.String,System.String,System.Threading.CancellationToken)"/>.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.StreamInfo.LiveId">
+            <summary>YouTube video ID.</summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.StreamInfo.Title">
+            <summary>Stream title.</summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.StreamInfo.ThumbnailUrl">
+            <summary>Best available thumbnail URL, or null if unavailable.</summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.StreamInfo.Status">
+            <summary>Live status: Live, Upcoming, or Past.</summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.StreamInfo.ViewerCount">
+            <summary>
+            Current viewer or waiting count.
+            Non-null for Live (viewers) and Upcoming (waiting) streams.
+            Null for Past streams.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.StreamInfo.ViewCount">
+            <summary>
+            Total view count for Past streams. Null for Live and Upcoming.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.StreamInfo.ScheduledAt">
+            <summary>
+            Scheduled broadcast time for Upcoming streams (UTC). Null for Live and Past.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.StreamInfo.PublishedTimeText">
+            <summary>
+            Relative published time text as returned by YouTube (e.g. "3 days ago").
+            Populated for Past streams. Null for Live and Upcoming.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.StreamInfo.Duration">
+            <summary>
+            Stream duration for Past streams. Null for Live and Upcoming.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Models.Superchat">
+            <summary>
+            Represents a Super Chat or Super Sticker event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Superchat.AmountString">
+            <summary>
+            The raw amount string displayed (e.g., "$5.00", "¥1,000").
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Superchat.AmountValue">
+            <summary>
+            The numeric value of the amount, parsed from AmountString.
+            Returns 0 if parsing fails.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Superchat.Currency">
+            <summary>
+            The currency code (e.g., "USD", "JPY") or symbol, parsed from AmountString.
+            Defaults to "USD" if parsing fails.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Superchat.BodyBackgroundColor">
+            <summary>
+            The primary background color hex code (e.g., "1565C0" for blue) for the Super Chat body or sticker background.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Superchat.HeaderBackgroundColor">
+            <summary>
+            The background color hex code for the Super Chat header. Null for Super Stickers or if unavailable.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Superchat.HeaderTextColor">
+            <summary>
+            The text color hex code for the Super Chat header. Null for Super Stickers or if unavailable.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Superchat.BodyTextColor">
+            <summary>
+            The text color hex code for the Super Chat body (user message). Null for Super Stickers or if unavailable.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Superchat.AuthorNameTextColor">
+            <summary>
+            The text color hex code for the author's name within the Super Chat or Super Sticker. Null if unavailable.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Models.Superchat.Sticker">
+            <summary>
+            If the event is a Super Sticker, contains an ImagePart with sticker details. Null otherwise.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.IYTLiveChat">
+            <summary>
+            Represents the YouTube Live Chat Service
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.InitialPageLoaded">
+            <summary>
+            Fires after the initial Live page was loaded
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.ChatStopped">
+            <summary>
+            Fires after Chat was stopped
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.ChatReceived">
+            <summary>
+            Fires when a ChatItem was received
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.LivestreamStarted">
+            <summary>
+            Fires when a livestream becomes active for the monitored target.
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.LivestreamEnded">
+            <summary>
+            Fires when the current livestream ends for the monitored target.
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.LivestreamInaccessible">
+            <summary>
+            Fires when monitor mode detects a livestream candidate but cannot initialize chat access
+            (for example members-only/login-required/unplayable restrictions).
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.RawActionReceived">
+            <summary>
+            Fires when a raw action payload was received (including unsupported action types).
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.PollUpdated">
+            <summary>
+            Fires when a poll opens or its live vote counts change.
+            Produced by <c>showLiveChatActionPanelAction</c> (initial open) and
+            <c>updateLiveChatPollAction</c> (periodic vote-count refresh).
+            <para>
+            Poll lifecycle — subscribe to events in this order:
+            <list type="number">
+              <item><description><see cref="E:YTLiveChat.Contracts.Services.IYTLiveChat.PollUpdated"/> where <see cref="P:YTLiveChat.Contracts.Models.PollItem.IsNew"/> is <see langword="true"/> — a new poll just opened; choices have 0 votes.</description></item>
+              <item><description><see cref="E:YTLiveChat.Contracts.Services.IYTLiveChat.PollUpdated"/> where <see cref="P:YTLiveChat.Contracts.Models.PollItem.IsNew"/> is <see langword="false"/> — live vote-count updates; use <see cref="P:YTLiveChat.Contracts.Models.PollItem.PollId"/> to correlate.</description></item>
+              <item><description><see cref="E:YTLiveChat.Contracts.Services.IYTLiveChat.PollClosed"/> — the poll panel was dismissed and the poll is over.</description></item>
+              <item><description><see cref="E:YTLiveChat.Contracts.Services.IYTLiveChat.EngagementMessageReceived"/> with <see cref="F:YTLiveChat.Contracts.Models.EngagementMessageType.PollResult"/> — a formatted text summary (e.g. "DIG (70%) … Poll complete: 1.3K votes") appears in the chat feed shortly after <see cref="E:YTLiveChat.Contracts.Services.IYTLiveChat.PollClosed"/>. This is a chat-level visual and is <em>not</em> required to track poll lifecycle.</description></item>
+            </list>
+            </para>
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.PollClosed">
+            <summary>
+            Fires when the poll panel is dismissed (<c>closeLiveChatActionPanelAction</c>).
+            This is the authoritative signal that a poll has ended.
+            <see cref="P:YTLiveChat.Contracts.Services.PollClosedEventArgs.PollId"/> matches the <see cref="P:YTLiveChat.Contracts.Models.PollItem.PollId"/> from
+            the preceding <see cref="E:YTLiveChat.Contracts.Services.IYTLiveChat.PollUpdated"/> events.
+            <para>
+            Shortly after this event, <see cref="E:YTLiveChat.Contracts.Services.IYTLiveChat.EngagementMessageReceived"/> fires with
+            <see cref="F:YTLiveChat.Contracts.Models.EngagementMessageType.PollResult"/> carrying the formatted result text visible in chat.
+            You do <em>not</em> need to subscribe to that engagement event to know the poll ended —
+            <see cref="E:YTLiveChat.Contracts.Services.IYTLiveChat.PollClosed"/> alone is sufficient.
+            </para>
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.ChatItemDeleted">
+            <summary>
+            Fires when a single chat message is removed (<c>removeChatItemAction</c>).
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.ChatItemsDeletedByAuthor">
+            <summary>
+            Fires when all messages from a specific author are removed (<c>removeChatItemByAuthorAction</c>
+            or <c>markChatItemsByAuthorAsDeletedAction</c>).
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.BannerAdded">
+            <summary>
+            Fires when a banner is added (<c>addBannerToLiveChatCommand</c>).
+            The <see cref="P:YTLiveChat.Contracts.Services.BannerAddedEventArgs.Banner"/> property is one of two concrete subclasses —
+            pattern-match to access type-specific properties:
+            <list type="bullet">
+              <item><description>
+                <see cref="T:YTLiveChat.Contracts.Models.PinnedMessageBannerItem"/> — a pinned chat message; carries <c>Author</c>,
+                <c>Message</c>, <c>PinnedBy</c>, <c>Timestamp</c>, and role flags
+                (<c>IsOwner</c>, <c>IsModerator</c>, <c>IsVerified</c>).
+              </description></item>
+              <item><description>
+                <see cref="T:YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem"/> — a cross-channel banner; check
+                <c>RedirectType</c> to distinguish an owner redirect (<c>Redirect</c>, <c>RedirectVideoId</c> non-null)
+                from viewers raiding into this stream (<c>Raid</c>, <c>RedirectVideoId</c> null).
+                Pass <c>RedirectVideoId</c> or <c>RedirectChannelHandle</c> to <c>IYTLiveChat.Start</c> to follow.
+              </description></item>
+            </list>
+            Use <see cref="P:YTLiveChat.Contracts.Services.BannerRemovedEventArgs.TargetActionId"/> in the subsequent <see cref="E:YTLiveChat.Contracts.Services.IYTLiveChat.BannerRemoved"/>
+            event to correlate with <see cref="P:YTLiveChat.Contracts.Models.BannerItem.ActionId"/>.
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.BannerRemoved">
+            <summary>
+            Fires when a banner is removed (<c>removeBannerForLiveChatCommand</c>).
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.ChatItemReplaced">
+            <summary>
+            Fires when an existing chat item is replaced with new content (<c>replaceChatItemAction</c>).
+            The replacement is typically an updated version of the same message (e.g. after slow-mode
+            resolves a pending message). <see cref="P:YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs.Replacement"/> is null
+            when the replacement item type produces no <see cref="T:YTLiveChat.Contracts.Models.ChatItem"/> (e.g. placeholder).
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.EngagementMessageReceived">
+            <summary>
+            Fires when a viewer engagement system message is received
+            (<c>liveChatViewerEngagementMessageRenderer</c>). These are YouTube-generated notices
+            that appear in the chat feed but are not user messages. Inspect
+            <see cref="P:YTLiveChat.Contracts.Models.EngagementItem.MessageType"/> to distinguish variants:
+            <list type="bullet">
+              <item><description><see cref="F:YTLiveChat.Contracts.Models.EngagementMessageType.CommunityGuidelines"/> — "Welcome to live chat! Remember to guard your privacy…" shown at stream start.</description></item>
+              <item><description><see cref="F:YTLiveChat.Contracts.Models.EngagementMessageType.SubscribersOnly"/> — subscribers-only mode notice, shown when the channel restricts chat participation.</description></item>
+              <item><description><see cref="F:YTLiveChat.Contracts.Models.EngagementMessageType.PollResult"/> — formatted poll result text (e.g. "Option A (70%)\nOption B (30%)\nPoll complete: 1.3K votes") that appears in chat after a poll closes. This is the chat-level visual; subscribe to <see cref="E:YTLiveChat.Contracts.Services.IYTLiveChat.PollClosed"/> to know when a poll ended.</description></item>
+              <item><description><see cref="F:YTLiveChat.Contracts.Models.EngagementMessageType.Unknown"/> — unrecognized engagement message type; <see cref="P:YTLiveChat.Contracts.Models.EngagementItem.Message"/> still contains the concatenated text.</description></item>
+            </list>
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.GiftReceived">
+            <summary>
+            Fires when a viewer sends a virtual gift using YouTube Jewels
+            (<c>giftMessageViewModel</c> in <c>addChatItemAction</c>).
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.CreatorGoalReceived">
+            <summary>
+            Fires when the live-chat ticker bar shows or refreshes a Super Chat creator goal chip
+            (<c>showCreatorGoalTickerChipCommand</c>).
+            Multiple events for the same goal share <see cref="P:YTLiveChat.Contracts.Models.CreatorGoalItem.EntityKey"/>.
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Contracts.Services.IYTLiveChat.ErrorOccurred">
+            <summary>
+            Fires on any error from backend or within service
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Contracts.Services.IYTLiveChat.GetStreamsAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Fetches the list of streams (live, upcoming, and recent past) from a channel's streams page.
+            Returns title, thumbnail, live status, viewer/view count, scheduled time, published time, and duration for each entry.
+            </summary>
+            <param name="handle">Channel @handle (e.g. <c>"@IRyS"</c>).</param>
+            <param name="channelId">Channel ID (e.g. <c>"UC8rcEBzJSleTkf_-agPM20g"</c>).</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Ordered list of stream entries as shown on the channel's streams tab.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when neither handle nor channelId is provided.</exception>
+        </member>
+        <member name="M:YTLiveChat.Contracts.Services.IYTLiveChat.Start(System.String,System.String,System.String,System.Boolean)">
+            <summary>
+            Starts the Listeners for the LiveChat and fires InitialPageLoaded when successful. Either <paramref name="handle"/>, <paramref name="channelId"/> or <paramref name="liveId"/> must be given.
+            </summary>
+            <remarks>
+            This method initially loads the stream page from whatever param was given. If called again, it'll simply register the listeners again, but not load another live stream. If another live stream should be loaded, <paramref name="overwrite"/> should be set to true.
+            </remarks>
+            <param name="handle">The handle of the channel (eg. "@Original151")</param>
+            <param name="channelId">The channelId of the channel (eg. "UCtykdsdm9cBfh5JM8xscA0Q")</param>
+            <param name="liveId">The video ID of the live video (eg. "WZafWA1NVrU")</param>
+            <param name="overwrite"></param>
+        </member>
+        <member name="M:YTLiveChat.Contracts.Services.IYTLiveChat.Stop">
+            <summary>
+            Stops the listeners
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Contracts.Services.IYTLiveChat.StreamChatItemsAsync(System.String,System.String,System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Starts chat monitoring and asynchronously yields parsed chat items until stopped, stream ends, or cancellation is requested.
+            This helper owns the listener lifecycle and calls <see cref="M:YTLiveChat.Contracts.Services.IYTLiveChat.Start(System.String,System.String,System.String,System.Boolean)"/> and <see cref="M:YTLiveChat.Contracts.Services.IYTLiveChat.Stop"/> internally.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Contracts.Services.IYTLiveChat.StreamRawActionsAsync(System.String,System.String,System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Starts chat monitoring and asynchronously yields raw action payloads (including unsupported action types)
+            until stopped, stream ends, or cancellation is requested.
+            This helper owns the listener lifecycle and calls <see cref="M:YTLiveChat.Contracts.Services.IYTLiveChat.Start(System.String,System.String,System.String,System.Boolean)"/> and <see cref="M:YTLiveChat.Contracts.Services.IYTLiveChat.Stop"/> internally.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.InitialPageLoadedEventArgs">
+            <summary>
+            EventArgs for InitialPageLoaded event
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.InitialPageLoadedEventArgs.LiveId">
+            <summary>
+            Video ID selected or found
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.ChatStoppedEventArgs">
+            <summary>
+            EventArgs for ChatStopped event
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.ChatStoppedEventArgs.Reason">
+            <summary>
+            Reason why the stop occured
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.ChatReceivedEventArgs">
+            <summary>
+            EventArgs for ChatReceived event
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.ChatReceivedEventArgs.ChatItem">
+            <summary>
+            ChatItem that was received
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.LivestreamStartedEventArgs">
+            <summary>
+            EventArgs for LivestreamStarted event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.LivestreamStartedEventArgs.LiveId">
+            <summary>
+            Video ID selected or found for the active livestream.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.LivestreamEndedEventArgs">
+            <summary>
+            EventArgs for LivestreamEnded event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.LivestreamEndedEventArgs.LiveId">
+            <summary>
+            Video ID of the livestream that ended.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.LivestreamEndedEventArgs.Reason">
+            <summary>
+            Reason why the livestream was considered ended.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.LivestreamInaccessibleEventArgs">
+            <summary>
+            EventArgs for LivestreamInaccessible event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.LivestreamInaccessibleEventArgs.LiveId">
+            <summary>
+            Video ID of the detected livestream candidate.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.LivestreamInaccessibleEventArgs.Reason">
+            <summary>
+            Best-effort reason why chat access could not be initialized.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.RawActionReceivedEventArgs">
+            <summary>
+            EventArgs for RawActionReceived event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.RawActionReceivedEventArgs.RawAction">
+            <summary>
+            Raw action JSON payload.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.RawActionReceivedEventArgs.ParsedChatItem">
+            <summary>
+            Parsed ChatItem mapped from this action, if recognized.
+            Null for unsupported action/renderer types.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.ErrorOccurredEventArgs">
+            <summary>
+            EventArgs for ErrorOccurred event
+            </summary>
+            <param name="exception">Exception that triggered the event</param>
+        </member>
+        <member name="M:YTLiveChat.Contracts.Services.ErrorOccurredEventArgs.#ctor(System.Exception)">
+            <summary>
+            EventArgs for ErrorOccurred event
+            </summary>
+            <param name="exception">Exception that triggered the event</param>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.PollUpdatedEventArgs">
+            <summary>
+            EventArgs for PollUpdated event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.PollUpdatedEventArgs.Poll">
+            <summary>
+            The current poll state (question, choices, vote percentages).
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs">
+            <summary>
+            EventArgs for ChatItemDeleted event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs.TargetId">
+            <summary>
+            The ID of the chat item that was removed.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs">
+            <summary>
+            EventArgs for ChatItemsDeletedByAuthor event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs.ChannelId">
+            <summary>
+            The external channel ID of the author whose messages were removed.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.PollClosedEventArgs">
+            <summary>
+            EventArgs for PollClosed event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.PollClosedEventArgs.PollId">
+            <summary>
+            The ID of the poll that was closed (matches <see cref="P:YTLiveChat.Contracts.Models.PollItem.PollId"/> from the preceding <c>PollUpdated</c> event).
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.BannerAddedEventArgs">
+            <summary>
+            EventArgs for BannerAdded event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.BannerAddedEventArgs.Banner">
+            <summary>
+            The pinned-message banner that was added.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.BannerRemovedEventArgs">
+            <summary>
+            EventArgs for BannerRemoved event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.BannerRemovedEventArgs.TargetActionId">
+            <summary>
+            The action ID of the banner that was removed (matches <see cref="P:YTLiveChat.Contracts.Models.BannerItem.ActionId"/>).
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs">
+            <summary>
+            EventArgs for ChatItemReplaced event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs.TargetItemId">
+            <summary>
+            The ID of the chat item that was replaced.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs.Replacement">
+            <summary>
+            The replacement chat item, or null when the replacement renderer type produces no
+            <see cref="T:YTLiveChat.Contracts.Models.ChatItem"/> (e.g. a placeholder renderer).
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs">
+            <summary>
+            EventArgs for EngagementMessageReceived event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs.Engagement">
+            <summary>
+            The viewer engagement message that was received.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.GiftReceivedEventArgs">
+            <summary>
+            EventArgs for GiftReceived event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.GiftReceivedEventArgs.Gift">
+            <summary>
+            The virtual gift that was sent.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.Services.CreatorGoalReceivedEventArgs">
+            <summary>
+            EventArgs for CreatorGoalReceived event.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.Services.CreatorGoalReceivedEventArgs.CreatorGoal">
+            <summary>
+            The creator goal ticker chip that was received.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Contracts.YTLiveChatOptions">
+            <summary>
+            Options from appsettings.json loaded in DI
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.YTLiveChatOptions.YoutubeBaseUrl">
+            <summary>
+            Base URL of YouTube
+            </summary>
+            <remarks>If not set, during DI initialization it'll default to: "https://www.youtube.com"</remarks>
+        </member>
+        <member name="P:YTLiveChat.Contracts.YTLiveChatOptions.RequestFrequency">
+            <summary>
+            Frequency of when (in milliseconds) the new batch of chat messages will be requested from YT servers, (i.e. every X milliseconds)
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.YTLiveChatOptions.EnableContinuousLivestreamMonitor">
+            <summary>
+            If true and started with a channel handle/channelId (not direct liveId), keeps monitoring for future livestreams.
+            When a stream ends, the service continues polling the channel's /live endpoint until the next stream starts.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.YTLiveChatOptions.LiveCheckFrequency">
+            <summary>
+            Frequency in milliseconds for checking whether a channel handle/channelId is currently live
+            while waiting for a stream to start in continuous monitor mode.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.YTLiveChatOptions.RequireActiveBroadcastForAutoDetectedStream">
+            <summary>
+            When enabled, handle/channel auto-detection only accepts streams that are currently broadcasting.
+            Prevents monitor mode from attaching to scheduled/free-chat placeholders.
+            Does not affect explicit <c>liveId</c> starts.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.YTLiveChatOptions.IgnoredAutoDetectedLiveIds">
+            <summary>
+            Optional list of stream IDs to ignore during handle/channel auto-detection.
+            Useful for long-lived free-chat/scheduled streams that should never be selected.
+            Does not affect explicit <c>liveId</c> starts.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.YTLiveChatOptions.DebugLogReceivedJsonItems">
+            <summary>
+            [DEBUG] If true, logs the raw JSON of received 'AddChatItemAction.Item' objects to the specified file.
+            This is useful for inspecting the structure of different event types.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Contracts.YTLiveChatOptions.DebugLogFilePath">
+            <summary>
+            [DEBUG] The file path where raw JSON items will be logged if DebugLogReceivedJsonItems is true.
+            Defaults to "ytlivechat_debug_items.json" in the application's base directory.
+            Uses a single JSON array for easier downstream analysis.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Converter.ToHex6Color(System.Int64)">
+            <summary>
+            Converts a long representing an ARGB color value (like those from YouTube API)
+            into a 6-digit uppercase hex color string (RGB only, ignoring alpha).
+            Handles potential negative values correctly.
+            </summary>
+            <param name="value">The ARGB color value as a long.</param>
+            <returns>A 6-digit hex color string (e.g., "FF0000" for red), or null if input is invalid.</returns>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.IsActivelyBroadcastingLivePage(System.String)">
+            <summary>
+            Best-effort check to determine whether the fetched watch page represents an actively broadcasting livestream.
+            Returns false for replay/upcoming pages and when no clear live-state marker can be found.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ExtractStreamCandidatesFromStreamsPage(System.String)">
+            <summary>
+            Extracts stream candidates from a channel streams page.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.DetectInaccessibleLiveReason(System.String)">
+            <summary>
+            Best-effort classification for inaccessible live pages (members-only / login-required / unplayable).
+            Returns null when no known inaccessible marker is found.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.GetBaseRenderer(YTLiveChat.Models.Response.AddChatItemActionItem)">
+            <summary>
+            Extracts the relevant message renderer from a polymorphic item container.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToMessagePart(YTLiveChat.Models.Response.MessageRun)">
+            <summary>
+            Converts a MessageRun (internal model) to a MessagePart (contract model).
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToMessageParts(System.Collections.Generic.IEnumerable{YTLiveChat.Models.Response.MessageRun})">
+            <summary>
+            Converts an array of MessageRun (internal) to MessagePart[] (contract).
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ParseAmount(System.String)">
+            <summary>
+            Parses the primary amount/currency string into numeric value and symbol/code.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToChatItem(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Converts a raw YouTube Action into a StreamWeaver ChatItem contract.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToImage(System.Collections.Generic.List{YTLiveChat.Models.Response.Thumbnail},System.String)">
+            <summary>
+            Converts an array of image thumbnails (internal model) to an ImagePart (contract model).
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToImage(System.Collections.Generic.List{YTLiveChat.Models.Response.Source},System.String)">
+            <summary>
+            Converts a list of URL sources (e.g. IconSource.Sources) to an ImagePart (contract model).
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ParseLiveChatResponse(YTLiveChat.Models.Response.LiveChatResponse)">
+            <summary>
+            Parses the full API response to extract chat items and the next continuation token.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ParseLiveChatResponseWithActionIndex(YTLiveChat.Models.Response.LiveChatResponse)">
+            <summary>
+            Parses the full API response to extract chat items with their source action index
+            and the next continuation token.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToPollItem(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Extracts a <see cref="T:YTLiveChat.Contracts.Models.PollItem"/> from a poll-related action
+            (<c>updateLiveChatPollAction</c> or <c>showLiveChatActionPanelAction</c>).
+            Returns null if the action is not a poll action or is missing required fields.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToClosedPollId(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Returns the poll ID from a <c>closeLiveChatActionPanelAction</c>, or null for other actions.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToDeletedItemId(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Returns the target item ID from a <c>removeChatItemAction</c>, or null for other actions.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToDeletedByAuthorChannelId(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Returns the external channel ID from <c>removeChatItemByAuthorAction</c> or
+            <c>markChatItemsByAuthorAsDeletedAction</c>, or null if neither is present.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToBannerItem(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Extracts a <see cref="T:YTLiveChat.Contracts.Models.BannerItem"/> from an <c>addBannerToLiveChatCommand</c> action.
+            Returns null for other action types or when required fields are absent.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToReplacedChatItem(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Extracts the target item ID and an optional replacement <see cref="T:YTLiveChat.Contracts.Models.ChatItem"/>
+            from a <c>replaceChatItemAction</c>.
+            Returns <c>(null, null)</c> for other action types or when required fields are absent.
+            <c>Replacement</c> is null when the replacement renderer type produces no chat item
+            (e.g. a placeholder renderer).
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToRemovedBannerActionId(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Returns the target action ID from a <c>removeBannerForLiveChatCommand</c>, or null.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToEngagementItem(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Extracts a <see cref="T:YTLiveChat.Contracts.Models.EngagementItem"/> from a
+            <c>liveChatViewerEngagementMessageRenderer</c> inside an <c>addChatItemAction</c>.
+            Returns null for other action types or when required fields are absent.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ParseVoteCount(System.String)">
+            <summary>
+            Parses a vote-count run string like "1,234 votes" or "0 votes" into an integer.
+            Returns null if the text is absent or unparseable.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToGiftItem(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Extracts a <see cref="T:YTLiveChat.Contracts.Models.GiftItem"/> from a <c>giftMessageViewModel</c>
+            nested inside an <c>addChatItemAction</c>.
+            Returns null for other action types or when required fields are absent.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ToCreatorGoalItem(YTLiveChat.Models.Response.Action)">
+            <summary>
+            Extracts a <see cref="T:YTLiveChat.Contracts.Models.CreatorGoalItem"/> from a
+            <c>showCreatorGoalTickerChipCommand</c> action.
+            Returns null for other action types or when required fields are absent.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.Parser.ExtractStreamsFromPage(System.String)">
+            <summary>
+            Converts raw streams page HTML into a list of <see cref="T:YTLiveChat.Contracts.Models.StreamInfo"/> objects.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Boolean">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Double">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.IDictionaryStringJsonElement">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListDouble">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListAction">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListAuthorBadgeContainer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListBeforeContentButtonContainer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListContinuation">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListCreatorGoalContentItem">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListMessageRun">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListMutation">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListParam">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListPollChoice">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListServiceTrackingParam">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListSource">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListThumbnail">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListThumbnailList">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListViewModelClientResourceSource">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListViewModelStyleRun">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListInt64">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ListString">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.JsonElement">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.NullableJsonElement">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.JsonObject">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ClientInfo">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatRequest">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.RequestContext">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Accessibility">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.AccessibilityData">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Action">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.AddBannerCommandProperties">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.AddBannerToLiveChatCommand">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.AddChatItemAction">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.AddChatItemActionItem">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.AddLiveChatTickerItemAction">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.AddLiveChatTickerItemActionItem">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.AuthorBadgeContainer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.AvatarViewModel">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.AvatarViewModelContainer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.BannerAutoCollapseDelay">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.BannerButtonCommand">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.BannerInlineButtonRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.BannerRendererContainer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.BeforeContentButtonContainer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.BumperContent">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.BumperUserEduContentViewModel">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ButtonViewModel">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CloseLiveChatActionPanelAction">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CommandMetadata">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ContextMenuEndpoint">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Continuation">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ContinuationContents">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CreatorGoalContentItem">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CreatorGoalEngagementPanel">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CreatorGoalEngagementPanelSectionListRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CreatorGoalInnerSectionList">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CreatorGoalInnertubeCommand">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CreatorGoalOnClickCommand">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CreatorGoalProgressFlowViewModel">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CreatorGoalSectionListContent">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CreatorGoalShowEngagementPanelEndpoint">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CreatorGoalTickerChip">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.CustomThumbnail">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Emoji">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.EmojiImage">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.EngagementActionButton">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.EngagementButtonRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.EntityBatchUpdate">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.FrameworkUpdates">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.GiftMessageViewModel">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.HeaderText">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Icon">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.IconSource">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.InlineActionButtonContainer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.InvalidationContinuationData">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.InvalidationId">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LeaderboardBadge">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LeaderboardBadgeButtonViewModel">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatActionPanelRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatActionPanelRendererContents">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatAuthorBadgeRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatBannerChatSummaryRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatBannerHeaderContainer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatBannerHeaderRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatBannerRedirectRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatBannerRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatBannerRendererContents">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatBannerRendererProperties">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatCallForQuestionsRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatContinuation">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatItemBumperViewModel">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatItemContextMenuEndpoint">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatMembershipItemRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatPaidMessageRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatPaidStickerRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatParticipantRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatPlaceholderItemRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatResponse">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatSponsorshipsGiftPurchaseAnnouncementRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatSponsorshipsGiftRedemptionAnnouncementRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatSponsorshipsHeaderRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatStreamingResponseExtension">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatTextMessageRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatTickerCreatorGoalViewModel">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatTickerPaidMessageItemRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatTickerPaidStickerItemRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatTickerShowItemRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatTickerSponsorItemRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.LiveChatViewerEngagementMessageRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.MainAppWebResponseContext">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Message">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.MessageEmoji">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.MessageRendererBase">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.MessageRun">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.MessageText">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Mutation">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.MutationPayload">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.NavigationEndpoint">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.PanelToShow">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Param">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.PollChoice">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.PollHeader">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.PollHeaderRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.PollRenderer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.PollToUpdate">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.PurchaseAmountText">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ReactionControlPanelOverlayViewModel">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.RemoveBannerForLiveChatCommand">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.RemoveChatItemAction">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.RemoveChatItemByAuthorAction">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ReplaceChatItemAction">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ReplacementItem">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ResponseContext">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ServiceTrackingParam">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ShowCreatorGoalTickerChipCommand">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ShowLiveChatActionPanelAction">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ShowLiveChatItemEndpoint">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.SignalAction">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.SimpleText">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Source">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.SponsorshipsHeaderContainer">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Sticker">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.StickerBackgroundGradient">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.StickerLowerBumper">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Thumbnail">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ThumbnailList">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.TickerShowItemEndpoint">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.TimedContinuationData">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Timestamp">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.UpdateLiveChatPollAction">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.UrlEndpoint">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ViewModelClientResource">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ViewModelClientResourceImage">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ViewModelClientResourceSource">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ViewModelStyledText">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.ViewModelStyleRun">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.WatchEndpoint">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.WebCommandMetadata">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.WebResponseContextExtensionData">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Int32">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Int64">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.NullableInt64">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.String">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.Default">
+            <summary>
+            The default <see cref="T:System.Text.Json.Serialization.JsonSerializerContext"/> associated with a default <see cref="T:System.Text.Json.JsonSerializerOptions"/> instance.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.GeneratedSerializerOptions">
+            <summary>
+            The source-generated options associated with this context.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.#ctor">
+            <inheritdoc/>
+        </member>
+        <member name="M:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.#ctor(System.Text.Json.JsonSerializerOptions)">
+            <inheritdoc/>
+        </member>
+        <member name="M:YTLiveChat.Helpers.YTLiveChatJsonSerializerContext.GetTypeInfo(System.Type)">
+            <inheritdoc/>
+        </member>
+        <member name="T:YTLiveChat.Models.FetchOptions">
+            <summary>
+            Represents options for fetching live chat data.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.FetchOptions.LiveId">
+            <summary>
+            The ID of the live stream.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.FetchOptions.ApiKey">
+            <summary>
+            The API key for authentication.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.FetchOptions.ClientVersion">
+            <summary>
+            The client version to be used in the request.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.FetchOptions.Continuation">
+            <summary>
+            The continuation token for pagination.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.ThumbnailList.Accessibility">
+            <summary>
+            Accessibility label present on some thumbnail containers (e.g. authorPhoto in ticker items).
+            On ticker paid-message outer renderers the label carries the author's @handle.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Models.Response.HeaderText">
+            <summary>
+            Represents a text structure that can either be a simple string
+            or a collection of runs (complex formatting).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatPaidMessageRenderer.LeaderboardBadge">
+            <summary>
+            Viewer leaderboard rank badge shown on super chats by top-ranking channel-point holders
+            (e.g. title "#1"). Present on ~5% of paid messages. Use <see cref="P:YTLiveChat.Models.Response.LeaderboardBadgeButtonViewModel.Title"/>
+            to extract the rank string.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Models.Response.StickerBackgroundGradient">
+            <summary>
+            Linear gradient applied to the sticker card background.
+            Colors are ARGB values (32-bit unsigned packed into long).
+            Stops are parallel arrays: <see cref="P:YTLiveChat.Models.Response.StickerBackgroundGradient.Colors"/>[i] at <see cref="P:YTLiveChat.Models.Response.StickerBackgroundGradient.Positions"/>[i].
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.StickerBackgroundGradient.Positions">
+            <summary>Stop offsets in [0,1], parallel to <see cref="P:YTLiveChat.Models.Response.StickerBackgroundGradient.Colors"/>.</summary>
+        </member>
+        <member name="T:YTLiveChat.Models.Response.BumperUserEduContentViewModel">
+            <summary>
+            Educational celebration text and icon shown on 1st-purchase Super Stickers.
+            Text example: "Let's celebrate their 1st Super on a live stream".
+            Image is a client-side resource symbol (e.g. "CELEBRATION").
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatPaidStickerRenderer.HeaderOverlayImage">
+            <summary>
+            Overlay image shown on 1st-purchase Super Stickers (PDG novelty celebration feature).
+            Contains a static thumbnail list (animation .webp). Decorative only.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatPaidStickerRenderer.LowerBumper">
+            <summary>
+            Lower bumper shown on 1st-purchase Super Stickers ("Let's celebrate their 1st Super…").
+            Contains educational celebration text and a client-side icon. Decorative only.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatPaidStickerRenderer.PdgPurchasedNoveltyLoggingDirectives">
+            <summary>
+            Logging/tracking directives for the PDG novelty celebration feature.
+            Present only when <see cref="P:YTLiveChat.Models.Response.LiveChatPaidStickerRenderer.HeaderOverlayImage"/> is set. Not used by the parser.
+            Intentionally left as opaque blob — structure is pure tracking infrastructure.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatPaidStickerRenderer.PurchaseText">
+            <summary>
+            Pre-formatted description text for the sticker (e.g. "Sent [StickerName]").
+            Present on ~98% of paid stickers in ticker context.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatPaidStickerRenderer.BackgroundGradient">
+            <summary>
+            Linear gradient applied to the sticker card background.
+            Present on most paid stickers. Colours are ARGB; see <see cref="T:YTLiveChat.Models.Response.StickerBackgroundGradient"/>.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatMembershipItemRenderer.Empty">
+            <summary>
+            True on milestone membership items that carry no message body (observed on ~3.7% of instances).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.GiftMessageViewModel.GiftImage">
+            <summary>
+            URL-based gift item image (~45% of gifts). Distinct from <see cref="P:YTLiveChat.Models.Response.GiftMessageViewModel.Image"/>
+            which is a client-side resource symbol; this carries a real CDN thumbnail URL.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.GiftMessageViewModel.AuthorAvatar">
+            <summary>
+            Author avatar as an avatarViewModel container (~45% of gifts).
+            Access the URL via <c>AuthorAvatar?.AvatarViewModel?.Image?.Sources</c>.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LeaderboardBadgeButtonViewModel.Title">
+            <summary>Rank string, e.g. "#1".</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorUsername">
+            <summary>The @handle of the author, e.g. "@TurtleCubes".</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.DurationSec">
+            <summary>Ticker bar display duration in seconds (int, distinct from the action's string durationSec).</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.SponsorPhoto">
+            <summary>Profile photo of the member shown in the ticker bar.</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DetailText">
+            <summary>Detail text, e.g. "Member" or "sent 10 Gift Memberships".</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DetailIcon">
+            <summary>Optional icon beside the detail text (e.g. STAR_CIRCLE_RIBBON for gift purchases).</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DurationSec">
+            <summary>Ticker bar display duration in seconds.</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.TickerThumbnails">
+            <summary>Sticker image(s) shown directly in the ticker bar.</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.DurationSec">
+            <summary>Ticker bar display duration in seconds.</summary>
+        </member>
+        <member name="T:YTLiveChat.Models.Response.LiveChatTickerCreatorGoalViewModel">
+            <summary>
+            ViewModel for a Super Chat goal ticker chip shown in the live-chat ticker bar.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatTickerCreatorGoalViewModel.A11yLabel">
+            <summary>Screen-reader label, e.g. "See Super Chat goal".</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatTickerCreatorGoalViewModel.OnClickCommand">
+            <summary>
+            Engagement-panel command containing goal progress information.
+            The parser navigates to <c>creatorGoalProgressFlowViewModel.progressCountA11yLabel</c>.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.CreatorGoalProgressFlowViewModel.ProgressCountA11yLabel">
+            <summary>
+            Template label for goal progress, e.g. "Super Chat goal progress: $0 out of $1".
+            The <c>$0</c>/<c>$1</c> placeholders are filled client-side at display time.
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.CloseLiveChatActionPanelAction.SkipOnDismissCommand">
+            <summary>
+            When true the panel should not fire its dismiss command on close (observed on poll close).
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Models.Response.BannerButtonCommand">
+            <summary>
+            The command payload inside a <see cref="T:YTLiveChat.Models.Response.BannerInlineButtonRenderer"/>.
+            Carries either a <c>watchEndpoint</c> ("Go now" → direct video link) or a
+            <c>urlEndpoint</c> ("Learn more" → support page link).
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Models.Response.LiveChatBannerChatSummaryRenderer">
+            <summary>
+            The structured text payload inside a <c>liveChatBannerChatSummaryRenderer</c>.
+            Runs typically contain: bold title, newline, deemphasized disclaimer, newline, body text.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Models.Response.LiveChatCallForQuestionsRenderer">
+            <summary>
+            Pinned Q&amp;A question banner (<c>liveChatCallForQuestionsRenderer</c>).
+            Shown when a streamer highlights a viewer's question for the audience.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Models.Response.BannerAutoCollapseDelay">
+            <summary>Auto-collapse timer present on pinned-message banners.</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.BannerAutoCollapseDelay.Seconds">
+            <summary>Seconds until the banner auto-collapses (string-encoded integer).</summary>
+        </member>
+        <member name="T:YTLiveChat.Models.Response.LiveChatBannerRendererProperties">
+            <summary>
+            Properties embedded inside <see cref="T:YTLiveChat.Models.Response.LiveChatBannerRenderer"/>.
+            Observed on pinned-message and chat-summary banners (auto-collapse timer, ephemeral flag).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatBannerRendererProperties.IsEphemeral">
+            <summary>When true the banner auto-dismisses (also observed at the renderer level for chat-summary banners).</summary>
+        </member>
+        <member name="T:YTLiveChat.Models.Response.AddBannerCommandProperties">
+            <summary>
+            Properties at the <see cref="T:YTLiveChat.Models.Response.AddBannerToLiveChatCommand"/> level for ephemeral banners
+            (e.g. cross-channel redirect and raid notifications).
+            </summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.AddBannerCommandProperties.IsEphemeral">
+            <summary>When true the banner auto-dismisses after <see cref="P:YTLiveChat.Models.Response.AddBannerCommandProperties.BannerTimeoutMs"/> ms.</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.AddBannerCommandProperties.BannerTimeoutMs">
+            <summary>Duration in milliseconds before the ephemeral banner is dismissed (string-encoded).</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatBannerRenderer.IsStackable">
+            <summary>Whether this banner can be stacked alongside another active banner.</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatBannerRenderer.ViewerIsCreator">
+            <summary>True when the viewer is the channel creator (viewer-side flag, not author metadata).</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.LiveChatBannerRenderer.BannerProperties">
+            <summary>Timing and state properties for pinned-message banners (auto-collapse delay).</summary>
+        </member>
+        <member name="P:YTLiveChat.Models.Response.AddBannerToLiveChatCommand.BannerProperties">
+            <summary>
+            Ephemeral-banner properties (auto-dismiss timeout) present on redirect banners.
+            Located at the command level, not inside the renderer.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Services.YTHttpClient">
+            <summary>
+            Client for making HTTP requests to YouTube's internal InnerTube API endpoints for live chat.
+            </summary>
+            <param name="httpClient">An instance of <see cref="T:System.Net.Http.HttpClient"/> configured with the base YouTube URL. Its lifetime should be managed externally.</param>
+            <param name="logger">An optional logger instance.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown if httpClient is null.</exception>
+        </member>
+        <member name="M:YTLiveChat.Services.YTHttpClient.#ctor(System.Net.Http.HttpClient,Microsoft.Extensions.Logging.ILogger{YTLiveChat.Services.YTHttpClient})">
+            <summary>
+            Client for making HTTP requests to YouTube's internal InnerTube API endpoints for live chat.
+            </summary>
+            <param name="httpClient">An instance of <see cref="T:System.Net.Http.HttpClient"/> configured with the base YouTube URL. Its lifetime should be managed externally.</param>
+            <param name="logger">An optional logger instance.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown if httpClient is null.</exception>
+        </member>
+        <member name="M:YTLiveChat.Services.YTHttpClient.GetLiveChatAsync(YTLiveChat.Models.FetchOptions,System.Threading.CancellationToken)">
+            <summary>
+            Fetches the latest live chat messages and continuation token based on the provided options.
+            </summary>
+            <param name="options">The fetch options containing API key, context, and continuation token.</param>
+            <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+            <returns>
+            A tuple containing the deserialized <see cref="T:YTLiveChat.Models.Response.LiveChatResponse"/> and the raw JSON string.
+            Returns (null, rawJsonWithError) if an HTTP error (non-2xx) occurs after logging it.
+            Returns (null, rawJsonWithError) if JSON deserialization fails after logging it.
+            Returns (null, null) for other critical exceptions after logging them.
+            </returns>
+        </member>
+        <member name="M:YTLiveChat.Services.YTHttpClient.GetOptionsAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Fetches the initial HTML page for a given channel handle, ID, or video ID to extract initial chat options.
+            </summary>
+            <param name="handle">The channel handle (e.g., "@ChannelHandle").</param>
+            <param name="channelId">The channel ID (e.g., "UCxxxxxxxxxxxxxxx").</param>
+            <param name="liveId">The video ID of the live stream.</param>
+            <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+            <returns>The raw HTML content of the page.</returns>
+            <exception cref="T:System.ArgumentException">Thrown if none of handle, channelId, or liveId are provided.</exception>
+        </member>
+        <member name="M:YTLiveChat.Services.YTHttpClient.GetChannelPageAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Fetches the channel home page HTML for a given handle or channel ID.
+            Used to extract membership offer tokens from <c>ytInitialData</c>.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTHttpClient.GetStreamsPageAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Fetches the streams tab HTML page for a given channel handle or ID.
+            </summary>
+        </member>
+        <member name="T:YTLiveChat.Services.YTLiveChat">
+            <summary>
+            Service implementation for fetching and processing YouTube Live Chat messages.
+            Uses YouTube's internal "InnerTube" API.
+            </summary>
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.InitialPageLoaded">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.ChatStopped">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.ChatReceived">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.LivestreamStarted">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.LivestreamEnded">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.LivestreamInaccessible">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.RawActionReceived">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.PollUpdated">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.PollClosed">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.ChatItemDeleted">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.ChatItemsDeletedByAuthor">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.BannerAdded">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.BannerRemoved">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.ChatItemReplaced">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.EngagementMessageReceived">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.GiftReceived">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.CreatorGoalReceived">
+            <inheritdoc />
+        </member>
+        <member name="E:YTLiveChat.Services.YTLiveChat.ErrorOccurred">
+            <inheritdoc />
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.#ctor(YTLiveChat.Contracts.YTLiveChatOptions,YTLiveChat.Services.YTHttpClient,Microsoft.Extensions.Logging.ILogger{YTLiveChat.Services.YTLiveChat})">
+            <summary>
+            Initializes a new instance of the <see cref="T:YTLiveChat.Services.YTLiveChat"/> class.
+            </summary>
+            <param name="options">The configuration options for the chat service.</param>
+            <param name="ytHttpClient">The HTTP client instance configured for YouTube interaction.</param>
+            <param name="logger">Optional logger instance.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown if options or ytHttpClient is null.</exception>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.Start(System.String,System.String,System.String,System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.StartInternalAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Internal asynchronous method that performs the initialization and polling loop.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.PollingLoopWithTaskDelayAsync(System.Threading.CancellationToken)">
+            <summary>
+            Polling loop implementation using Task.Delay (for .NET Standard 2.1).
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.ProcessResponseAndEmitEvents(YTLiveChat.Models.Response.LiveChatResponse,System.String)">
+            <summary>
+            Processes a live chat response and emits parsed and raw action events.
+            </summary>
+            <param name="response">Parsed live chat response model.</param>
+            <param name="rawJson">Raw response JSON payload.</param>
+            <returns>The next continuation token, if available.</returns>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.ExtractRawActions(System.String)">
+            <summary>
+            Extracts raw action objects from the live chat response JSON payload.
+            </summary>
+            <param name="rawJson">Raw response JSON payload.</param>
+            <returns>List of raw action elements, or null when unavailable.</returns>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.LogRawJsonActionsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Logs raw JSON action items if debug logging is enabled.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.Stop">
+            <inheritdoc />
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.StreamChatItemsAsync(System.String,System.String,System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.StreamRawActionsAsync(System.String,System.String,System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.Dispose">
+            <inheritdoc />
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.Dispose(System.Boolean)">
+            <summary>
+            Releases managed and unmanaged resources.
+            </summary>
+            <param name="disposing">True to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnInitialPageLoaded(YTLiveChat.Contracts.Services.InitialPageLoadedEventArgs)">
+            <summary>Invokes the InitialPageLoaded event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnChatStopped(YTLiveChat.Contracts.Services.ChatStoppedEventArgs)">
+            <summary>Invokes the ChatStopped event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnChatReceived(YTLiveChat.Contracts.Services.ChatReceivedEventArgs)">
+            <summary>Invokes the ChatReceived event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnLivestreamStarted(YTLiveChat.Contracts.Services.LivestreamStartedEventArgs)">
+            <summary>Invokes the LivestreamStarted event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnLivestreamEnded(YTLiveChat.Contracts.Services.LivestreamEndedEventArgs)">
+            <summary>Invokes the LivestreamEnded event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnRawActionReceived(YTLiveChat.Contracts.Services.RawActionReceivedEventArgs)">
+            <summary>Invokes the RawActionReceived event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.EmitActionEvents(System.Collections.Generic.List{YTLiveChat.Models.Response.Action})">
+            <summary>Iterates parsed actions and fires poll/delete/banner events for subscribed handlers.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnPollUpdated(YTLiveChat.Contracts.Services.PollUpdatedEventArgs)">
+            <summary>Invokes the PollUpdated event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnPollClosed(YTLiveChat.Contracts.Services.PollClosedEventArgs)">
+            <summary>Invokes the PollClosed event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnChatItemDeleted(YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs)">
+            <summary>Invokes the ChatItemDeleted event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnChatItemsDeletedByAuthor(YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs)">
+            <summary>Invokes the ChatItemsDeletedByAuthor event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnBannerAdded(YTLiveChat.Contracts.Services.BannerAddedEventArgs)">
+            <summary>Invokes the BannerAdded event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnBannerRemoved(YTLiveChat.Contracts.Services.BannerRemovedEventArgs)">
+            <summary>Invokes the BannerRemoved event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnChatItemReplaced(YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs)">
+            <summary>Invokes the ChatItemReplaced event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnEngagementMessageReceived(YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs)">
+            <summary>Invokes the EngagementMessageReceived event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnGiftReceived(YTLiveChat.Contracts.Services.GiftReceivedEventArgs)">
+            <summary>Invokes the GiftReceived event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnCreatorGoalReceived(YTLiveChat.Contracts.Services.CreatorGoalReceivedEventArgs)">
+            <summary>Invokes the CreatorGoalReceived event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnErrorOccurred(YTLiveChat.Contracts.Services.ErrorOccurredEventArgs)">
+            <summary>Invokes the ErrorOccurred event.</summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.GetFetchOptionsAsync(System.String,System.String,System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Fetches the initial HTML page and parses it to get necessary API options.
+            </summary>
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.GetStreamsAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:YTLiveChat.Services.YTLiveChat.OnLivestreamInaccessible(YTLiveChat.Contracts.Services.LivestreamInaccessibleEventArgs)">
+            <summary>Invokes the LivestreamInaccessible event.</summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.RequiredMemberAttribute">
+            <summary>Specifies that a type has required members or that a member is required.</summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute">
+            <summary>Indicates that the C# compiler should consider a method to be the one it would synthesize for a given compiler feature.</summary>
+        </member>
+        <member name="M:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.#ctor(System.String)">
+            <summary>Initializes a new instance of the <see cref="T:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"/> class.</summary>
+            <param name="featureName">The name of the required compiler feature.</param>
+        </member>
+        <member name="P:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.FeatureName">
+            <summary>Gets the name of the compiler feature.</summary>
+        </member>
+        <member name="P:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.IsOptional">
+            <summary>Gets or sets a value indicating whether the compiler feature is optional.</summary>
+            <value><see langword="true"/> if the compiler feature is optional; otherwise, <see langword="false"/>.</value>
+        </member>
+        <member name="F:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.RefStructs">
+            <summary>The <see cref="P:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.FeatureName"/> used for the ref structs language feature.</summary>
+        </member>
+        <member name="F:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.RequiredMembers">
+            <summary>The <see cref="P:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.FeatureName"/> used for the required members language feature.</summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.IsExternalInit">
+            <summary>
+            Reserved to be used by the compiler for tracking metadata.
+            This attribute should not be used by developers in source code.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute">
+            <summary>
+            Specifies that this constructor sets all required members for the current type, and callers
+            do not need to set any required members themselves.
+            </summary>
+        </member>
+    </members>
+</doc>

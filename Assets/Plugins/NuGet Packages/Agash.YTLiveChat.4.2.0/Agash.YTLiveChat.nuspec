@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Agash.YTLiveChat</id>
+    <version>4.2.0</version>
+    <authors>Agash Thamo.</authors>
+    <license type="file">LICENSE.txt</license>
+    <licenseUrl>https://aka.ms/deprecateLicenseUrl</licenseUrl>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/Agash/YTLiveChat/</projectUrl>
+    <description>InnerTube API for YouTube LiveChat to get Live Chat messages without API restrictions. Mainly intended for use in application for the streamer.</description>
+    <copyright>Copyright (c) Agash 2025</copyright>
+    <tags>library, youtube, live-chat, yt, streamer</tags>
+    <repository type="git" url="https://github.com/Agash/YTLiveChat.git" branch="refs/tags/v4.2.0" commit="747f147c5e21ca8edd994a248aa8dbcdece14991" />
+    <dependencies>
+      <group targetFramework="net10.0">
+        <dependency id="Microsoft.Bcl.AsyncInterfaces" version="10.0.8" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Extensions.Logging.Abstractions" version="10.0.8" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="net9.0">
+        <dependency id="Microsoft.Bcl.AsyncInterfaces" version="10.0.8" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Extensions.Logging.Abstractions" version="10.0.8" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Json" version="10.0.7" exclude="Build,Analyzers" />
+        <dependency id="System.Threading.Channels" version="10.0.7" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="Microsoft.Bcl.AsyncInterfaces" version="10.0.8" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Extensions.Logging.Abstractions" version="10.0.8" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Json" version="10.0.7" exclude="Build,Analyzers" />
+        <dependency id="System.Threading.Channels" version="10.0.7" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.1">
+        <dependency id="Microsoft.Bcl.AsyncInterfaces" version="10.0.8" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Extensions.Logging.Abstractions" version="10.0.8" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Json" version="10.0.7" exclude="Build,Analyzers" />
+        <dependency id="System.Threading.Channels" version="10.0.7" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

@@ -5031,6 +5031,90 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 444791154}
   m_CullTransparentMesh: 1
+--- !u!1 &459901118
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 459901119}
+  - component: {fileID: 459901121}
+  - component: {fileID: 459901120}
+  m_Layer: 0
+  m_Name: YouTube Integration
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &459901119
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 459901118}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 528.3717, y: 740.0023, z: -5.0570917}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 547252205}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &459901120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 459901118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c896f87a79d575651a3c841753f2e581, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _imageHandler: {fileID: 459901121}
+  onChatMessage:
+    m_PersistentCalls:
+      m_Calls: []
+  onChatMessageDelete:
+    m_PersistentCalls:
+      m_Calls: []
+  onPaidChatMessage:
+    m_PersistentCalls:
+      m_Calls: []
+  onChatRedeem:
+    m_PersistentCalls:
+      m_Calls: []
+  onChannelFollow:
+    m_PersistentCalls:
+      m_Calls: []
+  onChannelPaidSubscription:
+    m_PersistentCalls:
+      m_Calls: []
+  onChannelRaid:
+    m_PersistentCalls:
+      m_Calls: []
+  onStreamInfoUpdate:
+    m_PersistentCalls:
+      m_Calls: []
+  _webServer: {fileID: 835040116}
+--- !u!114 &459901121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 459901118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7b7368e1ce3c8d45968410de8dc63cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _maximumCachedItems: -1
 --- !u!1001 &466220711
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6725,6 +6809,7 @@ Transform:
   - {fileID: 1325093188}
   - {fileID: 687667458}
   - {fileID: 1286638394}
+  - {fileID: 459901119}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &547252206
@@ -6741,6 +6826,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _initializationOrder: 10
   _twitch: {fileID: 687667457}
+  _youtube: {fileID: 459901120}
   _discord: {fileID: 1286638396}
   _obs: {fileID: 1325093187}
 --- !u!1 &560812844
