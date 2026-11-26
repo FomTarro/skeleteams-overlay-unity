@@ -1,31 +1,37 @@
 using System;
 using System.Collections.Generic;
-using Cysharp.Net.Http;
-using Grpc.Net.Client;
 using Skeletom.Essentials.IO;
-using System.Collections.Concurrent;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
 using UnityEngine;
 using Skeletom.Essentials.Utils;
-using Skeletom.BattleStation.Integrations.YouTube.API;
-using Youtube.Api.V3;
+
 using Skeletom.BattleStation.Server;
-using System.Net.Http;
 using YTLiveChat.Contracts.Models;
-using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
+using System.Net.Http;
+using System.Linq;
 
 namespace Skeletom.BattleStation.Integrations.YouTube
 {
     public class YouTubeIntegration : StreamIntegration<YouTubeIntegration.IntegrationData>
     {
-        private readonly Utils.Logger LOGGER = new("YouTube");
+        private static readonly Utils.Logger LOGGER = new("YouTube");
         public override string FileName => "youtube.json";
 
-        private const string CLIENT_ID = "AIzaSyAazq1yIPfoSTLRssMfV7vhN3PmQDcE96Y";
-        private string USER_TOKEN = "NO_TOKEN_SET";
-        private string BROADCASTER_ID = "NO_ID_SET";
+        private string TRACKED_CHANNEL_HANDLE = "NO_CHANNEL";
+
+        private readonly ChatClient _client = new(LOGGER);
+        private readonly Dictionary<string, RecentChatter> RECENT_CHATTERS = new();
+        private const int RECENT_CHATTER_TIMEOUT = 15*60;
+        private class RecentChatter
+        {
+            public readonly StreamUser user;
+            public float timeout;
+            public RecentChatter(StreamUser user, float timeout)
+            {
+                this.user = user;
+                this.timeout = timeout;
+            }
+        }
 
         [Header("Networking")]
         [SerializeField]
@@ -77,150 +83,160 @@ namespace Skeletom.BattleStation.Integrations.YouTube
 
         private void Update()
         {
-            YTLiveChat.Contracts.Services.ChatReceivedEventArgs data = null;
-            do
-            {
-                if (_argsQueue.TryDequeue(out data))
+            if(_client != null) {
+                ChatClient.ChatEvent chatEvent;
+                do
                 {
-                    HandleChatMessage(data);
-                }
-            } while (data != null);
+                    chatEvent = _client.GetNextChatItem();
+                    if (chatEvent != null)
+                    {
+                        ProcessChatEvent(chatEvent);
+                    }
+                } while (chatEvent != null);
+            }
+            ProcessRecentChatterTimeouts(Time.deltaTime);
         }
 
-        private string content;
-        // private async Task GetEmoteData(string videoId, CancellationToken cts)
-        // {
-        //     HttpClient client = new();
-        //     client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-        //     var request = new HttpRequestMessage(HttpMethod.Get, $"https://www.youtube.com/live_chat?is_popout=1&v={videoId}");
-        //     var response = await client.SendAsync(request);
-        //     var str = await response.Content.ReadAsStringAsync();
-        //     Debug.Log(str.Contains("window[\"ytInitialData\"]"));
-        //     try{
-        //         var snippet = str.Split("window[\"ytInitialData\"] = ")[1].Split("</script>")[0];
-        //         content = snippet;
-                
-        //     }catch(Exception e)
-        //     {
-        //         Debug.LogError(e);
-        //     }
-        //     SaveDataManager.WriteSaveData(this);
-        // }
+        private void ProcessChatEvent(ChatClient.ChatEvent chatEvent)
+        {
+            try
+            {
+                switch (chatEvent.eventType)
+                {
+                    case ChatClient.ChatEvent.EventType.Message:
+                        HandleChatMessage(chatEvent.item);
+                        break;
+                    case ChatClient.ChatEvent.EventType.Delete:
+                        HandleChatMessageDeletion(chatEvent.id);
+                        break;
+                }
+            }catch(Exception e)
+            {
+                LOGGER.LogError(e.Message);
+            }
+        }
+
+        private readonly List<string> TIMEOUTS = new();
+        /// <summary>
+        /// Decrements all pending request timeouts by the provided delta,
+        /// and invokes the OnError callback for requests which expire.
+        /// </summary>
+        /// <param name="delta">The time delta in milliseconds</param>
+        private void ProcessRecentChatterTimeouts(float delta)
+        {
+            foreach(var kvp in RECENT_CHATTERS)
+            {
+                kvp.Value.timeout -= delta;
+                if(kvp.Value.timeout < 0f)
+                {
+                    TIMEOUTS.Add(kvp.Key);
+                }
+            }
+            for(int i = 0; i < TIMEOUTS.Count; i++)
+            {
+                RECENT_CHATTERS.Remove(TIMEOUTS[i]);
+            }
+            TIMEOUTS.Clear();
+        }
 
         #endregion
 
-        #region GRPC
+        #region Chat Events
 
-        private readonly GrpcChannel _channel = GrpcChannel.ForAddress("https://youtube.googleapis.com", new GrpcChannelOptions
+        // Wrapper Class for YTLiveChat, the secret API
+        private class ChatClient
         {
-            HttpHandler = new YetAnotherHttpHandler()
-        });
-        private CancellationTokenSource _cts;
-        private readonly ConcurrentQueue<LiveChatMessage> _messageQueue = new();
+            private readonly YTLiveChat.Services.YTHttpClient _httpClient;
+            private readonly YTLiveChat.Services.YTLiveChat _chatClient;
 
-       private readonly ConcurrentQueue<YTLiveChat.Contracts.Services.ChatReceivedEventArgs> _argsQueue= new();
+            private readonly ConcurrentQueue<ChatEvent> _chatEventQueue = new();
 
+            public ChatClient(Utils.Logger logger) {
+                _httpClient = new(
+                    new HttpClient()
+                    {
+                        BaseAddress=new Uri("https://www.youtube.com/watch")
+                    }
+                );
+                _chatClient = new(
+                    new YTLiveChat.Contracts.YTLiveChatOptions(), 
+                    _httpClient
+                );
+                // TODO: reconnection logic
+                _chatClient.InitialPageLoaded += (_, e) => logger.Log($"Loaded stream: {e.LiveId}");
+                _chatClient.ChatStopped += (_, e) => logger.LogWarning($"Chat stopped: {e.Reason}");
+                _chatClient.ErrorOccurred += (_, e) => logger.LogError($"YTLiveChat Error: {e.GetException()}");
+                _chatClient.ChatReceived += (_, e) =>
+                {
+                    _chatEventQueue.Enqueue(new ChatEvent(
+                        ChatEvent.EventType.Message,
+                        e.ChatItem.Id,
+                        e.ChatItem)
+                    );
+                };
+                _chatClient.ChatItemDeleted += (_, e) =>
+                {
+                    _chatEventQueue.Enqueue(new ChatEvent(
+                        ChatEvent.EventType.Delete,
+                        e.TargetId,
+                        null)
+                    );
+                };
+            }
+
+            public class ChatEvent
+            {
+                public enum EventType
+                {
+                    Message,
+                    Delete,
+                }
+
+                public readonly EventType eventType;
+                public string id;
+                public ChatItem item;
+
+                public ChatEvent(EventType eventType, string id, ChatItem item)
+                {
+                    this.eventType = eventType;
+                    this.id = id;
+                    this.item = item;
+                }
+            }
+
+            public void Start(string videoId)
+            {
+                _chatClient.Start(liveId:videoId);
+            }
+
+            public void Stop()
+            {
+                _chatClient.Stop();
+            }
+
+            public ChatEvent GetNextChatItem()
+            {
+                if(_chatEventQueue.TryDequeue(out var item))
+                {
+                    return item;
+                };
+                return null;
+            }
+        }
 
         public void StartTrackingLiveChat(string videoId)
         {
-            StopTrackingLiveChat();
-            _cts = new CancellationTokenSource();
-            HttpUtils.HttpHeaders header = new();
-            header.customHeaders.Add("x-goog-api-key", CLIENT_ID);
-            StartCoroutine(HttpUtils.GetRequest(
-                $"https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id={videoId}", 
-                header,
-                (success) =>
-                {
-                    // Turn holistic video URL into live chat ID
-                    var response = JsonUtility.FromJson<LiveStreamingDetailsResponse>(success);
-                    if(response.items.Length > 0)
-                    {
-                        var client = new YTLiveChat.Services.YTLiveChat(
-                            new YTLiveChat.Contracts.YTLiveChatOptions(),
-                            new YTLiveChat.Services.YTHttpClient(
-                                new HttpClient()
-                                {
-                                    BaseAddress=new Uri("https://www.youtube.com/watch")
-                                }
-                            )
-                        );
-                        client.InitialPageLoaded += (_, e) => LOGGER.Log($"Loaded stream: {e.LiveId}");
-                        client.ChatStopped += (_, e) => LOGGER.LogWarning($"Chat stopped: {e.Reason}");
-                        client.ErrorOccurred += (_, e) => LOGGER.LogError($"YTLiveChat Error: {e.GetException()}");
-                        client.ChatReceived += (_, e) => LOGGER.Log($"Message received!");
-                        client.ChatReceived += (chat, args) =>
-                        {
-                            _argsQueue.Enqueue(args);
-                        };
-                        client.Start(liveId:videoId);
-                        Debug.LogWarning(response.items[0].liveStreamingDetails.activeLiveChatId);
-                        // _ = ListenToChatAsync(response.items[0].liveStreamingDetails.activeLiveChatId, _cts.Token);
-                        // _ = GetEmoteData(videoId, _cts.Token);
-                    }
-                    else
-                    {
-                        LOGGER.LogError("No videos returned in response.");
-                    }
-                }, 
-                (err) =>
-                {
-                    LOGGER.LogError(err.message);
-                }
-            ));
-        }
-
-        private async Task ListenToChatAsync(string liveChatId, CancellationToken token)
-        {
-            var client = new V3DataLiveChatMessageService.V3DataLiveChatMessageServiceClient(_channel);
-            var headers = new Metadata { { "x-goog-api-key", CLIENT_ID } };
-            string nextPageToken = null;
-            while (!token.IsCancellationRequested)
-            {
-                var request = new LiveChatMessageListRequest
-                {
-                    LiveChatId = liveChatId,
-                    Part = { "snippet", "authorDetails" }
-                };
-                if (!string.IsNullOrEmpty(nextPageToken))
-                {
-                    request.PageToken = nextPageToken;
-                }
-
-                try
-                {
-                    using var call = client.StreamList(request, headers: headers, cancellationToken: token);
-                    while (await call.ResponseStream.MoveNext(token))
-                    {
-                        var response = call.ResponseStream.Current;
-                        nextPageToken = response.NextPageToken;
-                        foreach (var item in response.Items)
-                        {
-                            _messageQueue.Enqueue(item);
-                        }
-                    }
-                }
-                catch (RpcException ex) when (ex.StatusCode != StatusCode.Cancelled)
-                {
-                    LOGGER.LogWarning($"gRPC stream interrupted ({ex.StatusCode}). Reconnecting...");
-                    await Task.Delay(2000, token);
-                }
-                catch(Exception ex)
-                {
-                    LOGGER.LogError(ex.Message);
-                }
-            }
+            _client.Start(videoId);
         }
 
         public void StopTrackingLiveChat()
         {
-            _cts?.Cancel();
-            _cts?.Dispose();
+            _client.Stop();
         }
 
-        private void HandleChatMessage(YTLiveChat.Contracts.Services.ChatReceivedEventArgs chatEvent)
+        private void HandleChatMessage(ChatItem item)
         {
-            StreamUser chatter = new(chatEvent.ChatItem.Author.Name, chatEvent.ChatItem.Id);
+            StreamUser chatter = new(item.Author.Name, item.Id);
             List<StreamChatMessage.Fragment> fragments = new();
             List<StreamBadge> badges = new();
             DateTime timestamp = DateTime.Now;
@@ -229,7 +245,7 @@ namespace Skeletom.BattleStation.Integrations.YouTube
                 () =>
                 {
                     StreamChatMessage message = new(
-                        chatEvent.ChatItem.Id,
+                        item.Id,
                         "YouTube",
                         timestamp,
                         chatter,
@@ -240,45 +256,66 @@ namespace Skeletom.BattleStation.Integrations.YouTube
                     onChatMessage.Invoke(message);
                 }
             );
-            foreach(YTLiveChat.Contracts.Models.MessagePart fragment in chatEvent.ChatItem.Message){
+            foreach(MessagePart fragment in item.Message){
                 string taskId = Guid.NewGuid().ToString();
                 manager.AddDependency(taskId);
                 switch (fragment)
                 {
                     case TextPart t:
-                        fragments.Add( new StreamChatMessage.Fragment(
+                        fragments.Add(new StreamChatMessage.Fragment(
                             StreamChatMessage.Fragment.Type.TEXT, 
                             t.Text
                         ));
                         manager.ResolveDependency(taskId);
                         break;
                     case EmojiPart e:
-                        var emojiFragment = new StreamChatMessage.Fragment(
+                        StreamChatMessage.Fragment emojiFragment = new(
                             StreamChatMessage.Fragment.Type.EMOTE, 
                             e.EmojiText
                         );
                         fragments.Add(emojiFragment);
                         ImageHandler.GetFromRemote(
-                        e.Url,
-                        new HttpUtils.HttpHeaders(), 
-                        $"emoji_{e.EmojiText}",
-                        (success) =>
-                        {
-                            emojiFragment.image = success;
-                            manager.ResolveDependency(taskId);
-                        },
-                        (err) =>
-                        {
-                            manager.ResolveDependency(taskId);
-                        }
-                    );
-                    break;
+                            e.Url,
+                            new HttpUtils.HttpHeaders(), 
+                            $"emoji_{e.EmojiText}",
+                            (success) =>
+                            {
+                                emojiFragment.image = success;
+                                manager.ResolveDependency(taskId);
+                            },
+                            (err) =>
+                            {
+                                manager.ResolveDependency(taskId);
+                            }
+                        );
+                        break;
                 }
+            }
+            if(item.Author.Badge != null)
+            {
+                string taskId = Guid.NewGuid().ToString();
+                manager.AddDependency(taskId);
+                StreamBadge newBadge = new(item.Author.Badge.Label, taskId);
+                badges.Add(newBadge);
+                ImageHandler.GetFromRemote(
+                    item.Author.Badge.Thumbnail.Url,
+                    new HttpUtils.HttpHeaders(),
+                    $"badge_{item.Author.Badge.Label}",
+                    (success) =>
+                    {
+                        newBadge.image = success;
+                        manager.ResolveDependency(taskId);
+                    },
+                    (err) =>
+                    {
+                        manager.ResolveDependency(taskId);
+                    }
+                );
             }
             string avatarTaskId = Guid.NewGuid().ToString();
             manager.AddDependency(avatarTaskId);
-            ImageHandler.GetFromRemote(chatEvent.ChatItem.Author.Thumbnail.Url, new HttpUtils.HttpHeaders(),
-            $"avatar_{chatEvent.ChatItem.Author.ChannelId}",
+            ImageHandler.GetFromRemote(item.Author.Thumbnail.Url, new HttpUtils.HttpHeaders(),
+            $"avatar_{item.Author.ChannelId}",
             (avatar) =>
             {
                 chatter.avatar = avatar;
@@ -290,49 +327,25 @@ namespace Skeletom.BattleStation.Integrations.YouTube
                 manager.ResolveDependency(avatarTaskId);
             });
             manager.Enable(true);
+
+            // Keep a list of recent chatters
+            // Current best approach to getting a list of chatters
+            // is to just collect them as chat messages come in
+            // There is no API, public nor private, which can get a complete list
+            if (RECENT_CHATTERS.ContainsKey(chatter.id))
+            {
+                RECENT_CHATTERS[chatter.id].timeout = RECENT_CHATTER_TIMEOUT;
+            }
+            else
+            {
+                RECENT_CHATTERS[chatter.id] = new(chatter, RECENT_CHATTER_TIMEOUT);
+            }
         }
 
-        private void HandleChatMessage(LiveChatMessage chatEvent)
+        private void HandleChatMessageDeletion(string messageId)
         {
-            StreamUser chatter = new(chatEvent.AuthorDetails.DisplayName, chatEvent.Id);
-            List<StreamChatMessage.Fragment> fragments = new();
-            List<StreamBadge> badges = new();
-            DateTime timestamp = DateTime.Now;
-            // create a callback for all HTTP dependencies
-            DependencyManager manager = new(
-                () =>
-                {
-                    StreamChatMessage message = new(
-                        chatEvent.Id,
-                        "YouTube",
-                        timestamp,
-                        chatter,
-                        "#FFFFFF",
-                        badges,
-                        fragments
-                    );
-                    onChatMessage.Invoke(message);
-                }
-            );
-            fragments.Add( new StreamChatMessage.Fragment(
-                StreamChatMessage.Fragment.Type.TEXT, 
-                chatEvent.Snippet.DisplayMessage
-            ));
-            string avatarTaskId = Guid.NewGuid().ToString();
-            manager.AddDependency(avatarTaskId);
-            ImageHandler.GetFromRemote(chatEvent.AuthorDetails.ProfileImageUrl, new HttpUtils.HttpHeaders(),
-            $"avatar_{chatEvent.AuthorDetails.DisplayName}",
-            (avatar) =>
-            {
-                chatter.avatar = avatar;
-                manager.ResolveDependency(avatarTaskId);
-            },
-            (err) =>
-            {
-                LOGGER.LogError(err.message);
-                manager.ResolveDependency(avatarTaskId);
-            });
-            manager.Enable(true);
+            StreamChatMessageDeletion deletion = new(messageId);
+            onChatMessageDelete.Invoke(deletion);
         }
 
         #endregion
@@ -341,7 +354,7 @@ namespace Skeletom.BattleStation.Integrations.YouTube
 
         public override void GetCurrentChatUsers(Action<List<StreamUser>> onSuccess, Action<StreamError> onError)
         {
-            throw new NotImplementedException();
+            onSuccess(RECENT_CHATTERS.Values.Select(user => user.user).ToList());
         }
 
 
@@ -358,16 +371,14 @@ namespace Skeletom.BattleStation.Integrations.YouTube
         {
             return new IntegrationData()
             {
-                token = USER_TOKEN,
-                content = content
+                channelHandle=TRACKED_CHANNEL_HANDLE
             };
         }
 
         [SerializeField]
         public class IntegrationData : BaseSaveData
         {
-            public string token;
-            public string content;
+            public string channelHandle;
         }
 
         #endregion

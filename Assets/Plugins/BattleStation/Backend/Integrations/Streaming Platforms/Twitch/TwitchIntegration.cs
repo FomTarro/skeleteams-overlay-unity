@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Skeletom.BattleStation.Integrations.Twitch.API;
 using Skeletom.BattleStation.Server;
 using Skeletom.Essentials.Collections;
 using Skeletom.Essentials.IO;
@@ -151,11 +150,8 @@ namespace Skeletom.BattleStation.Integrations.Twitch
                                 LOGGER.Log("EventSub subscriptions complete, caching emotes and badges...");
                                 // Subscribing to events is time-sensitive (sessionId will be invalidated after 10s of inactivity),
                                 // So let's do our subscriptions before we do the heavy caching operation
-                                // GetChannelEmotes(BROADCASTER_ID, (emotes) => { }, (err) => { Debug.LogError(err); });
-                                // GetGlobalEmotes((emotes) => { }, (err) => { Debug.LogError(err); });
                                 GetChannelBadges(BROADCASTER_ID, (badges) => { }, (err) => { LOGGER.LogError($"{err}"); });
                                 GetGlobalBadges((badges) => { }, (err) => { LOGGER.LogError($"{err}"); });
-                                // GetCurrentChatUsers((chatters) => {Debug.Log(string.Join(", ", chatters.Select(chatter => chatter.displayName))); }, (err) => { Debug.LogError(err); });
                             },
                             (key, pending) =>
                             {
@@ -528,14 +524,14 @@ namespace Skeletom.BattleStation.Integrations.Twitch
         public void CreatePoll(string title, int duration, List<string> choices, Action<API.PollData> onSuccess, Action<StreamError> onError)
         {
             string url = $"{TWITCH_API.POLLS_ENDPOINT}";
-            string body = JsonUtility.ToJson(new PollData()
+            string body = JsonUtility.ToJson(new API.PollData()
             {
                 broadcaster_id = BROADCASTER_ID,
                 title = title,
                 duration = duration,
                 channel_points_voting_enabled = true,
                 channel_points_per_vote = 100,
-                choices = choices.Select((title) => new PollChoice()
+                choices = choices.Select((title) => new API.PollChoice()
                 {
                     title = title
                 }).ToList()
@@ -555,7 +551,7 @@ namespace Skeletom.BattleStation.Integrations.Twitch
             );
         }
 
-        public void GetPoll(string id, Action<PollData> onSuccess, Action<StreamError> onError)
+        public void GetPoll(string id, Action<API.PollData> onSuccess, Action<StreamError> onError)
         {
             string url = $"{TWITCH_API.POLLS_ENDPOINT}?broadcaster_id={BROADCASTER_ID}&id={id}";
             StartCoroutine(

@@ -187,6 +187,8 @@ namespace Skeletom.BattleStation.Integrations.Discord
             }
         }
 
+
+        private readonly List<string> TIMEOUTS = new();
         /// <summary>
         /// Decrements all pending request timeouts by the provided delta,
         /// and invokes the OnError callback for requests which expire.
@@ -194,11 +196,10 @@ namespace Skeletom.BattleStation.Integrations.Discord
         /// <param name="delta">The time delta in milliseconds</param>
         private void ProcessRequestTimeouts(float delta)
         {
-            List<string> nonces = new(REQUEST_RESPONSE_HANDLERS.Keys);
-            foreach(string nonce in nonces)
+            foreach(var kvp in REQUEST_RESPONSE_HANDLERS)
             {
-                REQUEST_RESPONSE_HANDLERS[nonce].timeout -= delta;
-                if(REQUEST_RESPONSE_HANDLERS[nonce].timeout < 0f)
+                kvp.Value.timeout -= delta;
+                if(kvp.Value.timeout < 0f)
                 {
                     ErrorResponse err = new()
                     {
@@ -208,10 +209,15 @@ namespace Skeletom.BattleStation.Integrations.Discord
                             message = "Request timeout."
                         }
                     };
-                    REQUEST_RESPONSE_HANDLERS[nonce].onError(err);
-                    REQUEST_RESPONSE_HANDLERS.Remove(nonce);
+                    kvp.Value.onError(err);
+                    TIMEOUTS.Add(kvp.Key);
                 }
             }
+            for(int i = 0; i < TIMEOUTS.Count; i++)
+            {
+                REQUEST_RESPONSE_HANDLERS.Remove(TIMEOUTS[i]);
+            }
+            TIMEOUTS.Clear();
         }
 
         private void ConnectToIPC()

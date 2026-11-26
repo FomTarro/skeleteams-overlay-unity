@@ -221,6 +221,8 @@ public class LayoutManager : Singleton<LayoutManager>
 
     // Update is called once per frame
     private float _pollingDelta = 0f;
+    private int _twitchChatterCount = 0;
+    private int _youtubeChatterCounter = 0;
     void Update()
     {
         _pollingDelta += Time.deltaTime;
@@ -228,7 +230,16 @@ public class LayoutManager : Singleton<LayoutManager>
         {
             IntegrationManager.Instance.Twitch.GetCurrentChatUsers((list) =>
             {
-                onChatUserCounted.Invoke(list.Count);
+                _twitchChatterCount = list.Count;
+                onChatUserCounted.Invoke(_twitchChatterCount + _youtubeChatterCounter);
+            }, (err) =>
+            {
+                Debug.LogError(err.message);
+            });
+            IntegrationManager.Instance.YouTube.GetCurrentChatUsers((list) =>
+            {
+                _youtubeChatterCounter = list.Count;
+                onChatUserCounted.Invoke(_twitchChatterCount + _youtubeChatterCounter);
             }, (err) =>
             {
                 Debug.LogError(err.message);
